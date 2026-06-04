@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Click</string>
+    <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
+</resources>
