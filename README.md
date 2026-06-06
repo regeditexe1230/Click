@@ -1,5 +1,5 @@
 # Click
-================================               
+               
 1.A android app can help you perform some automated click and swipe actions       
 2.This app support for android 7.0+       
        
