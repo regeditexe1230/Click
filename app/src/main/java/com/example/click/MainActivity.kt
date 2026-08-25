@@ -186,7 +186,9 @@ class MainActivity : AppCompatActivity() {
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
             prefs.edit().putBoolean("first_launch_done", true).apply()
-            showFirstLaunchDialog()
+            window.decorView.postDelayed({
+                showFirstLaunchDialog()
+            }, 500)
         }
     }
 
