@@ -14,16 +14,12 @@ import android.view.View
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,12 +30,11 @@ class MainActivity : AppCompatActivity() {
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
-    private lateinit var radioGroupMode: RadioGroup
-    private lateinit var radioSwipe: RadioButton
+    private lateinit var btnClick: Button
+    private lateinit var btnSwipe: Button
     private lateinit var swipeParams: LinearLayout
-    private lateinit var radioGroupSwipeMethod: RadioGroup
-    private lateinit var radioSwipeManual: RadioButton
-    private lateinit var radioSwipeGesture: RadioButton
+    private lateinit var btnSwipeManual: Button
+    private lateinit var btnSwipeGesture: Button
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
     private lateinit var inputSwipeX1: EditText
@@ -49,25 +44,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSwipeDuration: EditText
     private lateinit var inputDelay: EditText
     private lateinit var inputRepeat: EditText
-    private lateinit var checkInfinite: CheckBox
-    private lateinit var btnStartFloating: MaterialButton
+    private lateinit var btnInfinite: Button
+    private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
-    private lateinit var btnStopFloating: MaterialButton
-    private lateinit var btnRecordGesture: MaterialButton
+    private lateinit var btnStopFloating: Button
+    private lateinit var btnRecordGesture: Button
     private lateinit var lblRecordedStatus: TextView
     private lateinit var statusText: TextView
+
+    private var isSwipeMode = false
+    private var isGestureMode = false
+    private var isInfiniteMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.statusText)
-        radioGroupMode = findViewById(R.id.radioGroupMode)
-        radioSwipe = findViewById(R.id.radioSwipe)
+        btnClick = findViewById(R.id.radioClick)
+        btnSwipe = findViewById(R.id.radioSwipe)
         swipeParams = findViewById(R.id.swipeParams)
-        radioGroupSwipeMethod = findViewById(R.id.radioGroupSwipeMethod)
-        radioSwipeManual = findViewById(R.id.radioSwipeManual)
-        radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
+        btnSwipeManual = findViewById(R.id.radioSwipeManual)
+        btnSwipeGesture = findViewById(R.id.radioSwipeGesture)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
         gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
         inputSwipeX1 = findViewById(R.id.inputSwipeX1)
@@ -77,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         inputSwipeDuration = findViewById(R.id.inputSwipeDuration)
         inputDelay = findViewById(R.id.inputDelay)
         inputRepeat = findViewById(R.id.inputRepeat)
-        checkInfinite = findViewById(R.id.checkInfinite)
+        btnInfinite = findViewById(R.id.checkInfinite)
         btnStartFloating = findViewById(R.id.btnStartFloating)
         btnStartOverlay = findViewById(R.id.btnStartOverlay)
         btnStopFloating = findViewById(R.id.btnStopFloating)
@@ -92,13 +90,69 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<MaterialButton>(R.id.btnEnableService).setOnClickListener {
+        // 初始状态
+        btnClick.isSelected = true
+        btnSwipe.isSelected = false
+
+        // 执行模式按钮
+        btnClick.setOnClickListener {
+            isSwipeMode = false
+            btnClick.isSelected = true
+            btnSwipe.isSelected = false
+            swipeParams.visibility = View.GONE
+            saveConfig()
+            updateStatus()
+        }
+
+        btnSwipe.setOnClickListener {
+            isSwipeMode = true
+            btnClick.isSelected = false
+            btnSwipe.isSelected = true
+            swipeParams.visibility = View.VISIBLE
+            saveConfig()
+            if (!isSwipeConfigValid()) {
+                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+            }
+            updateStatus()
+        }
+
+        // 滑动方式按钮
+        btnSwipeManual.setOnClickListener {
+            isGestureMode = false
+            btnSwipeManual.isSelected = true
+            btnSwipeGesture.isSelected = false
+            manualSwipeParams.visibility = View.VISIBLE
+            gestureSwipeSection.visibility = View.GONE
+            saveConfig()
+            updateStatus()
+        }
+
+        btnSwipeGesture.setOnClickListener {
+            isGestureMode = true
+            btnSwipeManual.isSelected = false
+            btnSwipeGesture.isSelected = true
+            manualSwipeParams.visibility = View.GONE
+            gestureSwipeSection.visibility = View.VISIBLE
+            saveConfig()
+            updateStatus()
+        }
+
+        // 无限循环按钮
+        btnInfinite.setOnClickListener {
+            isInfiniteMode = !isInfiniteMode
+            btnInfinite.isActivated = isInfiniteMode
+            inputRepeat.isEnabled = !isInfiniteMode
+            saveConfig()
+        }
+
+        findViewById<Button>(R.id.btnEnableService).setOnClickListener {
             showWarningDialog {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }
 
-        findViewById<MaterialButton>(R.id.btnEnableOverlay).setOnClickListener {
+        findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!Settings.canDrawOverlays(this)) {
                     Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
@@ -110,29 +164,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
                 }
             }
-        }
-
-        radioGroupMode.setOnCheckedChangeListener { _, id ->
-            swipeParams.visibility = if (id == R.id.radioSwipe) View.VISIBLE else View.GONE
-            saveConfig()
-            if (id == R.id.radioSwipe && !isSwipeConfigValid()) {
-                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
-                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
-            }
-            updateStatus()
-        }
-
-        radioGroupSwipeMethod.setOnCheckedChangeListener { _, id ->
-            val isManual = id == R.id.radioSwipeManual
-            manualSwipeParams.visibility = if (isManual) View.VISIBLE else View.GONE
-            gestureSwipeSection.visibility = if (isManual) View.GONE else View.VISIBLE
-            saveConfig()
-            updateStatus()
-        }
-
-        checkInfinite.setOnCheckedChangeListener { _, checked ->
-            inputRepeat.isEnabled = !checked
-            saveConfig()
         }
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
@@ -168,7 +199,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnStartOverlay.setOnClickListener { handleStartButtonClick() }
-
         btnStartFloating.setOnClickListener { handleStartButtonClick() }
 
         btnStopFloating.setOnClickListener {
@@ -254,7 +284,7 @@ class MainActivity : AppCompatActivity() {
         if (gesture.points.size >= 2) {
             lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点，${gesture.totalDuration}ms"
             lblRecordedStatus.visibility = View.VISIBLE
-        } else if (radioSwipe.isChecked && radioSwipeGesture.isChecked) {
+        } else if (isSwipeMode && isGestureMode) {
             lblRecordedStatus.text = "尚未录制手势"
             lblRecordedStatus.visibility = View.VISIBLE
         } else {
@@ -263,8 +293,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isSwipeConfigValid(): Boolean {
-        if (!radioSwipe.isChecked) return true
-        return if (radioSwipeManual.isChecked) {
+        if (!isSwipeMode) return true
+        return if (!isGestureMode) {
             inputSwipeX1.text.isNotEmpty() &&
             inputSwipeY1.text.isNotEmpty() &&
             inputSwipeX2.text.isNotEmpty() &&
@@ -276,8 +306,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val mode = if (radioSwipe.isChecked) Mode.SWIPE else Mode.CLICK
-        val swipeMethod = if (radioSwipeManual.isChecked) SwipeMethod.MANUAL else SwipeMethod.GESTURE
+        val mode = if (isSwipeMode) Mode.SWIPE else Mode.CLICK
+        val swipeMethod = if (!isGestureMode) SwipeMethod.MANUAL else SwipeMethod.GESTURE
         AppConfig.current = AppConfig(
             mode = mode,
             swipeMethod = swipeMethod,
@@ -287,7 +317,7 @@ class MainActivity : AppCompatActivity() {
             swipeY2 = inputSwipeY2.text.toString().toFloatOrNull() ?: 0f,
             swipeDuration = inputSwipeDuration.text.toString().toLongOrNull() ?: 0L,
             delayMs = inputDelay.text.toString().toLongOrNull() ?: 0L,
-            repeatCount = if (checkInfinite.isChecked) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
+            repeatCount = if (isInfiniteMode) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
         )
     }
 
@@ -299,7 +329,7 @@ class MainActivity : AppCompatActivity() {
 
         if (serviceEnabled && overlayGranted) {
             if (!isSwipeConfigValid()) {
-                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
+                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
                 Toast.makeText(this, hint, Toast.LENGTH_LONG).show()
                 return
             }
