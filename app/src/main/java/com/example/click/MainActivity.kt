@@ -16,13 +16,13 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.materialswitch.MaterialSwitch
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSwipeDuration: EditText
     private lateinit var inputDelay: EditText
     private lateinit var inputRepeat: EditText
-    private lateinit var btnInfinite: Switch
+    private lateinit var btnInfinite: MaterialSwitch
     private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
     private lateinit var btnStopFloating: Button
@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         // 设置顶栏
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.inflateMenu(R.menu.menu_main)
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_about -> {

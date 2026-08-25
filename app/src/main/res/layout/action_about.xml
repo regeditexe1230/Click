@@ -6,12 +6,12 @@
 
     <ImageButton
         android:id="@+id/btnAboutIcon"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="center"
-        android:layout_marginBottom="2dp"
         android:src="@drawable/about"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:scaleType="fitCenter"
-        android:contentDescription="关于" />
+        android:contentDescription="关于"
+        android:tint="?attr/colorOnSurface" />
 </FrameLayout>
