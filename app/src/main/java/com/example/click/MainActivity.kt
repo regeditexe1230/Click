@@ -390,12 +390,14 @@ class MainActivity : AppCompatActivity() {
         if (!message.contains("github")) {
             throw RuntimeException("App integrity verification failed")
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("安全警告")
             .setMessage(message)
             .setPositiveButton("确认") { _, _ -> onConfirmed() }
             .setCancelable(false)
-            .show()
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
     }
 
     private fun openOverlaySettings() {
@@ -440,21 +442,26 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun showFirstLaunchDialog() {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
             .setMessage("\n" + decodeTutorialText())
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
             .setCancelable(false)
-            .show()
+            .create()
+        // 平滑显示，避免闪烁
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
             .setMessage("\n" + decodeFloatTutorialText())
             .setPositiveButton("知道了") { _, _ -> onStart() }
             .setCancelable(false)
-            .show()
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
     }
 
     private fun decodeFloatTutorialText(): String {
