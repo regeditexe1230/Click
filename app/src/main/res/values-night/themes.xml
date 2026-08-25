@@ -19,5 +19,8 @@
         <item name="android:statusBarColor">@color/md_theme_surface</item>
         <item name="android:navigationBarColor">@color/md_theme_surface</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!-- Splash Screen -->
+        <item name="android:windowSplashScreenBackground">@color/md_theme_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/icon</item>
     </style>
 </resources>

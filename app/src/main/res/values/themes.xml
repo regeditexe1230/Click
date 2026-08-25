@@ -20,6 +20,8 @@
         <item name="android:navigationBarColor">@color/md_theme_surface</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/md_theme_background</item>
-        <item name="android:windowDisablePreview">false</item>
+        <!-- Splash Screen -->
+        <item name="android:windowSplashScreenBackground">@color/md_theme_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/icon</item>
     </style>
 </resources>
