@@ -1,4 +1,4 @@
-package com.example.click
+﻿package com.example.click
 
 import android.content.Context
 import android.content.Intent
@@ -519,7 +519,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFirstLaunchDialog() {
         val scrollView = android.widget.ScrollView(this).apply {
             val textView = android.widget.TextView(this@MainActivity).apply {
-                text = decodeTutorialText()
+                text = "\n$(decodeTutorialText())"
                 textSize = 14f
                 setPadding(48, 16, 48, 16)
             }
@@ -537,7 +537,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
         val scrollView = android.widget.ScrollView(this).apply {
             val textView = android.widget.TextView(this@MainActivity).apply {
-                text = decodeFloatTutorialText()
+                text = "\n$(decodeFloatTutorialText())"
                 textSize = 14f
                 setPadding(48, 16, 48, 16)
             }

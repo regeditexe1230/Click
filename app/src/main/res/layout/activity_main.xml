@@ -24,15 +24,15 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- 权限状态标题 - 在框间 -->
+            <!-- 权限状态 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="权限状态"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="2dp" />
 
-            <!-- 权限状态框 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,16 +64,16 @@
                 android:layout_marginTop="8dp"
                 android:text="开启悬浮窗权限" />
 
-            <!-- 执行模式标题 - 在框间 -->
+            <!-- 执行模式 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="执行模式"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="2dp" />
 
-            <!-- 执行模式框 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -106,7 +106,6 @@
                         style="@style/Widget.Material3.Button.OutlinedButton" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                <!-- 滑动参数区域 -->
                 <LinearLayout
                     android:id="@+id/swipeParams"
                     android:layout_width="match_parent"
@@ -270,16 +269,16 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 执行设置标题 - 在框间 -->
+            <!-- 执行设置 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:text="执行设置"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="2dp" />
 
-            <!-- 执行设置框 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
