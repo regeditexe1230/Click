@@ -13,16 +13,17 @@ import android.text.style.ClickableSpan
 import android.view.View
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.radiobutton.MaterialRadioButton
-import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,21 +35,21 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionStep = PermissionStep.NONE
 
     private lateinit var radioGroupMode: RadioGroup
-    private lateinit var radioSwipe: MaterialRadioButton
+    private lateinit var radioSwipe: RadioButton
     private lateinit var swipeParams: LinearLayout
     private lateinit var radioGroupSwipeMethod: RadioGroup
-    private lateinit var radioSwipeManual: MaterialRadioButton
-    private lateinit var radioSwipeGesture: MaterialRadioButton
+    private lateinit var radioSwipeManual: RadioButton
+    private lateinit var radioSwipeGesture: RadioButton
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
-    private lateinit var inputSwipeX1: TextInputEditText
-    private lateinit var inputSwipeY1: TextInputEditText
-    private lateinit var inputSwipeX2: TextInputEditText
-    private lateinit var inputSwipeY2: TextInputEditText
-    private lateinit var inputSwipeDuration: TextInputEditText
-    private lateinit var inputDelay: TextInputEditText
-    private lateinit var inputRepeat: TextInputEditText
-    private lateinit var checkInfinite: MaterialCheckBox
+    private lateinit var inputSwipeX1: EditText
+    private lateinit var inputSwipeY1: EditText
+    private lateinit var inputSwipeX2: EditText
+    private lateinit var inputSwipeY2: EditText
+    private lateinit var inputSwipeDuration: EditText
+    private lateinit var inputDelay: EditText
+    private lateinit var inputRepeat: EditText
+    private lateinit var checkInfinite: CheckBox
     private lateinit var btnStartFloating: MaterialButton
     private lateinit var btnStartOverlay: View
     private lateinit var btnStopFloating: MaterialButton
@@ -264,11 +265,11 @@ class MainActivity : AppCompatActivity() {
     private fun isSwipeConfigValid(): Boolean {
         if (!radioSwipe.isChecked) return true
         return if (radioSwipeManual.isChecked) {
-            inputSwipeX1.text?.isNotEmpty() == true &&
-            inputSwipeY1.text?.isNotEmpty() == true &&
-            inputSwipeX2.text?.isNotEmpty() == true &&
-            inputSwipeY2.text?.isNotEmpty() == true &&
-            inputSwipeDuration.text?.isNotEmpty() == true
+            inputSwipeX1.text.isNotEmpty() &&
+            inputSwipeY1.text.isNotEmpty() &&
+            inputSwipeX2.text.isNotEmpty() &&
+            inputSwipeY2.text.isNotEmpty() &&
+            inputSwipeDuration.text.isNotEmpty()
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
@@ -398,7 +399,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onTextChanged(editText: TextInputEditText, action: () -> Unit) {
+    private fun onTextChanged(editText: EditText, action: () -> Unit) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
