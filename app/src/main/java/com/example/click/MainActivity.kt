@@ -14,12 +14,11 @@ import android.view.View
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.TextView
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.materialswitch.MaterialSwitch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -33,12 +32,12 @@ class MainActivity : AppCompatActivity() {
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
-    private lateinit var radioGroupMode: RadioGroup
-    private lateinit var radioSwipe: RadioButton
+    private lateinit var toggleGroupMode: MaterialButtonToggleGroup
+    private lateinit var btnSwipe: Button
     private lateinit var swipeParams: LinearLayout
-    private lateinit var radioGroupSwipeMethod: RadioGroup
-    private lateinit var radioSwipeManual: RadioButton
-    private lateinit var radioSwipeGesture: RadioButton
+    private lateinit var toggleGroupSwipeMethod: MaterialButtonToggleGroup
+    private lateinit var btnSwipeManual: Button
+    private lateinit var btnSwipeGesture: Button
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
     private lateinit var inputSwipeX1: EditText
@@ -48,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSwipeDuration: EditText
     private lateinit var inputDelay: EditText
     private lateinit var inputRepeat: EditText
-    private lateinit var checkInfinite: CheckBox
+    private lateinit var checkInfinite: MaterialSwitch
     private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
     private lateinit var btnStopFloating: Button
@@ -61,12 +60,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.statusText)
-        radioGroupMode = findViewById(R.id.radioGroupMode)
-        radioSwipe = findViewById(R.id.radioSwipe)
+        toggleGroupMode = findViewById(R.id.toggleGroupMode)
+        btnSwipe = findViewById(R.id.btnSwipe)
         swipeParams = findViewById(R.id.swipeParams)
-        radioGroupSwipeMethod = findViewById(R.id.radioGroupSwipeMethod)
-        radioSwipeManual = findViewById(R.id.radioSwipeManual)
-        radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
+        toggleGroupSwipeMethod = findViewById(R.id.toggleGroupSwipeMethod)
+        btnSwipeManual = findViewById(R.id.btnSwipeManual)
+        btnSwipeGesture = findViewById(R.id.btnSwipeGesture)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
         gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
         inputSwipeX1 = findViewById(R.id.inputSwipeX1)
@@ -111,22 +110,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        radioGroupMode.setOnCheckedChangeListener { _, id ->
-            swipeParams.visibility = if (id == R.id.radioSwipe) View.VISIBLE else View.GONE
-            saveConfig()
-            if (id == R.id.radioSwipe && !isSwipeConfigValid()) {
-                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
-                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+        toggleGroupMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                swipeParams.visibility = if (checkedId == R.id.btnSwipe) View.VISIBLE else View.GONE
+                saveConfig()
+                if (checkedId == R.id.btnSwipe && !isSwipeConfigValid()) {
+                    val hint = if (btnSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
+                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+                }
+                updateStatus()
             }
-            updateStatus()
         }
 
-        radioGroupSwipeMethod.setOnCheckedChangeListener { _, id ->
-            val isManual = id == R.id.radioSwipeManual
-            manualSwipeParams.visibility = if (isManual) View.VISIBLE else View.GONE
-            gestureSwipeSection.visibility = if (isManual) View.GONE else View.VISIBLE
-            saveConfig()
-            updateStatus()
+        toggleGroupSwipeMethod.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                val isManual = checkedId == R.id.btnSwipeManual
+                manualSwipeParams.visibility = if (isManual) View.VISIBLE else View.GONE
+                gestureSwipeSection.visibility = if (isManual) View.GONE else View.VISIBLE
+                saveConfig()
+                updateStatus()
+            }
         }
 
         checkInfinite.setOnCheckedChangeListener { _, checked ->
@@ -253,7 +256,7 @@ class MainActivity : AppCompatActivity() {
         if (gesture.points.size >= 2) {
             lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点，${gesture.totalDuration}ms"
             lblRecordedStatus.visibility = View.VISIBLE
-        } else if (radioSwipe.isChecked && radioSwipeGesture.isChecked) {
+        } else if (btnSwipe.isChecked && btnSwipeGesture.isChecked) {
             lblRecordedStatus.text = "尚未录制手势"
             lblRecordedStatus.visibility = View.VISIBLE
         } else {
@@ -262,8 +265,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isSwipeConfigValid(): Boolean {
-        if (!radioSwipe.isChecked) return true
-        return if (radioSwipeManual.isChecked) {
+        if (!btnSwipe.isChecked) return true
+        return if (btnSwipeManual.isChecked) {
             inputSwipeX1.text.isNotEmpty() &&
             inputSwipeY1.text.isNotEmpty() &&
             inputSwipeX2.text.isNotEmpty() &&
@@ -275,8 +278,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val mode = if (radioSwipe.isChecked) Mode.SWIPE else Mode.CLICK
-        val swipeMethod = if (radioSwipeManual.isChecked) SwipeMethod.MANUAL else SwipeMethod.GESTURE
+        val mode = if (btnSwipe.isChecked) Mode.SWIPE else Mode.CLICK
+        val swipeMethod = if (btnSwipeManual.isChecked) SwipeMethod.MANUAL else SwipeMethod.GESTURE
         AppConfig.current = AppConfig(
             mode = mode,
             swipeMethod = swipeMethod,
@@ -298,7 +301,7 @@ class MainActivity : AppCompatActivity() {
 
         if (serviceEnabled && overlayGranted) {
             if (!isSwipeConfigValid()) {
-                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
+                val hint = if (btnSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
                 Toast.makeText(this, hint, Toast.LENGTH_LONG).show()
                 return
             }
