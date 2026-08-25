@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.click"
+    namespace = "com.yjc.click"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.click"
+        applicationId = "com.yjc.click"
         minSdk = 24
         targetSdk = 33
         versionCode = 2

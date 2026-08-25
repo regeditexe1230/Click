@@ -1,4 +1,4 @@
-package com.example.click
+package com.yjc.click
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -87,9 +87,9 @@ class FloatingService : Service() {
 
     private fun createNotification(): Notification {
         val text = when {
-            AppConfig.recordRequested -> "录制手势中..."
-            AppConfig.current.isInfinite -> "无限循环中"
-            else -> "点击悬浮球执行操作"
+            AppConfig.recordRequested -> "录制手势�?.."
+            AppConfig.current.isInfinite -> "无限循环�?
+            else -> "点击悬浮球执行操�?
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("悬浮球运行中")
@@ -169,7 +169,7 @@ class FloatingService : Service() {
                         if (AppConfig.current.mode == Mode.CLICK && targetMarker == null) {
                             Toast.makeText(
                                 this@FloatingService,
-                                "请先拖动悬浮球设到点击位置",
+                                "请先拖动悬浮球设到点击位�?,
                                 Toast.LENGTH_SHORT
                             ).show()
                             return@setOnTouchListener true
@@ -311,8 +311,8 @@ class FloatingService : Service() {
 
         recordingPoints.clear()
 
-        if (com.example.click.MainActivity.floatTutorialPending) {
-            com.example.click.MainActivity.floatTutorialPending = false
+        if (com.yjc.click.MainActivity.floatTutorialPending) {
+            com.yjc.click.MainActivity.floatTutorialPending = false
             val launch = packageManager.getLaunchIntentForPackage(packageName)
             launch?.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             launch?.putExtra("show_float_tutorial", true)
@@ -341,7 +341,7 @@ class FloatingService : Service() {
                 AppConfig.running = false
                 operationPaused = true
                 job?.cancel()
-                Toast.makeText(this, "操作已暂停", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "操作已暂�?, Toast.LENGTH_SHORT).show()
             } else {
                 android.util.Log.d("FloatingService", "executeAction: first tap while running")
                 lastTapTime = now

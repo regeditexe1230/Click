@@ -1,4 +1,4 @@
-package com.example.click
+package com.yjc.click
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription

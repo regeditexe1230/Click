@@ -1,4 +1,4 @@
-package com.example.click
+package com.yjc.click
 
 enum class Mode { CLICK, SWIPE }
 enum class SwipeMethod { MANUAL, GESTURE }

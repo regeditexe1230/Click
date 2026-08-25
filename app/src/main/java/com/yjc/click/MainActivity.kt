@@ -1,4 +1,4 @@
-package com.example.click
+package com.yjc.click
 
 import android.content.Context
 import android.content.Intent
@@ -106,12 +106,12 @@ class MainActivity : AppCompatActivity() {
                         Uri.parse("package:$packageName")
                     ))
                 } else {
-                    Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "悬浮窗权限已开�?, Toast.LENGTH_SHORT).show()
                 }
             }
         }
 
-        // 初始状态
+        // 初始状�?
         radioClick.isSelected = true
         radioSwipeManual.isSelected = true
 
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             expandView(swipeParams)
             saveConfig()
             if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                val hint = if (!isGestureMode) "请填写手动参�? else "请先录制手势"
                 Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
             }
             updateStatus()
@@ -193,7 +193,7 @@ class MainActivity : AppCompatActivity() {
                 AppConfig.running = true
                 startFloatingService()
             }
-            Toast.makeText(this, "请在屏幕上滑动手指录制手势", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请在屏幕上滑动手指录制手�?, Toast.LENGTH_SHORT).show()
         }
 
         btnStartOverlay.setOnClickListener { handleStartButtonClick() }
@@ -277,8 +277,8 @@ class MainActivity : AppCompatActivity() {
         val overlayGranted = hasOverlayPermission()
 
         statusText.text = buildString {
-            append("无障碍服务：${if (serviceEnabled) "✅ 已开启" else "❌ 未开启"}\n")
-            append("悬浮窗权限：${if (overlayGranted) "✅ 已开启" else "❌ 未开启"}")
+            append("无障碍服务：${if (serviceEnabled) "�?已开�? else "�?未开�?}\n")
+            append("悬浮窗权限：${if (overlayGranted) "�?已开�? else "�?未开�?}")
         }
 
         val ready = serviceEnabled && overlayGranted && isSwipeConfigValid()
@@ -290,7 +290,7 @@ class MainActivity : AppCompatActivity() {
 
         val gesture = AppConfig.recordedGesture
         if (gesture.points.size >= 2) {
-            lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点，${gesture.totalDuration}ms"
+            lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点�?{gesture.totalDuration}ms"
             lblRecordedStatus.visibility = View.VISIBLE
         } else if (isSwipeMode && isGestureMode) {
             lblRecordedStatus.text = "尚未录制手势"
@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
 
         if (serviceEnabled && overlayGranted) {
             if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                val hint = if (!isGestureMode) "请填写手动参�? else "请先录制手势"
                 Toast.makeText(this, hint, Toast.LENGTH_LONG).show()
                 return
             }
@@ -463,7 +463,7 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 Choreographer 确保帧同步
+        // 使用 Choreographer 确保帧同�?
         view.animate()
             .alpha(1f)
             .setDuration(250)
@@ -558,19 +558,19 @@ class MainActivity : AppCompatActivity() {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
             .setMessage("\n" + decodeTutorialText())
-            .setPositiveButton("知道了") { d, _ -> d.dismiss() }
+            .setPositiveButton("知道�?) { d, _ -> d.dismiss() }
             .setCancelable(false)
             .create()
-        // 平滑显示，避免闪烁
+        // 平滑显示，避免闪�?
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("悬浮球使用说明")
+            .setTitle("悬浮球使用说�?)
             .setMessage("\n" + decodeFloatTutorialText())
-            .setPositiveButton("知道了") { _, _ -> onStart() }
+            .setPositiveButton("知道�?) { _, _ -> onStart() }
             .setCancelable(false)
             .create()
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
