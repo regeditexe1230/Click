@@ -14,13 +14,13 @@ import android.view.View
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.google.android.material.materialswitch.MaterialSwitch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,13 +42,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var radioSwipeGesture: Button
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
-    private lateinit var inputSwipeX1: EditText
-    private lateinit var inputSwipeY1: EditText
-    private lateinit var inputSwipeX2: EditText
-    private lateinit var inputSwipeY2: EditText
-    private lateinit var inputSwipeDuration: EditText
-    private lateinit var inputDelay: EditText
-    private lateinit var inputRepeat: EditText
+    private lateinit var inputSwipeX1: TextInputEditText
+    private lateinit var inputSwipeY1: TextInputEditText
+    private lateinit var inputSwipeX2: TextInputEditText
+    private lateinit var inputSwipeY2: TextInputEditText
+    private lateinit var inputSwipeDuration: TextInputEditText
+    private lateinit var inputDelay: TextInputEditText
+    private lateinit var inputRepeat: TextInputEditText
     private lateinit var checkInfinite: MaterialSwitch
     private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
@@ -523,7 +523,7 @@ class MainActivity : AppCompatActivity() {
         animator.start()
     }
 
-    private fun onTextChanged(editText: EditText, action: () -> Unit) {
+    private fun onTextChanged(editText: TextInputEditText, action: () -> Unit) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
