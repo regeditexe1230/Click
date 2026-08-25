@@ -1,0 +1,205 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 257949696 bytes for Failed to commit area from 0x00000006ca200000 to 0x00000006d9800000 of length 257949696.
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (t:/workspace/hotspot/src/os/windows/vm/os_windows.cpp:3357), pid=42148, tid=48296
+#
+# JRE version:  (9.0+11) (build )
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (9.0.1+11, mixed mode, tiered, compressed oops, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: 
+
+Host: Intel(R) Core(TM) Ultra 9 275HX, 24 cores, 15G,  Windows 10 , 64 bit Build 26100 (10.0.26100.9212)
+Time: Tue Aug 25 13:02:14 2026 ?D1¨²¡À¨º¡Á?¨º¡À?? elapsed time: 0 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000019e4fac5800):  JavaThread "Unknown thread" [_thread_in_vm, id=48296, stack(0x00000034f8200000,0x00000034f8300000)]
+
+Stack: [0x00000034f8200000,0x00000034f8300000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x5870b8]
+V  [jvm.dll+0x69c0ee]
+V  [jvm.dll+0x69d00a]
+V  [jvm.dll+0x69d643]
+V  [jvm.dll+0x21d148]
+V  [jvm.dll+0x584bf4]
+V  [jvm.dll+0x57a005]
+V  [jvm.dll+0x2cd46b]
+V  [jvm.dll+0x2cd3d3]
+V  [jvm.dll+0x2cd2a2]
+V  [jvm.dll+0x2cf2a3]
+V  [jvm.dll+0x319203]
+V  [jvm.dll+0x319916]
+V  [jvm.dll+0x319303]
+V  [jvm.dll+0x2adbf8]
+V  [jvm.dll+0x2aee37]
+V  [jvm.dll+0x67b1ed]
+V  [jvm.dll+0x67c5ac]
+V  [jvm.dll+0x3269c9]
+V  [jvm.dll+0x6653ee]
+V  [jvm.dll+0x391931]
+V  [jvm.dll+0x3938e1]
+C  [java.exe+0x34f1]
+C  [java.exe+0xe24f]
+C  [java.exe+0xe3f6]
+C  [KERNEL32.DLL+0x2ccb7]
+C  [ntdll.dll+0xacaec]
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x0000019e4fadf800 GCTaskThread "GC Thread#0" [stack: 0x00000034f8300000,0x00000034f8400000] [id=31176]
+  0x0000019e4fae1000 GCTaskThread "GC Thread#1" [stack: 0x00000034f8400000,0x00000034f8500000] [id=32636]
+  0x0000019e4fae3800 GCTaskThread "GC Thread#2" [stack: 0x00000034f8500000,0x00000034f8600000] [id=55184]
+  0x0000019e4fae5000 GCTaskThread "GC Thread#3" [stack: 0x00000034f8600000,0x00000034f8700000] [id=11032]
+  0x0000019e4faed800 GCTaskThread "GC Thread#4" [stack: 0x00000034f8700000,0x00000034f8800000] [id=30288]
+  0x0000019e4faf0800 GCTaskThread "GC Thread#5" [stack: 0x00000034f8800000,0x00000034f8900000] [id=65432]
+  0x0000019e4faf1800 GCTaskThread "GC Thread#6" [stack: 0x00000034f8900000,0x00000034f8a00000] [id=49728]
+  0x0000019e4faf2800 GCTaskThread "GC Thread#7" [stack: 0x00000034f8a00000,0x00000034f8b00000] [id=58308]
+  0x0000019e4faf3800 GCTaskThread "GC Thread#8" [stack: 0x00000034f8b00000,0x00000034f8c00000] [id=70148]
+  0x0000019e4faf7000 GCTaskThread "GC Thread#9" [stack: 0x00000034f8c00000,0x00000034f8d00000] [id=59020]
+  0x0000019e4faf8000 GCTaskThread "GC Thread#10" [stack: 0x00000034f8d00000,0x00000034f8e00000] [id=71864]
+  0x0000019e4faf9800 GCTaskThread "GC Thread#11" [stack: 0x00000034f8e00000,0x00000034f8f00000] [id=68024]
+  0x0000019e4fafa800 GCTaskThread "GC Thread#12" [stack: 0x00000034f8f00000,0x00000034f9000000] [id=41544]
+  0x0000019e4fafc000 GCTaskThread "GC Thread#13" [stack: 0x00000034f9000000,0x00000034f9100000] [id=68500]
+  0x0000019e4fafe800 GCTaskThread "GC Thread#14" [stack: 0x00000034f9100000,0x00000034f9200000] [id=9264]
+  0x0000019e4fb09000 GCTaskThread "GC Thread#15" [stack: 0x00000034f9200000,0x00000034f9300000] [id=4996]
+  0x0000019e4fb0b000 GCTaskThread "GC Thread#16" [stack: 0x00000034f9300000,0x00000034f9400000] [id=69660]
+  0x0000019e4fb0f800 GCTaskThread "GC Thread#17" [stack: 0x00000034f9400000,0x00000034f9500000] [id=27616]
+  0x0000019e72655000 ConcurrentGCThread "G1 Main Marker" [stack: 0x00000034fa800000,0x00000034fa900000] [id=65680]
+  0x0000019e4fb0e000 ConcurrentGCThread "G1 Marker#0" [stack: 0x00000034fa900000,0x00000034faa00000] [id=53540]
+  0x0000019e4fb10000 ConcurrentGCThread "G1 Marker#1" [stack: 0x00000034faa00000,0x00000034fab00000] [id=69664]
+  0x0000019e4fb11800 ConcurrentGCThread "G1 Marker#2" [stack: 0x00000034fab00000,0x00000034fac00000] [id=53900]
+  0x0000019e4fb10800 ConcurrentGCThread "G1 Marker#3" [stack: 0x00000034fac00000,0x00000034fad00000] [id=29944]
+  0x0000019e4fb12000 ConcurrentGCThread "G1 Marker#4" [stack: 0x00000034fad00000,0x00000034fae00000] [id=51568]
+  0x0000019e4fb35800 ConcurrentGCThread "G1 Refine#0" [stack: 0x00000034fa600000,0x00000034fa700000] [id=47456]
+  0x0000019e4fb34800 ConcurrentGCThread "G1 Refine#1" [stack: 0x00000034fa500000,0x00000034fa600000] [id=66548]
+  0x0000019e4fb37000 ConcurrentGCThread "G1 Refine#2" [stack: 0x00000034fa400000,0x00000034fa500000] [id=63028]
+  0x0000019e4fb37800 ConcurrentGCThread "G1 Refine#3" [stack: 0x00000034fa300000,0x00000034fa400000] [id=34988]
+  0x0000019e4fb35000 ConcurrentGCThread "G1 Refine#4" [stack: 0x00000034fa200000,0x00000034fa300000] [id=73160]
+  0x0000019e4fb33800 ConcurrentGCThread "G1 Refine#5" [stack: 0x00000034fa100000,0x00000034fa200000] [id=47460]
+  0x0000019e4fb32000 ConcurrentGCThread "G1 Refine#6" [stack: 0x00000034fa000000,0x00000034fa100000] [id=69216]
+  0x0000019e4fb30800 ConcurrentGCThread "G1 Refine#7" [stack: 0x00000034f9f00000,0x00000034fa000000] [id=30224]
+  0x0000019e4fb2f800 ConcurrentGCThread "G1 Refine#8" [stack: 0x00000034f9e00000,0x00000034f9f00000] [id=67692]
+  0x0000019e4fb2c000 ConcurrentGCThread "G1 Refine#9" [stack: 0x00000034f9d00000,0x00000034f9e00000] [id=54984]
+  0x0000019e4fb2b800 ConcurrentGCThread "G1 Refine#10" [stack: 0x00000034f9c00000,0x00000034f9d00000] [id=73196]
+  0x0000019e4fb26800 ConcurrentGCThread "G1 Refine#11" [stack: 0x00000034f9b00000,0x00000034f9c00000] [id=68264]
+  0x0000019e4fb26000 ConcurrentGCThread "G1 Refine#12" [stack: 0x00000034f9a00000,0x00000034f9b00000] [id=33508]
+  0x0000019e4fb23800 ConcurrentGCThread "G1 Refine#13" [stack: 0x00000034f9900000,0x00000034f9a00000] [id=63904]
+  0x0000019e4fb23000 ConcurrentGCThread "G1 Refine#14" [stack: 0x00000034f9800000,0x00000034f9900000] [id=59980]
+  0x0000019e4fb22000 ConcurrentGCThread "G1 Refine#15" [stack: 0x00000034f9700000,0x00000034f9800000] [id=13128]
+  0x0000019e4fb21000 ConcurrentGCThread "G1 Refine#16" [stack: 0x00000034f9600000,0x00000034f9700000] [id=64060]
+  0x0000019e4fb1a000 ConcurrentGCThread "G1 Refine#17" [stack: 0x00000034f9500000,0x00000034f9600000] [id=23852]
+  0x0000019e4fb4c800 ConcurrentGCThread "G1 Young RemSet Sampling" [stack: 0x00000034fa700000,0x00000034fa800000] [id=33380]
+
+=>0x0000019e4fac5800 (exited) JavaThread "Unknown thread" [_thread_in_vm, id=48296, stack(0x00000034f8200000,0x00000034f8300000)]
+
+Threads with active compile tasks:
+
+VM state:not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x0000019e4fac2cc0] Heap_lock - owner thread: 0x0000019e4fac5800
+
+Heap address: 0x00000006ca200000, size: 3934 MB, Compressed Oops mode: Non-zero based: 0x00000006ca200000
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x00007ff796a50000 - 0x00007ff796a8e000 	C:\ProgramData\Oracle\Java\javapath\java.exe
+0x00007ffa15e60000 - 0x00007ffa160c7000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffa13b80000 - 0x00007ffa13c4a000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffa13200000 - 0x00007ffa13601000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ffa15310000 - 0x00007ffa153cc000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffa13ce0000 - 0x00007ffa13d89000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffa13dd0000 - 0x00007ffa13e79000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffa15b60000 - 0x00007ffa15c78000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ffa15980000 - 0x00007ffa15b4f000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffa131d0000 - 0x00007ffa131f7000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffa13da0000 - 0x00007ffa13dcb000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffa13a50000 - 0x00007ffa13b79000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffa13120000 - 0x00007ffa131c3000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ffa136d0000 - 0x00007ffa1381c000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ff9f10a0000 - 0x00007ff9f1330000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.9212_none_3e07a29ce3350031\COMCTL32.dll
+0x00007ffa0b4b0000 - 0x00007ffa0b4bb000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffa148a0000 - 0x00007ffa148d1000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ff92d110000 - 0x00007ff92d1ff000 	D:\java\java\java\java\java\java\java\bin\msvcr120.dll
+0x00007ff92b0d0000 - 0x00007ff92b176000 	D:\java\java\java\java\java\java\java\bin\msvcp120.dll
+0x00000000685a0000 - 0x0000000068fc4000 	D:\java\java\java\java\java\java\java\bin\server\jvm.dll
+0x00007ffa13d90000 - 0x00007ffa13d98000 	C:\WINDOWS\System32\PSAPI.DLL
+0x00007ffa03ad0000 - 0x00007ffa03b06000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ff9eeef0000 - 0x00007ff9eeefa000 	C:\WINDOWS\SYSTEM32\WSOCK32.dll
+0x00007ffa151c0000 - 0x00007ffa15240000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffa0b070000 - 0x00007ffa0b07f000 	D:\java\java\java\java\java\java\java\bin\verify.dll
+0x00007ffa03cb0000 - 0x00007ffa03cd7000 	D:\java\java\java\java\java\java\java\bin\java.dll
+0x00007ff9fcdc0000 - 0x00007ff9fcdd6000 	D:\java\java\java\java\java\java\java\bin\zip.dll
+0x00007ffa04000000 - 0x00007ffa0400a000 	D:\java\java\java\java\java\java\java\bin\jimage.dll
+0x00007ffa10290000 - 0x00007ffa104d2000 	C:\WINDOWS\SYSTEM32\dbghelp.dll
+0x00007ffa14080000 - 0x00007ffa14404000 	C:\WINDOWS\System32\combase.dll
+0x00007ffa148e0000 - 0x00007ffa149b9000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ffa13060000 - 0x00007ffa1310c000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+
+VM Arguments:
+java_command: <unknown>
+java_class_path (initial): <not set>
+Launcher Type: SUN_STANDARD
+
+Logging:
+Log output configuration:
+#0: stdout all=warning uptime,level,tags
+#1: stderr all=off uptime,level,tags
+
+Environment Variables:
+PATH=C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\intel64\compiler;D:\python3.14\Scripts\;D:\python3.14\;C:\Users\33947\AppData\Local\Programs\Python\Python313\Scripts\;C:\Users\33947\AppData\Local\Programs\Python\Python313\;D:\python3.12\Scripts\;D:\python3.12\;C:\ProgramData\Oracle\Java\javapath;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR;C:\Program Files\dotnet\;D:\cmake\bin;D:\msys64\mingw64\bin;D:\nodejs\;C:\ProgramData\chocolatey\bin;d:\Git\cmd;C:\Program Files\Microsoft SQL Server\170\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\Common Files\Autodesk Shared\;D:\ollama-ipex-llm-2.2.0-win;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\tools\php85;C:\Users\33947\.local\bin;C:\Users\33947\.cargo\bin;C:\Users\33947\.kimi-code\bin;C:\tools\php;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Users\33947\AppData\Local\Microsoft\WindowsApps;d:\ollama;D:\PyCharm 2026.1\bin;D:\IntelliJ IDEA 2026.1\bin;D:\CLion 2026.1\bin;C:\Users\33947\AppData\Roaming\npm;D:\Microsoft VS Code\bin;D:\WebStorm 2026.1.2\bin;C:\Users\33947\.dotnet\tools;C:\Users\33947\AppData\Local\Microsoft\WinGet\Links;D:\Blender 5.1;D:\Tesseract-OCR;C:\Users\33947\AppData\Local\Microsoft\WindowsApps;
+USERNAME=33947
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 198 Stepping 2, GenuineIntel
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 10 , 64 bit Build 26100 (10.0.26100.9212)
+
+CPU:total 24 (initial active 24) (24 cores per cpu, 1 threads per core) family 6 model 198 stepping 2, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, avx, avx2, aes, clmul, erms, 3dnowpref, lzcnt, tsc, tscinvbit, bmi1, bmi2, adx, sha, fma
+
+Memory: 4k page, physical 16109904k(172188k free), swap 66441552k(76508k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (9.0.1+11) for windows-amd64 JRE (9.0.1+11), built on Sep 28 2017 04:54:03 by "mach5one" with MS VC++ 12.0 (VS2013)
+
+END.

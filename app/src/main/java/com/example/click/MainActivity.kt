@@ -434,60 +434,10 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        val item = menu.findItem(R.id.action_about)
-        (item.actionView?.findViewById<View>(R.id.btnAboutIcon))?.setOnClickListener { showAboutDialog() }
-        return true
-    }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_about -> {
-                showAboutDialog()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun showAboutDialog() {
-        val raw = decodeAboutText()
-        val spannable = SpannableString(raw)
-        val start = raw.indexOf("http")
-        if (start >= 0) {
-            spannable.setSpan(object : ClickableSpan() {
-                override fun onClick(widget: View) {
-                    val url = raw.substring(start).trim()
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                }
-            }, start, raw.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-        android.app.AlertDialog.Builder(this)
-            .setTitle("关于")
-            .setMessage(spannable)
-            .setPositiveButton("确定", null)
-            .show().also { dialog ->
-                (dialog.findViewById<android.widget.TextView>(android.R.id.message))?.let {
-                    it.movementMethod = android.text.method.LinkMovementMethod.getInstance()
-                }
-            }
-    }
-
-    private fun decodeAboutText(): String {
-        val key = "YJCyjc303030."
-        val encoded = byteArrayOf(
-            188.toByte(), 240.toByte(), 215.toByte(), 158.toByte(), 254.toByte(), 203.toByte(), 214.toByte(), 160.toByte(), 190.toByte(), 215.toByte(), 148.toByte(), 128.toByte(), 193.toByte(), 229.toByte(), 208.toByte(), 0.toByte(), 21.toByte(), 3.toByte(), 0.toByte(), 88.toByte(), 58.toByte(), 212.toByte(), 185.toByte(), 187.toByte(), 214.toByte(), 178.toByte(), 245.toByte(), 165.toByte(), 255.toByte(), 227.toByte(), 91.toByte(), 77.toByte(), 3.toByte(), 58.toByte(), 214.toByte(), 140.toByte(), 179.toByte(), 213.toByte(), 161.toByte(), 200.toByte(), 162.toByte(), 195.toByte(), 252.toByte(), 133.toByte(), 223.toByte(), 169.toByte(), 73.toByte(), 89.toByte(), 83.toByte(), 57.toByte(), 215.toByte(), 147.toByte(), 200.toByte(), 173.toByte(), 232.toByte(), 224.toByte(), 133.toByte(), 223.toByte(), 169.toByte(), 88.toByte(), 71.toByte(), 68.toByte(), 67.toByte(), 67.toByte(), 20.toByte(), 118.toByte(), 101.toByte(), 36.toByte(), 16.toByte(), 30.toByte(), 11.toByte(), 70.toByte(), 82.toByte(), 29.toByte(), 83.toByte(), 92.toByte(), 93.toByte(), 1.toByte(), 43.toByte(), 47.toByte(), 36.toByte(), 28.toByte(), 14.toByte(), 10.toByte(), 71.toByte(), 85.toByte(), 75.toByte(), 85.toByte(), 2.toByte(), 2.toByte(), 29.toByte(), 105.toByte(), 101.toByte(), 0.toByte(), 16.toByte(), 6.toByte(), 0.toByte(), 88.toByte()
-        )
-        val keyBytes = key.toByteArray(Charsets.UTF_8)
-        val decoded = ByteArray(encoded.size) { i ->
-            (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
-        }
-        return String(decoded, Charsets.UTF_8)
-    }
 
     private fun showFirstLaunchDialog() {
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
             .setMessage("\n" + decodeTutorialText())
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
@@ -496,7 +446,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
             .setMessage("\n" + decodeFloatTutorialText())
             .setPositiveButton("知道了") { _, _ -> onStart() }
