@@ -37,6 +37,6 @@
     <color name="md_theme_outline">#FF938F99</color>
     <color name="md_theme_outlineVariant">#FF49454F</color>
     
-    <!-- 框背景颜色 - 深色模式使用 primaryContainer -->
-    <color name="section_background">#4F378B</color>
+    <!-- 框背景颜色 - 深色模式也使用浅紫色 -->
+    <color name="section_background">#EADDFF</color>
 </resources>
