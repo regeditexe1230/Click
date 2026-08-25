@@ -145,6 +145,7 @@ class FloatingService : Service() {
                     touchDownCenterX = event.rawX - event.x + view.width / 2f
                     touchDownCenterY = event.rawY - event.y + view.height / 2f
                     isDragging = false
+                    android.util.Log.d("FloatingService", "ACTION_DOWN rawX=${event.rawX} rawY=${event.rawY} x=${event.x} y=${event.y} initialX=$initialX initialY=$initialY")
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -152,8 +153,10 @@ class FloatingService : Service() {
                     val dy = (event.rawY - initialTouchY).toInt()
                     
                     if (!isDragging) {
+                        android.util.Log.d("FloatingService", "ACTION_MOVE dx=$dx dy=$dy threshold=$dragThreshold")
                         // 超过阈值才开始拖动
                         if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+                            android.util.Log.d("FloatingService", "DRAG STARTED!")
                             isDragging = true
                             operationPaused = false
                             if (job?.isActive == true) {
