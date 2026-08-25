@@ -442,20 +442,44 @@ class MainActivity : AppCompatActivity() {
         if (view.visibility == View.VISIBLE && view.height > 0) return
         
         view.animate().cancel()
-        view.alpha = 0f
-        view.translationY = -10f * resources.displayMetrics.density
-        view.visibility = View.VISIBLE
         
+        // 测量目标高度
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val targetHeight = view.measuredHeight
+        
+        view.visibility = View.VISIBLE
+        view.alpha = 0f
+        
+        val params = view.layoutParams
+        params.height = 1
+        view.layoutParams = params
+        
+        // 使用 Choreographer 确保帧同步
         view.animate()
             .alpha(1f)
-            .translationY(0f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
-            .withEndAction {
-                view.alpha = 1f
-                view.translationY = 0f
-            }
             .start()
+        
+        // 使用 ValueAnimator 平滑改变高度
+        val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
+        animator.duration = 250
+        animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
+        animator.addUpdateListener { anim ->
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = params
+                view.alpha = 1f
+            }
+        })
+        animator.start()
     }
 
     private fun collapseView(view: View) {
@@ -463,17 +487,34 @@ class MainActivity : AppCompatActivity() {
         
         view.animate().cancel()
         
-        view.animate()
-            .alpha(0f)
-            .translationY(-10f * resources.displayMetrics.density)
-            .setDuration(200)
-            .setInterpolator(android.view.animation.AccelerateInterpolator(2f))
-            .withEndAction {
+        val currentHeight = view.height
+        if (currentHeight <= 0) {
+            view.visibility = View.GONE
+            return
+        }
+        
+        view.alpha = 1f
+        
+        val params = view.layoutParams
+        
+        // 使用 ValueAnimator 平滑改变高度
+        val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
+        animator.duration = 200
+        animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
+        animator.addUpdateListener { anim ->
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+            view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
                 view.visibility = View.GONE
                 view.alpha = 1f
-                view.translationY = 0f
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = params
             }
-            .start()
+        })
+        animator.start()
     }
 
     private fun onTextChanged(editText: EditText, action: () -> Unit) {
