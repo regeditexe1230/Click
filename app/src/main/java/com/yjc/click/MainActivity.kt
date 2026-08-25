@@ -123,11 +123,6 @@ class MainActivity : AppCompatActivity() {
             params.width = radioClick.width - 8
             modeIndicator.layoutParams = params
         }
-        swipeMethodIndicator.post {
-            val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
-            params.width = radioSwipeManual.width - 8
-            swipeMethodIndicator.layoutParams = params
-        }
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
@@ -148,6 +143,12 @@ class MainActivity : AppCompatActivity() {
                 radioSwipe.isSelected = true
                 animateIndicator(modeIndicator, radioSwipe.x - radioClick.x)
                 expandView(swipeParams)
+                // 初始化滑动方式指示器宽度
+                swipeMethodIndicator.post {
+                    val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
+                    params.width = radioSwipeManual.width - 8
+                    swipeMethodIndicator.layoutParams = params
+                }
                 saveConfig()
                 if (!isSwipeConfigValid()) {
                     val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
