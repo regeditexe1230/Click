@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     private var isSwipeMode = false
     private var isGestureMode = false
+    private var isWarningDialogShowing = false
 
     private lateinit var radioClick: Button
     private lateinit var radioSwipe: Button
@@ -414,10 +415,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showWarningDialog(onConfirmed: () -> Unit) {
+        if (isWarningDialogShowing) return
+        
         val message = decodeWarning()
         if (!message.contains("github")) {
             throw RuntimeException("App integrity verification failed")
         }
+        
+        isWarningDialogShowing = true
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("安全警告")
             .setMessage(message)
@@ -425,6 +430,7 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.setOnDismissListener { isWarningDialogShowing = false }
         dialog.show()
     }
 
