@@ -41,7 +41,7 @@
                     android:text="权限状态"
                     android:textSize="12sp"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?attr/colorBackground" />
+                    android:background="?android:attr/colorBackground" />
 
                 <!-- 边框内容 -->
                 <LinearLayout
@@ -93,7 +93,7 @@
                     android:text="执行模式"
                     android:textSize="12sp"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?attr/colorBackground" />
+                    android:background="?android:attr/colorBackground" />
 
                 <!-- 边框内容 -->
                 <LinearLayout
@@ -313,7 +313,7 @@
                     android:text="执行设置"
                     android:textSize="12sp"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?attr/colorBackground" />
+                    android:background="?android:attr/colorBackground" />
 
                 <!-- 边框内容 -->
                 <LinearLayout
