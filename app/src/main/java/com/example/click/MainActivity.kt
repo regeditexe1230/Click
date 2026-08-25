@@ -441,76 +441,39 @@ class MainActivity : AppCompatActivity() {
     private fun expandView(view: View) {
         if (view.visibility == View.VISIBLE && view.height > 0) return
         
-        // 取消可能正在进行的动画
         view.animate().cancel()
-        
-        view.measure(
-            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val targetHeight = view.measuredHeight
-        
-        view.visibility = View.VISIBLE
         view.alpha = 0f
-        
-        val params = view.layoutParams
-        params.height = 0
-        view.layoutParams = params
+        view.translationY = -10f * resources.displayMetrics.density
+        view.visibility = View.VISIBLE
         
         view.animate()
             .alpha(1f)
-            .setDuration(300)
-            .start()
-        
-        val animator = android.animation.ValueAnimator.ofInt(0, targetHeight)
-        animator.duration = 300
-        animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
+            .translationY(0f)
+            .setDuration(250)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
+            .withEndAction {
+                view.alpha = 1f
+                view.translationY = 0f
             }
-        })
-        animator.start()
+            .start()
     }
 
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
         
-        // 取消可能正在进行的动画
         view.animate().cancel()
-        
-        val initialHeight = view.height
-        if (initialHeight <= 0) {
-            view.visibility = View.GONE
-            return
-        }
         
         view.animate()
             .alpha(0f)
-            .setDuration(300)
-            .start()
-        
-        val animator = android.animation.ValueAnimator.ofInt(initialHeight, 0)
-        animator.duration = 300
-        animator.addUpdateListener { anim ->
-            val params = view.layoutParams
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
+            .translationY(-10f * resources.displayMetrics.density)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator(2f))
+            .withEndAction {
                 view.visibility = View.GONE
                 view.alpha = 1f
-                val params = view.layoutParams
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
+                view.translationY = 0f
             }
-        })
-        animator.start()
+            .start()
     }
 
     private fun onTextChanged(editText: EditText, action: () -> Unit) {
