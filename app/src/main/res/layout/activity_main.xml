@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- 权限状态 - 左对齐 + 边框 -->
+            <!-- 权限状态 - 左上标题 + 边框 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -33,9 +33,17 @@
                 android:background="@drawable/section_border">
 
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="权限状态"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
                     android:id="@+id/statusText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:gravity="start"
                     android:textSize="15sp"
                     android:textStyle="bold"
@@ -64,14 +72,13 @@
                 android:orientation="vertical"
                 android:background="@drawable/section_border">
 
-                <!-- 框标题 -->
+                <!-- 框标题 - 左上 -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="执行模式"
                     android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:layout_gravity="end" />
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/toggleGroupMode"
@@ -113,21 +120,20 @@
                         android:layout_height="1dp"
                         android:background="?attr/colorOutlineVariant" />
 
-                    <!-- 滑动方式 -->
+                    <!-- 滑动方式标题 - 左上 -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:text="滑动方式"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
                         android:id="@+id/toggleGroupSwipeMethod"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="4dp"
                         app:singleSelection="true"
                         app:selectionRequired="true"
                         app:checkedButton="@id/radioSwipeManual">
@@ -274,20 +280,19 @@
                 android:orientation="vertical"
                 android:background="@drawable/section_border">
 
-                <!-- 框标题 -->
+                <!-- 框标题 - 左上 -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="执行设置"
                     android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:layout_gravity="end" />
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <!-- 延时 -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:text="执行前延时(毫秒)"
                     android:textSize="14sp"
                     android:textStyle="bold"
