@@ -123,6 +123,11 @@ class MainActivity : AppCompatActivity() {
             params.width = radioClick.width - 8
             modeIndicator.layoutParams = params
         }
+        swipeMethodIndicator.post {
+            val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
+            params.width = radioSwipeManual.width - 8
+            swipeMethodIndicator.layoutParams = params
+        }
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
