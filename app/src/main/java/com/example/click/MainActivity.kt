@@ -517,21 +517,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFirstLaunchDialog() {
+        val scrollView = android.widget.ScrollView(this).apply {
+            val textView = android.widget.TextView(this@MainActivity).apply {
+                text = decodeTutorialText()
+                textSize = 14f
+                setPadding(48, 16, 48, 16)
+            }
+            addView(textView)
+            maxHeight = (resources.displayMetrics.heightPixels * 0.6).toInt()
+        }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
-            .setMessage(decodeTutorialText())
+            .setView(scrollView)
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
             .setCancelable(false)
-            .show()
+            .create()
+            .apply {
+                window?.setDimAmount(0.6f)
+                show()
+            }
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
+        val scrollView = android.widget.ScrollView(this).apply {
+            val textView = android.widget.TextView(this@MainActivity).apply {
+                text = decodeFloatTutorialText()
+                textSize = 14f
+                setPadding(48, 16, 48, 16)
+            }
+            addView(textView)
+            maxHeight = (resources.displayMetrics.heightPixels * 0.6).toInt()
+        }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
-            .setMessage(decodeFloatTutorialText())
+            .setView(scrollView)
             .setPositiveButton("知道了") { _, _ -> onStart() }
             .setCancelable(false)
-            .show()
+            .create()
+            .apply {
+                window?.setDimAmount(0.6f)
+                show()
+            }
     }
 
     private fun decodeFloatTutorialText(): String {
