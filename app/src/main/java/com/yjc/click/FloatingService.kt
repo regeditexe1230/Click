@@ -124,7 +124,8 @@ class FloatingService : Service() {
         floatingViewReady = true
 
         // 拖动阈值使用dp，避免高分辨率设备误触
-        val dragThreshold = (15 * resources.displayMetrics.density).toInt()
+        val dragThreshold = (20 * resources.displayMetrics.density).toInt()
+        var downTime = 0L
 
         floatingView.setOnTouchListener { view, event ->
             when (event.actionMasked) {
@@ -142,20 +143,22 @@ class FloatingService : Service() {
                     touchDownCenterX = event.rawX - event.x + view.width / 2f
                     touchDownCenterY = event.rawY - event.y + view.height / 2f
                     isDragging = false
+                    downTime = System.currentTimeMillis()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
-                    if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-                        if (!isDragging) {
-                            isDragging = true
-                            operationPaused = false
-                            if (job?.isActive == true) {
-                                AppConfig.running = false
-                                job?.cancel()
-                            }
+                    // 只有超过阈值才判定为拖动
+                    if (!isDragging && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
+                        isDragging = true
+                        operationPaused = false
+                        if (job?.isActive == true) {
+                            AppConfig.running = false
+                            job?.cancel()
                         }
+                    }
+                    if (isDragging) {
                         params.x = initialX + dx
                         params.y = initialY + dy
                         windowManager.updateViewLayout(floatingView, params)
