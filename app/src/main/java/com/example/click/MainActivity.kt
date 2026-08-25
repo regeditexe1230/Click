@@ -524,7 +524,6 @@ class MainActivity : AppCompatActivity() {
                 setPadding(48, 16, 48, 16)
             }
             addView(textView)
-            maxHeight = (resources.displayMetrics.heightPixels * 0.6).toInt()
         }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
@@ -546,7 +545,6 @@ class MainActivity : AppCompatActivity() {
                 setPadding(48, 16, 48, 16)
             }
             addView(textView)
-            maxHeight = (resources.displayMetrics.heightPixels * 0.6).toInt()
         }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
