@@ -1,8 +1,7 @@
-﻿package com.example.click
+package com.example.click
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,16 +11,18 @@ import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ClickableSpan
 import android.view.View
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.materialswitch.MaterialSwitch
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,9 +33,12 @@ class MainActivity : AppCompatActivity() {
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
-    private lateinit var toggleGroupMode: MaterialButtonToggleGroup
-    private lateinit var toggleGroupSwipeMethod: MaterialButtonToggleGroup
+    private lateinit var radioGroupMode: RadioGroup
+    private lateinit var radioSwipe: RadioButton
     private lateinit var swipeParams: LinearLayout
+    private lateinit var radioGroupSwipeMethod: RadioGroup
+    private lateinit var radioSwipeManual: RadioButton
+    private lateinit var radioSwipeGesture: RadioButton
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
     private lateinit var inputSwipeX1: EditText
@@ -44,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSwipeDuration: EditText
     private lateinit var inputDelay: EditText
     private lateinit var inputRepeat: EditText
-    private lateinit var btnInfinite: MaterialSwitch
+    private lateinit var checkInfinite: CheckBox
     private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
     private lateinit var btnStopFloating: Button
@@ -52,36 +56,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lblRecordedStatus: TextView
     private lateinit var statusText: TextView
 
-    private var isSwipeMode = false
-    private var isGestureMode = false
-    private var isInfiniteMode = false
-
-    private val primaryColor by lazy { ContextCompat.getColor(this, R.color.md_theme_primary) }
-    private val surfaceVariantColor by lazy { ContextCompat.getColor(this, R.color.md_theme_surfaceVariant) }
-    private val onSurfaceVariantColor by lazy { ContextCompat.getColor(this, R.color.md_theme_onSurfaceVariant) }
-    private val onPrimaryColor by lazy { ContextCompat.getColor(this, R.color.md_theme_onPrimary) }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 设置顶栏
-        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.inflateMenu(R.menu.menu_main)
-        toolbar.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_about -> {
-                    showAboutDialog()
-                    true
-                }
-                else -> false
-            }
-        }
-
         statusText = findViewById(R.id.statusText)
-        toggleGroupMode = findViewById(R.id.toggleGroupMode)
-        toggleGroupSwipeMethod = findViewById(R.id.toggleGroupSwipeMethod)
+        radioGroupMode = findViewById(R.id.radioGroupMode)
+        radioSwipe = findViewById(R.id.radioSwipe)
         swipeParams = findViewById(R.id.swipeParams)
+        radioGroupSwipeMethod = findViewById(R.id.radioGroupSwipeMethod)
+        radioSwipeManual = findViewById(R.id.radioSwipeManual)
+        radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
         gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
         inputSwipeX1 = findViewById(R.id.inputSwipeX1)
@@ -91,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         inputSwipeDuration = findViewById(R.id.inputSwipeDuration)
         inputDelay = findViewById(R.id.inputDelay)
         inputRepeat = findViewById(R.id.inputRepeat)
-        btnInfinite = findViewById(R.id.checkInfinite)
+        checkInfinite = findViewById(R.id.checkInfinite)
         btnStartFloating = findViewById(R.id.btnStartFloating)
         btnStartOverlay = findViewById(R.id.btnStartOverlay)
         btnStopFloating = findViewById(R.id.btnStopFloating)
@@ -104,41 +89,6 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 PermissionStep.NONE
             }
-        }
-
-        // 初始化按钮状态
-        updateButtonStates()
-
-        // 执行模式 Segmented Buttons
-        toggleGroupMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                isSwipeMode = checkedId == R.id.radioSwipe
-                swipeParams.visibility = if (isSwipeMode) View.VISIBLE else View.GONE
-                saveConfig()
-                if (isSwipeMode && !isSwipeConfigValid()) {
-                    val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
-                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
-                }
-                updateStatus()
-            }
-        }
-
-        // 滑动方式 Segmented Buttons
-        toggleGroupSwipeMethod.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                isGestureMode = checkedId == R.id.radioSwipeGesture
-                manualSwipeParams.visibility = if (isGestureMode) View.GONE else View.VISIBLE
-                gestureSwipeSection.visibility = if (isGestureMode) View.VISIBLE else View.GONE
-                saveConfig()
-                updateStatus()
-            }
-        }
-
-        // 无限循环开关
-        btnInfinite.setOnCheckedChangeListener { _, isChecked ->
-            isInfiniteMode = isChecked
-            inputRepeat.isEnabled = !isChecked
-            saveConfig()
         }
 
         findViewById<Button>(R.id.btnEnableService).setOnClickListener {
@@ -159,6 +109,29 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+
+        radioGroupMode.setOnCheckedChangeListener { _, id ->
+            swipeParams.visibility = if (id == R.id.radioSwipe) View.VISIBLE else View.GONE
+            saveConfig()
+            if (id == R.id.radioSwipe && !isSwipeConfigValid()) {
+                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
+                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+            }
+            updateStatus()
+        }
+
+        radioGroupSwipeMethod.setOnCheckedChangeListener { _, id ->
+            val isManual = id == R.id.radioSwipeManual
+            manualSwipeParams.visibility = if (isManual) View.VISIBLE else View.GONE
+            gestureSwipeSection.visibility = if (isManual) View.GONE else View.VISIBLE
+            saveConfig()
+            updateStatus()
+        }
+
+        checkInfinite.setOnCheckedChangeListener { _, checked ->
+            inputRepeat.isEnabled = !checked
+            saveConfig()
         }
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
@@ -194,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnStartOverlay.setOnClickListener { handleStartButtonClick() }
+
         btnStartFloating.setOnClickListener { handleStartButtonClick() }
 
         btnStopFloating.setOnClickListener {
@@ -202,13 +176,10 @@ class MainActivity : AppCompatActivity() {
             updateStatus()
         }
 
-        // 使用说明 - 延迟显示确保UI加载完成
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
-            btnStartFloating.post {
-                prefs.edit().putBoolean("first_launch_done", true).apply()
-                showFirstLaunchDialog()
-            }
+            prefs.edit().putBoolean("first_launch_done", true).apply()
+            showFirstLaunchDialog()
         }
     }
 
@@ -262,21 +233,6 @@ class MainActivity : AppCompatActivity() {
         AppConfig.preventExecution = false
     }
 
-    private fun updateButtonStates() {
-        // 启用状态：紫色背景 + 白色文字
-        btnStartFloating.setBackgroundColor(primaryColor)
-        btnStartFloating.setTextColor(onPrimaryColor)
-        
-        btnStopFloating.setBackgroundColor(primaryColor)
-        btnStopFloating.setTextColor(onPrimaryColor)
-        
-        btnRecordGesture.setBackgroundColor(primaryColor)
-        btnRecordGesture.setTextColor(onPrimaryColor)
-        
-        // 禁用状态：浅灰色背景 + 深灰色文字
-        // 注意：需要在按钮禁用/启用时动态更新
-    }
-
     private fun updateStatus() {
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
@@ -288,26 +244,16 @@ class MainActivity : AppCompatActivity() {
 
         val ready = serviceEnabled && overlayGranted && isSwipeConfigValid()
         val canStart = ready && !AppConfig.running
-        
         btnStartFloating.isEnabled = canStart
-        btnStartFloating.setBackgroundColor(if (canStart) primaryColor else surfaceVariantColor)
-        btnStartFloating.setTextColor(if (canStart) onPrimaryColor else onSurfaceVariantColor)
-        
         btnStartOverlay.visibility = if (canStart) View.GONE else View.VISIBLE
-        
         btnStopFloating.isEnabled = AppConfig.running
-        btnStopFloating.setBackgroundColor(if (AppConfig.running) primaryColor else surfaceVariantColor)
-        btnStopFloating.setTextColor(if (AppConfig.running) onPrimaryColor else onSurfaceVariantColor)
-        
         btnRecordGesture.isEnabled = !AppConfig.running
-        btnRecordGesture.setBackgroundColor(if (!AppConfig.running) primaryColor else surfaceVariantColor)
-        btnRecordGesture.setTextColor(if (!AppConfig.running) onPrimaryColor else onSurfaceVariantColor)
 
         val gesture = AppConfig.recordedGesture
         if (gesture.points.size >= 2) {
             lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点，${gesture.totalDuration}ms"
             lblRecordedStatus.visibility = View.VISIBLE
-        } else if (isSwipeMode && isGestureMode) {
+        } else if (radioSwipe.isChecked && radioSwipeGesture.isChecked) {
             lblRecordedStatus.text = "尚未录制手势"
             lblRecordedStatus.visibility = View.VISIBLE
         } else {
@@ -316,8 +262,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isSwipeConfigValid(): Boolean {
-        if (!isSwipeMode) return true
-        return if (!isGestureMode) {
+        if (!radioSwipe.isChecked) return true
+        return if (radioSwipeManual.isChecked) {
             inputSwipeX1.text.isNotEmpty() &&
             inputSwipeY1.text.isNotEmpty() &&
             inputSwipeX2.text.isNotEmpty() &&
@@ -329,8 +275,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val mode = if (isSwipeMode) Mode.SWIPE else Mode.CLICK
-        val swipeMethod = if (!isGestureMode) SwipeMethod.MANUAL else SwipeMethod.GESTURE
+        val mode = if (radioSwipe.isChecked) Mode.SWIPE else Mode.CLICK
+        val swipeMethod = if (radioSwipeManual.isChecked) SwipeMethod.MANUAL else SwipeMethod.GESTURE
         AppConfig.current = AppConfig(
             mode = mode,
             swipeMethod = swipeMethod,
@@ -340,7 +286,7 @@ class MainActivity : AppCompatActivity() {
             swipeY2 = inputSwipeY2.text.toString().toFloatOrNull() ?: 0f,
             swipeDuration = inputSwipeDuration.text.toString().toLongOrNull() ?: 0L,
             delayMs = inputDelay.text.toString().toLongOrNull() ?: 0L,
-            repeatCount = if (isInfiniteMode) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
+            repeatCount = if (checkInfinite.isChecked) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
         )
     }
 
@@ -352,7 +298,7 @@ class MainActivity : AppCompatActivity() {
 
         if (serviceEnabled && overlayGranted) {
             if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                val hint = if (radioSwipeManual.isChecked) "请填写手动参数" else "请先录制手势"
                 Toast.makeText(this, hint, Toast.LENGTH_LONG).show()
                 return
             }
@@ -434,7 +380,7 @@ class MainActivity : AppCompatActivity() {
         if (!message.contains("github")) {
             throw RuntimeException("App integrity verification failed")
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        android.app.AlertDialog.Builder(this)
             .setTitle("安全警告")
             .setMessage(message)
             .setPositiveButton("确认") { _, _ -> onConfirmed() }
@@ -481,6 +427,23 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        val item = menu.findItem(R.id.action_about)
+        (item.actionView?.findViewById<View>(R.id.btnAboutIcon))?.setOnClickListener { showAboutDialog() }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_about -> {
+                showAboutDialog()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun showAboutDialog() {
         val raw = decodeAboutText()
         val spannable = SpannableString(raw)
@@ -493,12 +456,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }, start, raw.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        android.app.AlertDialog.Builder(this)
             .setTitle("关于")
             .setMessage(spannable)
             .setPositiveButton("确定", null)
             .show().also { dialog ->
-                (dialog.findViewById<android.widget.TextView>(com.google.android.material.R.id.message))?.let {
+                (dialog.findViewById<android.widget.TextView>(android.R.id.message))?.let {
                     it.movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 }
             }
@@ -517,39 +480,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFirstLaunchDialog() {
-        val scrollView = android.widget.ScrollView(this).apply {
-            val textView = android.widget.TextView(this@MainActivity).apply {
-                text = "\n$(decodeTutorialText())"
-                textSize = 14f
-                setPadding(48, 16, 48, 16)
-            }
-            addView(textView)
-        }
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        android.app.AlertDialog.Builder(this)
             .setTitle("使用说明")
-            .setView(scrollView)
+            .setMessage("\n" + decodeTutorialText())
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
             .setCancelable(false)
-            .create()
-        dialog.show()
+            .show()
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        val scrollView = android.widget.ScrollView(this).apply {
-            val textView = android.widget.TextView(this@MainActivity).apply {
-                text = "\n$(decodeFloatTutorialText())"
-                textSize = 14f
-                setPadding(48, 16, 48, 16)
-            }
-            addView(textView)
-        }
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        android.app.AlertDialog.Builder(this)
             .setTitle("悬浮球使用说明")
-            .setView(scrollView)
+            .setMessage("\n" + decodeFloatTutorialText())
             .setPositiveButton("知道了") { _, _ -> onStart() }
             .setCancelable(false)
-            .create()
-        dialog.show()
+            .show()
     }
 
     private fun decodeFloatTutorialText(): String {
@@ -575,5 +520,4 @@ class MainActivity : AppCompatActivity() {
         }
         return String(decoded, Charsets.UTF_8)
     }
-
 }
