@@ -93,31 +93,51 @@
                 android:background="@drawable/section_border"
                 android:padding="12dp">
 
-                <LinearLayout
+                <!-- Segmented Control -->
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_height="44dp"
+                    android:background="@drawable/segment_bg">
 
-                    <Button
-                        android:id="@+id/radioClick"
+                    <!-- 选中指示器 -->
+                    <View
+                        android:id="@+id/modeIndicator"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="4dp"
-                        android:text="点击"
-                        android:background="@drawable/btn_ripple_selector"
-                        android:textColor="@color/btn_text_selector" />
-
-                    <Button
-                        android:id="@+id/radioSwipe"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center_vertical"
                         android:layout_marginStart="4dp"
-                        android:text="滑动"
-                        android:background="@drawable/btn_ripple_selector"
-                        android:textColor="@color/btn_text_selector" />
-                </LinearLayout>
+                        android:background="@drawable/segment_selected" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/radioClick"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="点击"
+                            android:textSize="14sp"
+                            android:textColor="@color/segment_text_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/radioSwipe"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="滑动"
+                            android:textSize="14sp"
+                            android:textColor="@color/segment_text_selector"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/swipeParams"
@@ -141,32 +161,51 @@
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />
 
-                    <LinearLayout
+                    <!-- Segmented Control for Swipe Method -->
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="44dp"
                         android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
+                        android:background="@drawable/segment_bg">
 
-                        <Button
-                            android:id="@+id/radioSwipeManual"
+                        <View
+                            android:id="@+id/swipeMethodIndicator"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="4dp"
-                            android:text="手动参数"
-                            android:background="@drawable/btn_ripple_selector"
-                            android:textColor="@color/btn_text_selector" />
-
-                        <Button
-                            android:id="@+id/radioSwipeGesture"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_height="36dp"
+                            android:layout_gravity="center_vertical"
                             android:layout_marginStart="4dp"
-                            android:text="手势录制"
-                            android:background="@drawable/btn_ripple_selector"
-                            android:textColor="@color/btn_text_selector" />
-                    </LinearLayout>
+                            android:background="@drawable/segment_selected" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/radioSwipeManual"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="手动参数"
+                                android:textSize="14sp"
+                                android:textColor="@color/segment_text_selector"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/radioSwipeGesture"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:text="手势录制"
+                                android:textSize="14sp"
+                                android:textColor="@color/segment_text_selector"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
+                    </FrameLayout>
 
                     <LinearLayout
                         android:id="@+id/manualSwipeParams"

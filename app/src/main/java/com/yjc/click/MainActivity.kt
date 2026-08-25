@@ -35,11 +35,13 @@ class MainActivity : AppCompatActivity() {
     private var isGestureMode = false
     private var isWarningDialogShowing = false
 
-    private lateinit var radioClick: Button
-    private lateinit var radioSwipe: Button
+    private lateinit var radioClick: TextView
+    private lateinit var radioSwipe: TextView
+    private lateinit var modeIndicator: View
     private lateinit var swipeParams: LinearLayout
-    private lateinit var radioSwipeManual: Button
-    private lateinit var radioSwipeGesture: Button
+    private lateinit var radioSwipeManual: TextView
+    private lateinit var radioSwipeGesture: TextView
+    private lateinit var swipeMethodIndicator: View
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
     private lateinit var inputSwipeX1: TextInputEditText
@@ -64,9 +66,11 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
+        modeIndicator = findViewById(R.id.modeIndicator)
         swipeParams = findViewById(R.id.swipeParams)
         radioSwipeManual = findViewById(R.id.radioSwipeManual)
         radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
+        swipeMethodIndicator = findViewById(R.id.swipeMethodIndicator)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
         gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
         inputSwipeX1 = findViewById(R.id.inputSwipeX1)
@@ -114,27 +118,38 @@ class MainActivity : AppCompatActivity() {
         // 初始状态
         radioClick.isSelected = true
         radioSwipeManual.isSelected = true
+        modeIndicator.post {
+            val params = modeIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
+            params.width = radioClick.width - 8
+            modeIndicator.layoutParams = params
+        }
 
         radioClick.setOnClickListener {
-            isSwipeMode = false
-            radioClick.isSelected = true
-            radioSwipe.isSelected = false
-            collapseView(swipeParams)
-            saveConfig()
-            updateStatus()
+            if (isSwipeMode) {
+                isSwipeMode = false
+                radioClick.isSelected = true
+                radioSwipe.isSelected = false
+                animateIndicator(modeIndicator, 0f)
+                collapseView(swipeParams)
+                saveConfig()
+                updateStatus()
+            }
         }
 
         radioSwipe.setOnClickListener {
-            isSwipeMode = true
-            radioClick.isSelected = false
-            radioSwipe.isSelected = true
-            expandView(swipeParams)
-            saveConfig()
-            if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
-                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+            if (!isSwipeMode) {
+                isSwipeMode = true
+                radioClick.isSelected = false
+                radioSwipe.isSelected = true
+                animateIndicator(modeIndicator, radioSwipe.x - radioClick.x)
+                expandView(swipeParams)
+                saveConfig()
+                if (!isSwipeConfigValid()) {
+                    val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+                }
+                updateStatus()
             }
-            updateStatus()
         }
 
         radioSwipeManual.setOnClickListener {
@@ -142,6 +157,7 @@ class MainActivity : AppCompatActivity() {
             isGestureMode = false
             radioSwipeManual.isSelected = true
             radioSwipeGesture.isSelected = false
+            animateIndicator(swipeMethodIndicator, 0f)
             expandView(manualSwipeParams)
             collapseView(gestureSwipeSection)
             saveConfig()
@@ -153,6 +169,7 @@ class MainActivity : AppCompatActivity() {
             isGestureMode = true
             radioSwipeManual.isSelected = false
             radioSwipeGesture.isSelected = true
+            animateIndicator(swipeMethodIndicator, radioSwipeGesture.x - radioSwipeManual.x)
             collapseView(manualSwipeParams)
             expandView(gestureSwipeSection)
             saveConfig()
@@ -442,6 +459,14 @@ class MainActivity : AppCompatActivity() {
                 Uri.parse("package:$packageName")
             ))
         }
+    }
+
+    private fun animateIndicator(indicator: View, targetX: Float) {
+        indicator.animate()
+            .x(targetX)
+            .setDuration(250)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
     }
 
     private fun expandView(view: View) {
