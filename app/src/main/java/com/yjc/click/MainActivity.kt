@@ -303,11 +303,11 @@ class MainActivity : AppCompatActivity() {
     private fun isSwipeConfigValid(): Boolean {
         if (!isSwipeMode) return true
         return if (!isGestureMode) {
-            inputSwipeX1.text.isNotEmpty() &&
-            inputSwipeY1.text.isNotEmpty() &&
-            inputSwipeX2.text.isNotEmpty() &&
-            inputSwipeY2.text.isNotEmpty() &&
-            inputSwipeDuration.text.isNotEmpty()
+            inputSwipeX1.text?.isNotEmpty() == true &&
+            inputSwipeY1.text?.isNotEmpty() == true &&
+            inputSwipeX2.text?.isNotEmpty() == true &&
+            inputSwipeY2.text?.isNotEmpty() == true &&
+            inputSwipeDuration.text?.isNotEmpty() == true
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
