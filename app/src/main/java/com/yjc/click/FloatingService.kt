@@ -127,20 +127,21 @@ class FloatingService : Service() {
         val dragThreshold = (20 * resources.displayMetrics.density).toInt()
 
         floatingView.setOnTouchListener { view, event ->
-            // Android 10+ 手势冲突检测
-            if (Build.VERSION.SDK_INT >= 29 && (event.flags and 0x800) != 0) {
-                return@setOnTouchListener true
-            }
-
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    // Android 10+ 手势冲突检测
+                    if (Build.VERSION.SDK_INT >= 29 && (event.flags and 0x800) != 0) {
+                        return@setOnTouchListener true
+                    }
                     floatingView.alpha = 0.5f
-                    // 记录触摸起始点
+                    // 记录触摸起始屏幕坐标
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     // 记录当前悬浮球位置
-                    initialX = params.x
-                    initialY = params.y
+                    val location = IntArray(2)
+                    floatingView.getLocationOnScreen(location)
+                    initialX = location[0]
+                    initialY = location[1]
                     touchDownCenterX = event.rawX - event.x + view.width / 2f
                     touchDownCenterY = event.rawY - event.y + view.height / 2f
                     isDragging = false
@@ -165,11 +166,7 @@ class FloatingService : Service() {
                     if (isDragging) {
                         params.x = initialX + dx
                         params.y = initialY + dy
-                        try {
-                            windowManager.updateViewLayout(floatingView, params)
-                        } catch (e: Exception) {
-                            android.util.Log.e("FloatingService", "updateViewLayout failed", e)
-                        }
+                        windowManager.updateViewLayout(floatingView, params)
                     }
                     true
                 }
