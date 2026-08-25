@@ -13,16 +13,16 @@ import android.text.style.ClickableSpan
 import android.view.View
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.radiobutton.MaterialRadioButton
+import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,25 +34,25 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionStep = PermissionStep.NONE
 
     private lateinit var radioGroupMode: RadioGroup
-    private lateinit var radioSwipe: RadioButton
+    private lateinit var radioSwipe: MaterialRadioButton
     private lateinit var swipeParams: LinearLayout
     private lateinit var radioGroupSwipeMethod: RadioGroup
-    private lateinit var radioSwipeManual: RadioButton
-    private lateinit var radioSwipeGesture: RadioButton
+    private lateinit var radioSwipeManual: MaterialRadioButton
+    private lateinit var radioSwipeGesture: MaterialRadioButton
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
-    private lateinit var inputSwipeX1: EditText
-    private lateinit var inputSwipeY1: EditText
-    private lateinit var inputSwipeX2: EditText
-    private lateinit var inputSwipeY2: EditText
-    private lateinit var inputSwipeDuration: EditText
-    private lateinit var inputDelay: EditText
-    private lateinit var inputRepeat: EditText
-    private lateinit var checkInfinite: CheckBox
-    private lateinit var btnStartFloating: Button
+    private lateinit var inputSwipeX1: TextInputEditText
+    private lateinit var inputSwipeY1: TextInputEditText
+    private lateinit var inputSwipeX2: TextInputEditText
+    private lateinit var inputSwipeY2: TextInputEditText
+    private lateinit var inputSwipeDuration: TextInputEditText
+    private lateinit var inputDelay: TextInputEditText
+    private lateinit var inputRepeat: TextInputEditText
+    private lateinit var checkInfinite: MaterialCheckBox
+    private lateinit var btnStartFloating: MaterialButton
     private lateinit var btnStartOverlay: View
-    private lateinit var btnStopFloating: Button
-    private lateinit var btnRecordGesture: Button
+    private lateinit var btnStopFloating: MaterialButton
+    private lateinit var btnRecordGesture: MaterialButton
     private lateinit var lblRecordedStatus: TextView
     private lateinit var statusText: TextView
 
@@ -91,13 +91,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<Button>(R.id.btnEnableService).setOnClickListener {
+        findViewById<MaterialButton>(R.id.btnEnableService).setOnClickListener {
             showWarningDialog {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }
 
-        findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
+        findViewById<MaterialButton>(R.id.btnEnableOverlay).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!Settings.canDrawOverlays(this)) {
                     Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
@@ -264,11 +264,11 @@ class MainActivity : AppCompatActivity() {
     private fun isSwipeConfigValid(): Boolean {
         if (!radioSwipe.isChecked) return true
         return if (radioSwipeManual.isChecked) {
-            inputSwipeX1.text.isNotEmpty() &&
-            inputSwipeY1.text.isNotEmpty() &&
-            inputSwipeX2.text.isNotEmpty() &&
-            inputSwipeY2.text.isNotEmpty() &&
-            inputSwipeDuration.text.isNotEmpty()
+            inputSwipeX1.text?.isNotEmpty() == true &&
+            inputSwipeY1.text?.isNotEmpty() == true &&
+            inputSwipeX2.text?.isNotEmpty() == true &&
+            inputSwipeY2.text?.isNotEmpty() == true &&
+            inputSwipeDuration.text?.isNotEmpty() == true
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
@@ -380,7 +380,7 @@ class MainActivity : AppCompatActivity() {
         if (!message.contains("github")) {
             throw RuntimeException("App integrity verification failed")
         }
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("安全警告")
             .setMessage(message)
             .setPositiveButton("确认") { _, _ -> onConfirmed() }
@@ -398,7 +398,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onTextChanged(editText: EditText, action: () -> Unit) {
+    private fun onTextChanged(editText: TextInputEditText, action: () -> Unit) {
         editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -456,12 +456,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }, start, raw.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("关于")
             .setMessage(spannable)
             .setPositiveButton("确定", null)
             .show().also { dialog ->
-                (dialog.findViewById<android.widget.TextView>(android.R.id.message))?.let {
+                (dialog.findViewById<android.widget.TextView>(com.google.android.material.R.id.message))?.let {
                     it.movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 }
             }
@@ -480,7 +480,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFirstLaunchDialog() {
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
             .setMessage(decodeTutorialText())
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
@@ -489,7 +489,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
             .setMessage(decodeFloatTutorialText())
             .setPositiveButton("知道了") { _, _ -> onStart() }
@@ -500,7 +500,7 @@ class MainActivity : AppCompatActivity() {
     private fun decodeFloatTutorialText(): String {
         val key = "YJCyjc303030."
         val encoded = byteArrayOf(
-            104.toByte(), 100.toByte(), 166.toByte(), 241.toByte(), 237.toByte(), 134.toByte(), 187.toByte(), 128.toByte(), 213.toByte(), 179.toByte(), 128.toByte(), 214.toByte(), 167.toByte(), 254.toByte(), 162.toByte(), 226.toByte(), 245.toByte(), 140.toByte(), 240.toByte(), 190.toByte(), 212.toByte(), 142.toByte(), 172.toByte(), 212.toByte(), 170.toByte(), 170.toByte(), 188.toByte(), 240.toByte(), 215.toByte(), 158.toByte(), 254.toByte(), 203.toByte(), 57.toByte(), 58.toByte(), 1.toByte(), 30.toByte(), 213.toByte(), 188.toByte(), 167.toByte(), 189.toByte(), 247.toByte(), 204.toByte(), 159.toByte(), 232.toByte(), 207.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 200.toByte(), 210.toByte(), 220.toByte(), 166.toByte(), 243.toByte(), 194.toByte(), 134.toByte(), 190.toByte(), 131.toByte(), 214.toByte(), 191.toByte(), 156.toByte(), 214.toByte(), 165.toByte(), 207.toByte(), 175.toByte(), 201.toByte(), 209.toByte(), 140.toByte(), 225.toByte(), 159.toByte(), 214.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 173.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 156.toByte(), 229.toByte(), 204.toByte(), 213.toByte(), 187.toByte(), 165.toByte(), 213.toByte(), 185.toByte(), 152.toByte(), 203.toByte(), 209.toByte(), 250.toByte(), 165.toByte(), 250.toByte(), 217.toByte(), 133.toByte(), 186.toByte(), 151.toByte(), 219.toByte(), 145.toByte(), 191.toByte(), 214.toByte(), 189.toByte(), 212.toByte(), 174.toByte(), 254.toByte(), 229.toByte(), 141.toByte(), 249.toByte(), 183.toByte(), 212.toByte(), 142.toByte(), 189.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 159.toByte(), 225.toByte(), 245.toByte(), 214.toByte(), 186.toByte(), 155.toByte(), 214.toByte(), 164.toByte(), 134.toByte(), 200.toByte(), 219.toByte(), 230.toByte(), 165.toByte(), 204.toByte(), 196.toByte(), 132.toByte(), 163.toByte(), 179.toByte(), 215.toByte(), 140.toByte(), 169.toByte(), 213.toByte(), 163.toByte(), 211.toByte(), 163.toByte(), 195.toByte(), 246.toByte(), 140.toByte(), 251.toByte(), 189.toByte(), 223.toByte(), 143.toByte(), 188.toByte(), 215.toByte(), 139.toByte(), 139.toByte(), 189.toByte(), 244.toByte(), 252.toByte(), 156.toByte(), 196.toByte(), 249.toByte(), 215.toByte(), 141.toByte(), 190.toByte(), 58.toByte(), 57.toByte(), 3.toByte(), 0.toByte(), 191.toByte(), 193.toByte(), 213.toByte(), 156.toByte(), 224.toByte(), 203.toByte(), 214.toByte(), 158.toByte(), 191.toByte(), 214.toByte(), 156.toByte(), 165.toByte(), 203.toByte(), 201.toByte(), 196.toByte(), 164.toByte(), 251.toByte(), 211.toByte(), 134.toByte(), 180.toByte(), 139.toByte(), 215.toByte(), 136.toByte(), 179.toByte(), 212.toByte(), 150.toByte(), 210.toByte(), 172.toByte(), 193.toByte(), 213.toByte(), 140.toByte(), 214.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 214.toByte(), 189.toByte(), 157.toByte(), 188.toByte(), 197.toByte(), 236.toByte(), 156.toByte(), 214.toByte(), 227.toByte(), 214.toByte(), 151.toByte(), 184.toByte(), 214.toByte(), 160.toByte(), 189.toByte(), 202.toByte(), 228.toByte(), 214.toByte(), 73.toByte(), 115.toByte(), 94.toByte(), 77.toByte(), 214.toByte(), 191.toByte(), 191.toByte(), 213.toByte(), 180.toByte(), 139.toByte(), 200.toByte(), 219.toByte(), 230.toByte(), 165.toByte(), 204.toByte(), 196.toByte(), 132.toByte(), 163.toByte(), 179.toByte(), 214.toByte(), 191.toByte(), 156.toByte(), 214.toByte(), 180.toByte(), 219.toByte(), 175.toByte(), 194.toByte(), 229.toByte(), 140.toByte(), 240.toByte(), 190.toByte(), 212.toByte(), 142.toByte(), 172.toByte(), 57.toByte(), 58.toByte(), 200.toByte(), 234.toByte(), 226.toByte(), 165.toByte(), 253.toByte(), 229.toByte(), 140.toByte(), 143.toByte(), 170.toByte(), 215.toByte(), 139.toByte(), 189.toByte(), 212.toByte(), 150.toByte(), 217.toByte(), 174.toByte(), 251.toByte(), 211.toByte(), 143.toByte(), 217.toByte(), 167.toByte(), 215.toByte(), 167.toByte(), 152.toByte(), 214.toByte(), 184.toByte(), 169.toByte(), 188.toByte(), 209.toByte(), 221.toByte(), 159.toByte(), 246.toByte(), 207.toByte(), 219.toByte(), 141.toByte(), 156.toByte(), 212.toByte(), 136.toByte(), 134.toByte(), 200.toByte(), 206.toByte(), 252.toByte(), 165.toByte(), 251.toByte(), 198.toByte(), 133.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 176.toByte(), 212.toByte(), 146.toByte(), 195.toByte(), 162.toByte(), 196.toByte(), 211.toByte(), 143.toByte(), 233.toByte(), 155.toByte(), 213.toByte(), 178.toByte(), 172.toByte(), 213.toByte(), 157.toByte(), 140.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 159.toByte(), 235.toByte(), 193.toByte(), 214.toByte(), 148.toByte(), 190.toByte(), 213.toByte(), 188.toByte(), 159.toByte(), 202.toByte(), 226.toByte(), 239.toByte(), 166.toByte(), 255.toByte(), 231.toByte(), 132.toByte(), 177.toByte(), 137.toByte(), 214.toByte(), 183.toByte(), 136.toByte(), 213.toByte(), 190.toByte(), 246.toByte(), 175.toByte(), 201.toByte(), 209.toByte(), 140.toByte(), 225.toByte(), 159.toByte(), 214.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 173.toByte(), 191.toByte(), 198.toByte(), 202.toByte(), 144.toByte(), 248.toByte(), 205.toByte()
+            104.toByte(), 100.toByte(), 166.toByte(), 241.toByte(), 237.toByte(), 134.toByte(), 187.toByte(), 128.toByte(), 213.toByte(), 179.toByte(), 128.toByte(), 214.toByte(), 167.toByte(), 254.toByte(), 162.toByte(), 226.toByte(), 245.toByte(), 140.toByte(), 240.toByte(), 190.toByte(), 212.toByte(), 142.toByte(), 172.toByte(), 212.toByte(), 170.toByte(), 170.toByte(), 188.toByte(), 240.toByte(), 215.toByte(), 158.toByte(), 254.toByte(), 203.toByte(), 57.toByte(), 58.toByte(), 1.toByte(), 30.toByte(), 213.toByte(), 188.toByte(), 167.toByte(), 189.toByte(), 247.toByte(), 204.toByte(), 159.toByte(), 232.toByte(), 207.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 200.toByte(), 210.toByte(), 220.toByte(), 166.toByte(), 243.toByte(), 194.toByte(), 134.toByte(), 190.toByte(), 131.toByte(), 214.toByte(), 191.toByte(), 156.toByte(), 214.toByte(), 165.toByte(), 207.toByte(), 175.toByte(), 201.toByte(), 209.toByte(), 140.toByte(), 225.toByte(), 159.toByte(), 214.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 173.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 156.toByte(), 229.toByte(), 204.toByte(), 213.toByte(), 187.toByte(), 165.toByte(), 213.toByte(), 185.toByte(), 152.toByte(), 203.toByte(), 209.toByte(), 250.toByte(), 165.toByte(), 250.toByte(), 217.toByte(), 133.toByte(), 186.toByte(), 151.toByte(), 219.toByte(), 145.toByte(), 191.toByte(), 214.toByte(), 189.toByte(), 212.toByte(), 174.toByte(), 254.toByte(), 229.toByte(), 141.toByte(), 249.toByte(), 183.toByte(), 212.toByte(), 142.toByte(), 189.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 159.toByte(), 225.toByte(), 245.toByte(), 214.toByte(), 186.toByte(), 155.toByte(), 214.toByte(), 164.toByte(), 134.toByte(), 200.toByte(), 219.toByte(), 230.toByte(), 165.toByte(), 204.toByte(), 196.toByte(), 132.toByte(), 163.toByte(), 179.toByte(), 215.toByte(), 140.toByte(), 169.toByte(), 213.toByte(), 163.toByte()
         )
         val keyBytes = key.toByteArray(Charsets.UTF_8)
         val decoded = ByteArray(encoded.size) { i ->
@@ -512,7 +512,7 @@ class MainActivity : AppCompatActivity() {
     private fun decodeTutorialText(): String {
         val key = "YJCyjc303030."
         val encoded = byteArrayOf(
-            176.toByte(), 236.toByte(), 213.toByte(), 159.toByte(), 198.toByte(), 194.toByte(), 215.toByte(), 141.toByte(), 140.toByte(), 215.toByte(), 167.toByte(), 152.toByte(), 193.toByte(), 229.toByte(), 208.toByte(), 73.toByte(), 115.toByte(), 91.toByte(), 77.toByte(), 19.toByte(), 213.toByte(), 143.toByte(), 176.toByte(), 214.toByte(), 160.toByte(), 129.toByte(), 191.toByte(), 221.toByte(), 227.toByte(), 144.toByte(), 240.toByte(), 255.toByte(), 212.toByte(), 146.toByte(), 190.toByte(), 214.toByte(), 175.toByte(), 189.toByte(), 203.toByte(), 211.toByte(), 235.toByte(), 166.toByte(), 235.toByte(), 230.toByte(), 133.toByte(), 177.toByte(), 156.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 132.toByte(), 206.toByte(), 172.toByte(), 222.toByte(), 250.toByte(), 131.toByte(), 250.toByte(), 163.toByte(), 223.toByte(), 143.toByte(), 188.toByte(), 212.toByte(), 178.toByte(), 151.toByte(), 188.toByte(), 205.toByte(), 248.toByte(), 145.toByte(), 215.toByte(), 204.toByte(), 215.toByte(), 139.toByte(), 133.toByte(), 212.toByte(), 139.toByte(), 186.toByte(), 200.toByte(), 207.toByte(), 243.toByte(), 167.toByte(), 193.toByte(), 206.toByte(), 135.toByte(), 139.toByte(), 154.toByte(), 213.toByte(), 188.toByte(), 186.toByte(), 217.toByte(), 188.toByte(), 247.toByte(), 175.toByte(), 206.toByte(), 202.toByte(), 143.toByte(), 236.toByte(), 156.toByte(), 216.toByte(), 132.toByte(), 131.toByte(), 219.toByte(), 141.toByte(), 130.toByte(), 177.toByte(), 228.toByte(), 253.toByte(), 158.toByte(), 215.toByte(), 205.toByte(), 218.toByte(), 145.toByte(), 134.toByte(), 223.toByte(), 143.toByte(), 184.toByte(), 200.toByte(), 206.toByte(), 234.toByte(), 170.toByte(), 227.toByte(), 246.toByte(), 132.toByte(), 145.toByte(), 189.toByte(), 213.toByte(), 173.toByte(), 176.toByte(), 217.toByte(), 183.toByte(), 201.toByte(), 173.toByte(), 215.toByte(), 200.toByte(), 142.toByte(), 217.toByte(), 189.toByte(), 213.toByte(), 157.toByte(), 185.toByte(), 214.toByte(), 189.toByte(), 189.toByte(), 188.toByte(), 228.toByte(), 202.toByte(), 156.toByte(), 239.toByte(), 203.toByte(), 213.toByte(), 172.toByte(), 137.toByte(), 213.toByte(), 187.toByte(), 134.toByte(), 200.toByte(), 246.toByte(), 197.toByte(), 165.toByte(), 213.toByte(), 203.toByte(), 138.toByte(), 180.toByte(), 189.toByte(), 214.toByte(), 160.toByte(), 156.toByte(), 216.toByte(), 147.toByte(), 246.toByte(), 174.toByte(), 248.toByte(), 207.toByte(), 131.toByte(), 255.toByte(), 179.toByte(), 217.toByte(), 180.toByte(), 189.toByte(), 213.toByte(), 166.toByte(), 158.toByte(), 191.toByte(), 196.toByte(), 203.toByte(), 159.toByte(), 247.toByte(), 224.toByte(), 220.toByte(), 140.toByte(), 186.toByte(), 58.toByte(), 57.toByte(), 2.toByte(), 0.toByte(), 121.toByte(), 163.toByte(), 195.toByte(), 240.toByte(), 140.toByte(), 232.toByte(), 154.toByte(), 214.toByte(), 136.toByte(), 161.toByte(), 214.toByte(), 186.toByte(), 134.toByte(), 191.toByte(), 226.toByte(), 226.toByte(), 156.toByte(), 214.toByte(), 236.toByte(), 220.toByte(), 140.toByte(), 169.toByte(), 215.toByte(), 177.toByte(), 137.toByte(), 203.toByte(), 222.toByte(), 241.toByte(), 165.toByte(), 241.toByte(), 252.toByte(), 133.toByte(), 136.toByte(), 161.toByte(), 214.toByte(), 186.toByte(), 155.toByte(), 58.toByte(), 36.toByte(), 106.toByte(), 100.toByte(), 99.toByte(), 158.toByte(), 232.toByte(), 218.toByte(), 214.toByte(), 183.toByte(), 136.toByte(), 214.toByte(), 155.toByte(), 145.toByte(), 203.toByte(), 229.toByte(), 197.toByte(), 172.toByte(), 197.toByte(), 240.toByte(), 139.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 157.toByte(), 215.toByte(), 172.toByte(), 224.toByte(), 175.toByte(), 196.toByte(), 194.toByte(), 143.toByte(), 216.toByte(), 133.toByte(), 214.toByte(), 164.toByte(), 134.toByte(), 209.toByte(), 182.toByte(), 188.toByte(), 177.toByte(), 228.toByte(), 253.toByte(), 158.toByte(), 215.toByte(), 205.toByte(), 218.toByte(), 183.toByte(), 190.toByte(), 213.toByte(), 151.toByte(), 189.toByte(), 200.toByte(), 245.toByte(), 235.toByte(), 165.toByte(), 236.toByte(), 218.toByte(), 129.toByte(), 181.toByte(), 162.toByte(), 214.toByte(), 160.toByte(), 156.toByte(), 213.toByte(), 164.toByte(), 241.toByte(), 172.toByte(), 193.toByte(), 213.toByte(), 140.toByte(), 214.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 220.toByte(), 140.toByte(), 166.toByte(), 190.toByte(), 246.toByte(), 249.toByte(), 159.toByte(), 247.toByte(), 224.toByte(), 218.toByte(), 169.toByte(), 163.toByte(), 212.toByte(), 143.toByte(), 170.toByte(), 203.toByte(), 229.toByte(), 243.toByte(), 166.toByte(), 254.toByte(), 208.toByte(), 133.toByte(), 189.toByte(), 184.toByte(), 213.toByte(), 173.toByte(), 176.toByte(), 216.toByte(), 128.toByte(), 231.toByte(), 173.toByte(), 254.toByte(), 215.toByte(), 131.toByte(), 194.toByte(), 134.toByte(), 223.toByte(), 143.toByte(), 185.toByte(), 57.toByte(), 58.toByte(), 26.toByte(), 119.toByte(), 106.toByte(), 165.toByte(), 194.toByte(), 251.toByte(), 134.toByte(), 185.toByte(), 152.toByte(), 213.toByte(), 152.toByte(), 146.toByte(), 213.toByte(), 146.toByte(), 214.toByte(), 165.toByte(), 255.toByte(), 227.toByte(), 140.toByte(), 234.toByte(), 184.toByte(), 213.toByte(), 185.toByte(), 143.toByte(), 214.toByte(), 141.toByte(), 187.toByte(), 188.toByte(), 194.toByte(), 245.toByte(), 150.toByte(), 214.toByte(), 235.toByte(), 214.toByte(), 172.toByte(), 155.toByte(), 213.toByte(), 130.toByte(), 191.toByte(), 203.toByte(), 224.toByte(), 223.toByte(), 165.toByte(), 194.toByte(), 251.toByte(), 134.toByte(), 185.toByte(), 152.toByte(), 220.toByte(), 140.toByte(), 186.toByte(), 214.toByte(), 166.toByte(), 207.toByte(), 172.toByte(), 202.toByte(), 242.toByte(), 143.toByte(), 233.toByte(), 155.toByte(), 213.toByte(), 188.toByte(), 178.toByte(), 213.toByte(), 165.toByte(), 158.toByte(), 182.toByte(), 246.toByte(), 203.toByte(), 156.toByte(), 203.toByte(), 200.toByte(), 214.toByte(), 182.toByte(), 170.toByte(), 216.toByte(), 134.toByte(), 135.toByte(), 201.toByte(), 219.toByte(), 243.toByte(), 164.toByte(), 194.toByte(), 226.toByte(), 132.toByte(), 177.toByte(), 137.toByte(), 214.toByte(), 173.toByte(), 163.toByte(), 214.toByte(), 142.toByte(), 222.toByte(), 165.toByte(), 255.toByte(), 240.toByte(), 136.toByte(), 229.toByte(), 161.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 188.toByte(), 241.toByte(), 245.toByte(), 159.toByte(), 253.toByte(), 213.toByte(), 209.toByte(), 182.toByte(), 161.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 201.toByte(), 228.toByte(), 228.toByte(), 170.toByte(), 254.toByte(), 231.toByte(), 134.toByte(), 151.toByte(), 189.toByte(), 213.toByte(), 156.toByte(), 146.toByte(), 214.toByte(), 187.toByte(), 233.toByte(), 168.toByte(), 197.toByte(), 235.toByte(), 143.toByte(), 243.toByte(), 156.toByte(), 213.toByte(), 185.toByte(), 152.toByte(), 213.toByte(), 178.toByte(), 130.toByte(), 191.toByte(), 255.toByte(), 237.toByte(), 158.toByte(), 250.toByte(), 224.toByte(), 220.toByte(), 140.toByte(), 187.toByte(), 215.toByte(), 143.toByte(), 138.toByte(), 200.toByte(), 196.toByte(), 201.toByte(), 170.toByte(), 224.toByte(), 250.toByte(), 135.toByte(), 143.toByte(), 170.toByte(), 214.toByte(), 140.toByte(), 138.toByte(), 213.toByte(), 169.toByte(), 227.toByte(), 172.toByte(), 205.toByte(), 241.toByte(), 140.toByte(), 254.toByte(), 176.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 176.toByte(), 235.toByte(), 246.toByte(), 150.toByte(), 214.toByte(), 234.toByte()
+            176.toByte(), 236.toByte(), 213.toByte(), 159.toByte(), 198.toByte(), 194.toByte(), 215.toByte(), 141.toByte(), 140.toByte(), 215.toByte(), 167.toByte(), 152.toByte(), 193.toByte(), 229.toByte(), 208.toByte(), 73.toByte(), 115.toByte(), 91.toByte(), 77.toByte(), 19.toByte(), 213.toByte(), 143.toByte(), 176.toByte(), 214.toByte(), 160.toByte(), 129.toByte(), 191.toByte(), 221.toByte(), 227.toByte(), 144.toByte(), 240.toByte(), 255.toByte(), 212.toByte(), 146.toByte(), 190.toByte(), 214.toByte(), 175.toByte(), 189.toByte(), 203.toByte(), 211.toByte(), 235.toByte(), 166.toByte(), 235.toByte(), 230.toByte(), 133.toByte(), 177.toByte(), 156.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 132.toByte(), 206.toByte(), 172.toByte(), 222.toByte(), 250.toByte(), 131.toByte(), 250.toByte(), 163.toByte(), 223.toByte(), 143.toByte(), 188.toByte(), 212.toByte(), 178.toByte(), 151.toByte(), 188.toByte(), 205.toByte(), 248.toByte(), 145.toByte(), 215.toByte(), 204.toByte(), 215.toByte(), 139.toByte(), 133.toByte(), 212.toByte(), 139.toByte(), 186.toByte(), 200.toByte(), 207.toByte(), 243.toByte(), 167.toByte(), 193.toByte(), 206.toByte(), 135.toByte(), 139.toByte(), 154.toByte(), 213.toByte(), 188.toByte(), 186.toByte(), 217.toByte(), 188.toByte(), 247.toByte(), 175.toByte(), 206.toByte(), 202.toByte(), 143.toByte(), 236.toByte(), 156.toByte(), 216.toByte(), 132.toByte(), 131.toByte(), 219.toByte(), 141.toByte(), 130.toByte(), 177.toByte(), 228.toByte(), 253.toByte(), 158.toByte(), 215.toByte(), 205.toByte(), 218.toByte(), 145.toByte(), 134.toByte(), 223.toByte(), 143.toByte(), 184.toByte(), 200.toByte(), 206.toByte(), 234.toByte(), 170.toByte(), 227.toByte(), 246.toByte(), 132.toByte(), 145.toByte(), 189.toByte(), 213.toByte(), 173.toByte(), 176.toByte(), 217.toByte(), 183.toByte(), 201.toByte(), 173.toByte(), 215.toByte(), 200.toByte(), 142.toByte(), 217.toByte(), 189.toByte(), 213.toByte(), 157.toByte(), 185.toByte(), 214.toByte(), 189.toByte(), 189.toByte()
         )
         val keyBytes = key.toByteArray(Charsets.UTF_8)
         val decoded = ByteArray(encoded.size) { i ->
