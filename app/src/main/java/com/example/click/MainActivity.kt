@@ -390,7 +390,7 @@ class MainActivity : AppCompatActivity() {
         if (!message.contains("github")) {
             throw RuntimeException("App integrity verification failed")
         }
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("安全警告")
             .setMessage(message)
             .setPositiveButton("确认") { _, _ -> onConfirmed() }
