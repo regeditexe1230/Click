@@ -186,9 +186,10 @@ class MainActivity : AppCompatActivity() {
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
             prefs.edit().putBoolean("first_launch_done", true).apply()
-            window.decorView.postDelayed({
+            // 等待布局完全加载后再显示弹窗
+            btnStartFloating.post {
                 showFirstLaunchDialog()
-            }, 500)
+            }
         }
     }
 
