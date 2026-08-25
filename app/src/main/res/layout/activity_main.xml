@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Material 3 顶栏 -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -28,33 +27,42 @@
             <!-- 权限状态框 -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="8dp">
+                android:layout_height="wrap_content">
 
-                <!-- 标题在边框线中间 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start|top"
-                    android:layout_marginStart="12dp"
-                    android:paddingHorizontal="4dp"
-                    android:text="权限状态"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?android:attr/colorBackground" />
+                <!-- 边框 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/section_border" />
 
-                <!-- 边框内容 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:orientation="vertical"
-                    android:background="@drawable/section_border">
+                    android:paddingTop="12dp">
+
+                    <!-- 标题 - 用背景色覆盖边框线 -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start"
+                        android:layout_marginStart="12dp"
+                        android:paddingHorizontal="6dp"
+                        android:background="?android:attr/colorBackground">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="权限状态"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/statusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:padding="12dp"
                         android:gravity="start"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -80,217 +88,226 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:paddingTop="8dp">
+                android:layout_marginTop="16dp">
 
-                <!-- 标题在边框线中间 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start|top"
-                    android:layout_marginStart="12dp"
-                    android:paddingHorizontal="4dp"
-                    android:text="执行模式"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?android:attr/colorBackground" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/section_border" />
 
-                <!-- 边框内容 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:orientation="vertical"
-                    android:background="@drawable/section_border">
+                    android:paddingTop="12dp">
 
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggleGroupMode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:singleSelection="true"
-                        app:selectionRequired="true"
-                        app:checkedButton="@id/radioClick">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/radioClick"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="点击"
-                            style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/radioSwipe"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="滑动"
-                            style="@style/Widget.Material3.Button.OutlinedButton" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                    <!-- 滑动参数区域 -->
                     <LinearLayout
-                        android:id="@+id/swipeParams"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        android:layout_marginTop="12dp">
+                        android:layout_gravity="start"
+                        android:layout_marginStart="12dp"
+                        android:paddingHorizontal="6dp"
+                        android:background="?android:attr/colorBackground">
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="?attr/colorOutlineVariant" />
-
-                        <!-- 滑动方式 -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:text="滑动方式"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface" />
+                            android:text="执行模式"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
 
                         <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/toggleGroupSwipeMethod"
+                            android:id="@+id/toggleGroupMode"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
                             app:singleSelection="true"
                             app:selectionRequired="true"
-                            app:checkedButton="@id/radioSwipeManual">
+                            app:checkedButton="@id/radioClick">
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/radioSwipeManual"
+                                android:id="@+id/radioClick"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="手动参数"
+                                android:text="点击"
                                 style="@style/Widget.Material3.Button.OutlinedButton" />
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/radioSwipeGesture"
+                                android:id="@+id/radioSwipe"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="手势录制"
+                                android:text="滑动"
                                 style="@style/Widget.Material3.Button.OutlinedButton" />
                         </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                        <!-- 手动参数 -->
                         <LinearLayout
-                            android:id="@+id/manualSwipeParams"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginTop="12dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="起点"
-                                android:textSize="13sp"
-                                android:textColor="?attr/colorPrimary" />
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:orientation="horizontal">
-
-                                <EditText
-                                    android:id="@+id/inputSwipeX1"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginEnd="4dp"
-                                    android:hint="起点 X (横向坐标)"
-                                    android:inputType="numberDecimal" />
-
-                                <EditText
-                                    android:id="@+id/inputSwipeY1"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginStart="4dp"
-                                    android:hint="起点 Y (纵向坐标)"
-                                    android:inputType="numberDecimal" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="终点"
-                                android:textSize="13sp"
-                                android:textColor="?attr/colorPrimary" />
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:orientation="horizontal">
-
-                                <EditText
-                                    android:id="@+id/inputSwipeX2"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginEnd="4dp"
-                                    android:hint="终点 X (横向坐标)"
-                                    android:inputType="numberDecimal" />
-
-                                <EditText
-                                    android:id="@+id/inputSwipeY2"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginStart="4dp"
-                                    android:hint="终点 Y (纵向坐标)"
-                                    android:inputType="numberDecimal" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="时长"
-                                android:textSize="13sp"
-                                android:textColor="?attr/colorPrimary" />
-
-                            <EditText
-                                android:id="@+id/inputSwipeDuration"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:hint="滑动耗时(毫秒)"
-                                android:inputType="number" />
-                        </LinearLayout>
-
-                        <!-- 手势录制 -->
-                        <LinearLayout
-                            android:id="@+id/gestureSwipeSection"
+                            android:id="@+id/swipeParams"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:visibility="gone"
                             android:layout_marginTop="12dp">
 
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="?attr/colorOutlineVariant" />
+
                             <TextView
-                                android:id="@+id/lblRecordedStatus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text=""
+                                android:layout_marginTop="12dp"
+                                android:text="滑动方式"
                                 android:textSize="13sp"
-                                android:textColor="?attr/colorPrimary" />
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
 
-                            <Button
-                                android:id="@+id/btnRecordGesture"
+                            <com.google.android.material.button.MaterialButtonToggleGroup
+                                android:id="@+id/toggleGroupSwipeMethod"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="录制手势 (在屏幕上滑动)" />
+                                app:singleSelection="true"
+                                app:selectionRequired="true"
+                                app:checkedButton="@id/radioSwipeManual">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/radioSwipeManual"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="手动参数"
+                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/radioSwipeGesture"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="手势录制"
+                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+                            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                            <LinearLayout
+                                android:id="@+id/manualSwipeParams"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginTop="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="起点"
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorPrimary" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:orientation="horizontal">
+
+                                    <EditText
+                                        android:id="@+id/inputSwipeX1"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginEnd="4dp"
+                                        android:hint="起点 X (横向坐标)"
+                                        android:inputType="numberDecimal" />
+
+                                    <EditText
+                                        android:id="@+id/inputSwipeY1"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:hint="起点 Y (纵向坐标)"
+                                        android:inputType="numberDecimal" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:text="终点"
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorPrimary" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:orientation="horizontal">
+
+                                    <EditText
+                                        android:id="@+id/inputSwipeX2"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginEnd="4dp"
+                                        android:hint="终点 X (横向坐标)"
+                                        android:inputType="numberDecimal" />
+
+                                    <EditText
+                                        android:id="@+id/inputSwipeY2"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginStart="4dp"
+                                        android:hint="终点 Y (纵向坐标)"
+                                        android:inputType="numberDecimal" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:text="时长"
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorPrimary" />
+
+                                <EditText
+                                    android:id="@+id/inputSwipeDuration"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:hint="滑动耗时(毫秒)"
+                                    android:inputType="number" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/gestureSwipeSection"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:visibility="gone"
+                                android:layout_marginTop="12dp">
+
+                                <TextView
+                                    android:id="@+id/lblRecordedStatus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text=""
+                                    android:textSize="13sp"
+                                    android:textColor="?attr/colorPrimary" />
+
+                                <Button
+                                    android:id="@+id/btnRecordGesture"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:text="录制手势 (在屏幕上滑动)" />
+                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -300,90 +317,100 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:paddingTop="8dp">
+                android:layout_marginTop="12dp">
 
-                <!-- 标题在边框线中间 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start|top"
-                    android:layout_marginStart="12dp"
-                    android:paddingHorizontal="4dp"
-                    android:text="执行设置"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:background="?android:attr/colorBackground" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/section_border" />
 
-                <!-- 边框内容 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:orientation="vertical"
-                    android:background="@drawable/section_border">
+                    android:paddingTop="12dp">
 
-                    <!-- 延时 -->
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="执行前延时(毫秒)"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:layout_gravity="start"
+                        android:layout_marginStart="12dp"
+                        android:paddingHorizontal="6dp"
+                        android:background="?android:attr/colorBackground">
 
-                    <EditText
-                        android:id="@+id/inputDelay"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:hint="延时毫秒数"
-                        android:inputType="number"
-                        android:text="0" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="12dp"
-                        android:background="?attr/colorOutlineVariant" />
-
-                    <!-- 重复次数 -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="重复次数"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="执行设置"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:orientation="vertical"
+                        android:padding="12dp">
 
-                        <EditText
-                            android:id="@+id/inputRepeat"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="次数"
-                            android:inputType="number"
-                            android:text="1" />
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/checkInfinite"
+                        <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:text="无限循环" />
+                            android:text="执行前延时(毫秒)"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/inputDelay"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:hint="延时毫秒数"
+                            android:inputType="number"
+                            android:text="0" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="12dp"
+                            android:background="?attr/colorOutlineVariant" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="重复次数"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <EditText
+                                android:id="@+id/inputRepeat"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="次数"
+                                android:inputType="number"
+                                android:text="1" />
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/checkInfinite"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="无限循环" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
 
-            <!-- 操作按钮 -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -525,16 +525,13 @@ class MainActivity : AppCompatActivity() {
             }
             addView(textView)
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("使用说明")
             .setView(scrollView)
             .setPositiveButton("知道了") { d, _ -> d.dismiss() }
             .setCancelable(false)
             .create()
-            .apply {
-                window?.setDimAmount(0.6f)
-                show()
-            }
+        dialog.show()
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
@@ -546,16 +543,13 @@ class MainActivity : AppCompatActivity() {
             }
             addView(textView)
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("悬浮球使用说明")
             .setView(scrollView)
             .setPositiveButton("知道了") { _, _ -> onStart() }
             .setCancelable(false)
             .create()
-            .apply {
-                window?.setDimAmount(0.6f)
-                show()
-            }
+        dialog.show()
     }
 
     private fun decodeFloatTutorialText(): String {
