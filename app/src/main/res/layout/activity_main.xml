@@ -103,7 +103,7 @@
                         android:layout_weight="1"
                         android:layout_marginEnd="4dp"
                         android:text="点击"
-                        android:background="@drawable/btn_selector"
+                        android:background="@drawable/btn_ripple_selector"
                         android:textColor="@color/btn_text_selector" />
 
                     <Button
@@ -113,7 +113,7 @@
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
                         android:text="滑动"
-                        android:background="@drawable/btn_selector"
+                        android:background="@drawable/btn_ripple_selector"
                         android:textColor="@color/btn_text_selector" />
                 </LinearLayout>
 
@@ -152,7 +152,7 @@
                             android:layout_weight="1"
                             android:layout_marginEnd="4dp"
                             android:text="手动参数"
-                            android:background="@drawable/btn_selector"
+                            android:background="@drawable/btn_ripple_selector"
                             android:textColor="@color/btn_text_selector" />
 
                         <Button
@@ -162,7 +162,7 @@
                             android:layout_weight="1"
                             android:layout_marginStart="4dp"
                             android:text="手势录制"
-                            android:background="@drawable/btn_selector"
+                            android:background="@drawable/btn_ripple_selector"
                             android:textColor="@color/btn_text_selector" />
                     </LinearLayout>
 

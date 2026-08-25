@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             isSwipeMode = false
             radioClick.isSelected = true
             radioSwipe.isSelected = false
-            swipeParams.visibility = View.GONE
+            collapseView(swipeParams)
             saveConfig()
             updateStatus()
         }
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
             isSwipeMode = true
             radioClick.isSelected = false
             radioSwipe.isSelected = true
-            swipeParams.visibility = View.VISIBLE
+            expandView(swipeParams)
             saveConfig()
             if (!isSwipeConfigValid()) {
                 val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
@@ -140,8 +140,8 @@ class MainActivity : AppCompatActivity() {
             isGestureMode = false
             radioSwipeManual.isSelected = true
             radioSwipeGesture.isSelected = false
-            manualSwipeParams.visibility = View.VISIBLE
-            gestureSwipeSection.visibility = View.GONE
+            expandView(manualSwipeParams)
+            collapseView(gestureSwipeSection)
             saveConfig()
             updateStatus()
         }
@@ -150,8 +150,8 @@ class MainActivity : AppCompatActivity() {
             isGestureMode = true
             radioSwipeManual.isSelected = false
             radioSwipeGesture.isSelected = true
-            manualSwipeParams.visibility = View.GONE
-            gestureSwipeSection.visibility = View.VISIBLE
+            collapseView(manualSwipeParams)
+            expandView(gestureSwipeSection)
             saveConfig()
             updateStatus()
         }
@@ -434,6 +434,32 @@ class MainActivity : AppCompatActivity() {
                 Uri.parse("package:$packageName")
             ))
         }
+    }
+
+    private fun expandView(view: View) {
+        if (view.visibility == View.VISIBLE) return
+        view.visibility = View.VISIBLE
+        view.alpha = 0f
+        view.translationY = -20f * resources.displayMetrics.density
+        view.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(300)
+            .start()
+    }
+
+    private fun collapseView(view: View) {
+        if (view.visibility == View.GONE) return
+        view.animate()
+            .alpha(0f)
+            .translationY(-20f * resources.displayMetrics.density)
+            .setDuration(300)
+            .withEndAction {
+                view.visibility = View.GONE
+                view.alpha = 1f
+                view.translationY = 0f
+            }
+            .start()
     }
 
     private fun onTextChanged(editText: EditText, action: () -> Unit) {
