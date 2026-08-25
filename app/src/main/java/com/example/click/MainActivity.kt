@@ -21,6 +21,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButtonToggleGroup
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,11 +33,9 @@ class MainActivity : AppCompatActivity() {
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
-    private lateinit var btnClick: Button
-    private lateinit var btnSwipe: Button
+    private lateinit var toggleGroupMode: MaterialButtonToggleGroup
+    private lateinit var toggleGroupSwipeMethod: MaterialButtonToggleGroup
     private lateinit var swipeParams: LinearLayout
-    private lateinit var btnSwipeManual: Button
-    private lateinit var btnSwipeGesture: Button
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
     private lateinit var inputSwipeX1: EditText
@@ -61,12 +61,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 设置顶栏
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_about -> {
+                    showAboutDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+
         statusText = findViewById(R.id.statusText)
-        btnClick = findViewById(R.id.radioClick)
-        btnSwipe = findViewById(R.id.radioSwipe)
+        toggleGroupMode = findViewById(R.id.toggleGroupMode)
+        toggleGroupSwipeMethod = findViewById(R.id.toggleGroupSwipeMethod)
         swipeParams = findViewById(R.id.swipeParams)
-        btnSwipeManual = findViewById(R.id.radioSwipeManual)
-        btnSwipeGesture = findViewById(R.id.radioSwipeGesture)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
         gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
         inputSwipeX1 = findViewById(R.id.inputSwipeX1)
@@ -91,52 +101,29 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 初始状态
-        btnClick.isSelected = true
-        btnSwipe.isSelected = false
-
-        // 执行模式按钮
-        btnClick.setOnClickListener {
-            isSwipeMode = false
-            btnClick.isSelected = true
-            btnSwipe.isSelected = false
-            swipeParams.visibility = View.GONE
-            saveConfig()
-            updateStatus()
-        }
-
-        btnSwipe.setOnClickListener {
-            isSwipeMode = true
-            btnClick.isSelected = false
-            btnSwipe.isSelected = true
-            swipeParams.visibility = View.VISIBLE
-            saveConfig()
-            if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
-                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+        // 执行模式 Segmented Buttons
+        toggleGroupMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                isSwipeMode = checkedId == R.id.radioSwipe
+                swipeParams.visibility = if (isSwipeMode) View.VISIBLE else View.GONE
+                saveConfig()
+                if (isSwipeMode && !isSwipeConfigValid()) {
+                    val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+                }
+                updateStatus()
             }
-            updateStatus()
         }
 
-        // 滑动方式按钮
-        btnSwipeManual.setOnClickListener {
-            isGestureMode = false
-            btnSwipeManual.isSelected = true
-            btnSwipeGesture.isSelected = false
-            manualSwipeParams.visibility = View.VISIBLE
-            gestureSwipeSection.visibility = View.GONE
-            saveConfig()
-            updateStatus()
-        }
-
-        btnSwipeGesture.setOnClickListener {
-            isGestureMode = true
-            btnSwipeManual.isSelected = false
-            btnSwipeGesture.isSelected = true
-            manualSwipeParams.visibility = View.GONE
-            gestureSwipeSection.visibility = View.VISIBLE
-            saveConfig()
-            updateStatus()
+        // 滑动方式 Segmented Buttons
+        toggleGroupSwipeMethod.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                isGestureMode = checkedId == R.id.radioSwipeGesture
+                manualSwipeParams.visibility = if (isGestureMode) View.GONE else View.VISIBLE
+                gestureSwipeSection.visibility = if (isGestureMode) View.VISIBLE else View.GONE
+                saveConfig()
+                updateStatus()
+            }
         }
 
         // 无限循环开关
@@ -456,23 +443,6 @@ class MainActivity : AppCompatActivity() {
         ContextCompat.startForegroundService(this, intent)
         Toast.makeText(this, "悬浮球已启动", Toast.LENGTH_SHORT).show()
         updateStatus()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        val item = menu.findItem(R.id.action_about)
-        (item.actionView?.findViewById<View>(R.id.btnAboutIcon))?.setOnClickListener { showAboutDialog() }
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_about -> {
-                showAboutDialog()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     private fun showAboutDialog() {
