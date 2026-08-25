@@ -16,6 +16,7 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -44,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inputSwipeDuration: EditText
     private lateinit var inputDelay: EditText
     private lateinit var inputRepeat: EditText
-    private lateinit var btnInfinite: Button
+    private lateinit var btnInfinite: Switch
     private lateinit var btnStartFloating: Button
     private lateinit var btnStartOverlay: View
     private lateinit var btnStopFloating: Button
@@ -138,11 +139,10 @@ class MainActivity : AppCompatActivity() {
             updateStatus()
         }
 
-        // 无限循环按钮
-        btnInfinite.setOnClickListener {
-            isInfiniteMode = !isInfiniteMode
-            btnInfinite.isActivated = isInfiniteMode
-            inputRepeat.isEnabled = !isInfiniteMode
+        // 无限循环开关
+        btnInfinite.setOnCheckedChangeListener { _, isChecked ->
+            isInfiniteMode = isChecked
+            inputRepeat.isEnabled = !isChecked
             saveConfig()
         }
 

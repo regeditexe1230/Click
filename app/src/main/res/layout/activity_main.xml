@@ -304,16 +304,14 @@
                     android:inputType="number"
                     android:text="1" />
 
-                <Button
+                <Switch
                     android:id="@+id/checkInfinite"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="无限循环"
-                    android:background="@drawable/btn_toggle_bg"
-                    android:textColor="#FFFFFFFF"
-                    android:stateListAnimator="@null" />
+                    android:textOn="开"
+                    android:textOff="关" />
             </LinearLayout>
         </LinearLayout>
 
