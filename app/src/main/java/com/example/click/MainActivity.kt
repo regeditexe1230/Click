@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private var isSwipeMode = false
     private var isGestureMode = false
+    private var shouldShowFirstLaunchDialog = false
 
     private lateinit var toggleGroupMode: MaterialButtonToggleGroup
     private lateinit var radioSwipe: Button
@@ -186,9 +187,15 @@ class MainActivity : AppCompatActivity() {
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
             prefs.edit().putBoolean("first_launch_done", true).apply()
-            window.decorView.postDelayed({
-                showFirstLaunchDialog()
-            }, 500)
+            shouldShowFirstLaunchDialog = true
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && shouldShowFirstLaunchDialog) {
+            shouldShowFirstLaunchDialog = false
+            showFirstLaunchDialog()
         }
     }
 
