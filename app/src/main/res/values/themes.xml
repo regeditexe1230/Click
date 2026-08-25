@@ -22,6 +22,6 @@
         <item name="android:windowBackground">@color/md_theme_background</item>
         <!-- Splash Screen -->
         <item name="android:windowSplashScreenBackground">@color/md_theme_background</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/icon</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
 </resources>
