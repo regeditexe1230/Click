@@ -167,6 +167,7 @@ class FloatingService : Service() {
                         params.y = initialY + dy
                         windowManager.updateViewLayout(floatingView, params)
                         val actual = floatingView.layoutParams as WindowManager.LayoutParams
+                        android.util.Log.d("FloatingService", "DRAG params.x=${params.x} params.y=${params.y} actual.x=${actual.x} actual.y=${actual.y}")
                         params.x = actual.x
                         params.y = actual.y
                     }
