@@ -438,28 +438,60 @@ class MainActivity : AppCompatActivity() {
 
     private fun expandView(view: View) {
         if (view.visibility == View.VISIBLE) return
+        
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val targetHeight = view.measuredHeight
+        
         view.visibility = View.VISIBLE
+        val params = view.layoutParams
+        params.height = 0
+        view.layoutParams = params
         view.alpha = 0f
-        view.translationY = -20f * resources.displayMetrics.density
+        
         view.animate()
             .alpha(1f)
-            .translationY(0f)
             .setDuration(300)
             .start()
+        
+        val animator = android.animation.ValueAnimator.ofInt(0, targetHeight)
+        animator.duration = 300
+        animator.addUpdateListener { anim ->
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+        }
+        animator.start()
     }
 
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
+        
+        val initialHeight = view.measuredHeight
+        
         view.animate()
             .alpha(0f)
-            .translationY(-20f * resources.displayMetrics.density)
             .setDuration(300)
-            .withEndAction {
+            .start()
+        
+        val animator = android.animation.ValueAnimator.ofInt(initialHeight, 0)
+        animator.duration = 300
+        animator.addUpdateListener { anim ->
+            val params = view.layoutParams
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
                 view.visibility = View.GONE
                 view.alpha = 1f
-                view.translationY = 0f
+                val params = view.layoutParams
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = params
             }
-            .start()
+        })
+        animator.start()
     }
 
     private fun onTextChanged(editText: EditText, action: () -> Unit) {
