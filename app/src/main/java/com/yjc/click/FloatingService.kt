@@ -123,55 +123,62 @@ class FloatingService : Service() {
         windowManager.addView(floatingView, params)
         floatingViewReady = true
 
-        // 拖动阈值使用dp，避免高分辨率设备误触
+        // 拖动阈值
         val dragThreshold = (20 * resources.displayMetrics.density).toInt()
-        var downTime = 0L
 
         floatingView.setOnTouchListener { view, event ->
+            // Android 10+ 手势冲突检测
+            if (Build.VERSION.SDK_INT >= 29 && (event.flags and 0x800) != 0) {
+                return@setOnTouchListener true
+            }
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Android 10+ 手势冲突检测
-                    if (Build.VERSION.SDK_INT >= 29 && (event.flags and 0x800) != 0) {
-                        return@setOnTouchListener true
-                    }
                     floatingView.alpha = 0.5f
-                    // 记录悬浮球当前位置
-                    initialX = params.x
-                    initialY = params.y
+                    // 记录触摸起始点
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
+                    // 记录当前悬浮球位置
+                    initialX = params.x
+                    initialY = params.y
                     touchDownCenterX = event.rawX - event.x + view.width / 2f
                     touchDownCenterY = event.rawY - event.y + view.height / 2f
                     isDragging = false
-                    downTime = System.currentTimeMillis()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
-                    // 只有超过阈值才判定为拖动
-                    if (!isDragging && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
-                        isDragging = true
-                        operationPaused = false
-                        if (job?.isActive == true) {
-                            AppConfig.running = false
-                            job?.cancel()
+                    
+                    if (!isDragging) {
+                        // 超过阈值才开始拖动
+                        if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+                            isDragging = true
+                            operationPaused = false
+                            if (job?.isActive == true) {
+                                AppConfig.running = false
+                                job?.cancel()
+                            }
                         }
                     }
+                    
                     if (isDragging) {
                         params.x = initialX + dx
                         params.y = initialY + dy
-                        windowManager.updateViewLayout(floatingView, params)
-                        val actual = floatingView.layoutParams as WindowManager.LayoutParams
-                        params.x = actual.x
-                        params.y = actual.y
+                        try {
+                            windowManager.updateViewLayout(floatingView, params)
+                        } catch (e: Exception) {
+                            android.util.Log.e("FloatingService", "updateViewLayout failed", e)
+                        }
                     }
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    android.util.Log.d("FloatingService", "ACTION_UP isDragging=$isDragging mode=${AppConfig.current.mode} hasTarget=${targetMarker != null}")
+                    android.util.Log.d("FloatingService", "ACTION_UP isDragging=$isDragging mode=${AppConfig.current.mode}")
                     floatingView.alpha = 1.0f
+                    
                     if (!isDragging) {
+                        // 点击操作
                         if (AppConfig.current.mode == Mode.CLICK && targetMarker == null) {
                             Toast.makeText(
                                 this@FloatingService,
@@ -189,6 +196,7 @@ class FloatingService : Service() {
                         }
                         executeAction()
                     } else {
+                        // 拖动结束
                         if (AppConfig.current.mode == Mode.CLICK) {
                             val half = (30 * resources.displayMetrics.density).toInt()
                             showTargetMarker((params.x + half).toFloat(), (params.y + half).toFloat())
