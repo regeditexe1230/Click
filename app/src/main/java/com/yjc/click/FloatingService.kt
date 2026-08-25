@@ -129,10 +129,6 @@ class FloatingService : Service() {
         floatingView.setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Android 10+ 手势冲突检测
-                    if (Build.VERSION.SDK_INT >= 29 && (event.flags and 0x800) != 0) {
-                        return@setOnTouchListener true
-                    }
                     floatingView.alpha = 0.5f
                     // 记录触摸起始屏幕坐标
                     initialTouchX = event.rawX
