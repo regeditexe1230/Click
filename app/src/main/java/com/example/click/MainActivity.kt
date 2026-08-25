@@ -137,6 +137,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         radioSwipeManual.setOnClickListener {
+            if (!isGestureMode) return@setOnClickListener
             isGestureMode = false
             radioSwipeManual.isSelected = true
             radioSwipeGesture.isSelected = false
@@ -147,6 +148,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         radioSwipeGesture.setOnClickListener {
+            if (isGestureMode) return@setOnClickListener
             isGestureMode = true
             radioSwipeManual.isSelected = false
             radioSwipeGesture.isSelected = true
@@ -437,7 +439,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun expandView(view: View) {
-        if (view.visibility == View.VISIBLE) return
+        if (view.visibility == View.VISIBLE && view.height > 0) return
+        
+        // 取消可能正在进行的动画
+        view.animate().cancel()
         
         view.measure(
             View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
@@ -446,10 +451,11 @@ class MainActivity : AppCompatActivity() {
         val targetHeight = view.measuredHeight
         
         view.visibility = View.VISIBLE
+        view.alpha = 0f
+        
         val params = view.layoutParams
         params.height = 0
         view.layoutParams = params
-        view.alpha = 0f
         
         view.animate()
             .alpha(1f)
@@ -462,13 +468,26 @@ class MainActivity : AppCompatActivity() {
             params.height = anim.animatedValue as Int
             view.layoutParams = params
         }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = params
+            }
+        })
         animator.start()
     }
 
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
         
-        val initialHeight = view.measuredHeight
+        // 取消可能正在进行的动画
+        view.animate().cancel()
+        
+        val initialHeight = view.height
+        if (initialHeight <= 0) {
+            view.visibility = View.GONE
+            return
+        }
         
         view.animate()
             .alpha(0f)
