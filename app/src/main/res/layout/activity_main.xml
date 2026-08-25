@@ -91,30 +91,31 @@
                 android:background="@drawable/section_border"
                 android:padding="12dp">
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/toggleGroupMode"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true"
-                    app:selectionRequired="true"
-                    app:checkedButton="@id/radioClick">
+                    android:orientation="horizontal">
 
-                    <com.google.android.material.button.MaterialButton
+                    <Button
                         android:id="@+id/radioClick"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
                         android:text="点击"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
+                        android:background="@drawable/btn_selector"
+                        android:textColor="@color/btn_text_selector" />
 
-                    <com.google.android.material.button.MaterialButton
+                    <Button
                         android:id="@+id/radioSwipe"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginStart="4dp"
                         android:text="滑动"
-                        style="@style/Widget.Material3.Button.OutlinedButton" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
+                        android:background="@drawable/btn_selector"
+                        android:textColor="@color/btn_text_selector" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/swipeParams"
@@ -138,31 +139,32 @@
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />
 
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggleGroupSwipeMethod"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="true"
-                        app:checkedButton="@id/radioSwipeManual">
+                        android:orientation="horizontal">
 
-                        <com.google.android.material.button.MaterialButton
+                        <Button
                             android:id="@+id/radioSwipeManual"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:layout_marginEnd="4dp"
                             android:text="手动参数"
-                            style="@style/Widget.Material3.Button.OutlinedButton" />
+                            android:background="@drawable/btn_selector"
+                            android:textColor="@color/btn_text_selector" />
 
-                        <com.google.android.material.button.MaterialButton
+                        <Button
                             android:id="@+id/radioSwipeGesture"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:layout_marginStart="4dp"
                             android:text="手势录制"
-                            style="@style/Widget.Material3.Button.OutlinedButton" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                            android:background="@drawable/btn_selector"
+                            android:textColor="@color/btn_text_selector" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/manualSwipeParams"

@@ -17,7 +17,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -35,10 +34,9 @@ class MainActivity : AppCompatActivity() {
     private var isSwipeMode = false
     private var isGestureMode = false
 
-    private lateinit var toggleGroupMode: MaterialButtonToggleGroup
+    private lateinit var radioClick: Button
     private lateinit var radioSwipe: Button
     private lateinit var swipeParams: LinearLayout
-    private lateinit var toggleGroupSwipeMethod: MaterialButtonToggleGroup
     private lateinit var radioSwipeManual: Button
     private lateinit var radioSwipeGesture: Button
     private lateinit var manualSwipeParams: LinearLayout
@@ -63,10 +61,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.statusText)
-        toggleGroupMode = findViewById(R.id.toggleGroupMode)
+        radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
         swipeParams = findViewById(R.id.swipeParams)
-        toggleGroupSwipeMethod = findViewById(R.id.toggleGroupSwipeMethod)
         radioSwipeManual = findViewById(R.id.radioSwipeManual)
         radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
         manualSwipeParams = findViewById(R.id.manualSwipeParams)
@@ -113,27 +110,50 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        toggleGroupMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                isSwipeMode = checkedId == R.id.radioSwipe
-                swipeParams.visibility = if (isSwipeMode) View.VISIBLE else View.GONE
-                saveConfig()
-                if (isSwipeMode && !isSwipeConfigValid()) {
-                    val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
-                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
-                }
-                updateStatus()
-            }
+        // 初始状态
+        radioClick.isSelected = true
+        radioSwipeManual.isSelected = true
+
+        radioClick.setOnClickListener {
+            isSwipeMode = false
+            radioClick.isSelected = true
+            radioSwipe.isSelected = false
+            swipeParams.visibility = View.GONE
+            saveConfig()
+            updateStatus()
         }
 
-        toggleGroupSwipeMethod.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                isGestureMode = checkedId == R.id.radioSwipeGesture
-                manualSwipeParams.visibility = if (isGestureMode) View.GONE else View.VISIBLE
-                gestureSwipeSection.visibility = if (isGestureMode) View.VISIBLE else View.GONE
-                saveConfig()
-                updateStatus()
+        radioSwipe.setOnClickListener {
+            isSwipeMode = true
+            radioClick.isSelected = false
+            radioSwipe.isSelected = true
+            swipeParams.visibility = View.VISIBLE
+            saveConfig()
+            if (!isSwipeConfigValid()) {
+                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
             }
+            updateStatus()
+        }
+
+        radioSwipeManual.setOnClickListener {
+            isGestureMode = false
+            radioSwipeManual.isSelected = true
+            radioSwipeGesture.isSelected = false
+            manualSwipeParams.visibility = View.VISIBLE
+            gestureSwipeSection.visibility = View.GONE
+            saveConfig()
+            updateStatus()
+        }
+
+        radioSwipeGesture.setOnClickListener {
+            isGestureMode = true
+            radioSwipeManual.isSelected = false
+            radioSwipeGesture.isSelected = true
+            manualSwipeParams.visibility = View.GONE
+            gestureSwipeSection.visibility = View.VISIBLE
+            saveConfig()
+            updateStatus()
         }
 
         checkInfinite.setOnCheckedChangeListener { _, checked ->
