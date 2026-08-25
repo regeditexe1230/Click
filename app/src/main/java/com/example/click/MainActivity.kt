@@ -2,6 +2,7 @@ package com.example.click
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -11,8 +12,6 @@ import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ClickableSpan
 import android.view.View
-import android.view.Menu
-import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -56,6 +55,11 @@ class MainActivity : AppCompatActivity() {
     private var isSwipeMode = false
     private var isGestureMode = false
     private var isInfiniteMode = false
+
+    private val primaryColor by lazy { ContextCompat.getColor(this, R.color.md_theme_primary) }
+    private val surfaceVariantColor by lazy { ContextCompat.getColor(this, R.color.md_theme_surfaceVariant) }
+    private val onSurfaceVariantColor by lazy { ContextCompat.getColor(this, R.color.md_theme_onSurfaceVariant) }
+    private val onPrimaryColor by lazy { ContextCompat.getColor(this, R.color.md_theme_onPrimary) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +105,9 @@ class MainActivity : AppCompatActivity() {
                 PermissionStep.NONE
             }
         }
+
+        // 初始化按钮状态
+        updateButtonStates()
 
         // 执行模式 Segmented Buttons
         toggleGroupMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -195,10 +202,13 @@ class MainActivity : AppCompatActivity() {
             updateStatus()
         }
 
+        // 使用说明 - 延迟显示确保UI加载完成
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
-            prefs.edit().putBoolean("first_launch_done", true).apply()
-            showFirstLaunchDialog()
+            btnStartFloating.post {
+                prefs.edit().putBoolean("first_launch_done", true).apply()
+                showFirstLaunchDialog()
+            }
         }
     }
 
@@ -252,6 +262,21 @@ class MainActivity : AppCompatActivity() {
         AppConfig.preventExecution = false
     }
 
+    private fun updateButtonStates() {
+        // 启用状态：紫色背景 + 白色文字
+        btnStartFloating.setBackgroundColor(primaryColor)
+        btnStartFloating.setTextColor(onPrimaryColor)
+        
+        btnStopFloating.setBackgroundColor(primaryColor)
+        btnStopFloating.setTextColor(onPrimaryColor)
+        
+        btnRecordGesture.setBackgroundColor(primaryColor)
+        btnRecordGesture.setTextColor(onPrimaryColor)
+        
+        // 禁用状态：浅灰色背景 + 深灰色文字
+        // 注意：需要在按钮禁用/启用时动态更新
+    }
+
     private fun updateStatus() {
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
@@ -263,10 +288,20 @@ class MainActivity : AppCompatActivity() {
 
         val ready = serviceEnabled && overlayGranted && isSwipeConfigValid()
         val canStart = ready && !AppConfig.running
+        
         btnStartFloating.isEnabled = canStart
+        btnStartFloating.setBackgroundColor(if (canStart) primaryColor else surfaceVariantColor)
+        btnStartFloating.setTextColor(if (canStart) onPrimaryColor else onSurfaceVariantColor)
+        
         btnStartOverlay.visibility = if (canStart) View.GONE else View.VISIBLE
+        
         btnStopFloating.isEnabled = AppConfig.running
+        btnStopFloating.setBackgroundColor(if (AppConfig.running) primaryColor else surfaceVariantColor)
+        btnStopFloating.setTextColor(if (AppConfig.running) onPrimaryColor else onSurfaceVariantColor)
+        
         btnRecordGesture.isEnabled = !AppConfig.running
+        btnRecordGesture.setBackgroundColor(if (!AppConfig.running) primaryColor else surfaceVariantColor)
+        btnRecordGesture.setTextColor(if (!AppConfig.running) onPrimaryColor else onSurfaceVariantColor)
 
         val gesture = AppConfig.recordedGesture
         if (gesture.points.size >= 2) {
