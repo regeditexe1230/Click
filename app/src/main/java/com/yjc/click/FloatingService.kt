@@ -118,7 +118,7 @@ class FloatingService : Service() {
 
         params.gravity = Gravity.TOP or Gravity.START
         params.x = 0
-        params.y = 100
+        params.y = (30 * resources.displayMetrics.density).toInt()
 
         windowManager.addView(floatingView, params)
         floatingViewReady = true
