@@ -118,13 +118,13 @@ class FloatingService : Service() {
 
         params.gravity = Gravity.TOP or Gravity.START
         params.x = 0
-        params.y = 200
+        params.y = 100
 
         windowManager.addView(floatingView, params)
         floatingViewReady = true
 
-        // 拖动阈值
-        val dragThreshold = (20 * resources.displayMetrics.density).toInt()
+        // 拖动阈值 - 使用更大的值避免误判
+        val dragThreshold = (30 * resources.displayMetrics.density).toInt()
 
         floatingView.setOnTouchListener { view, event ->
             when (event.actionMasked) {
