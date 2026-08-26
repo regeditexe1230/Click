@@ -214,24 +214,59 @@ class MainActivity : AppCompatActivity() {
         val programPage = findViewById<View>(R.id.program_page)
         val settingsPage = findViewById<View>(R.id.settings_page)
 
+        // 获取图标View并设置pivot
+        val menuView = bottomNavigation.getChildAt(0) as? android.view.ViewGroup
+        val iconViews = mutableListOf<android.widget.ImageView>()
+        menuView?.let { menu ->
+            for (i in 0 until menu.childCount) {
+                val itemView = menu.getChildAt(i) as? android.view.ViewGroup
+                itemView?.let { item ->
+                    // 查找ImageView（图标）
+                    findImageView(item)?.let { iconView ->
+                        iconView.pivotX = iconView.width / 2f
+                        iconView.pivotY = iconView.height / 2f
+                        iconViews.add(iconView)
+                    }
+                }
+            }
+        }
+
         bottomNavigation.setOnItemSelectedListener { item ->
+            // 获取当前选中的图标并播放动画
+            val menuView2 = bottomNavigation.getChildAt(0) as? android.view.ViewGroup
+            menuView2?.let { menu ->
+                for (i in 0 until menu.childCount) {
+                    val itemView = menu.getChildAt(i) as? android.view.ViewGroup
+                    itemView?.let { v ->
+                        findImageView(v)?.let { iconView ->
+                            // 重置所有图标
+                            iconView.scaleX = 1f
+                            iconView.scaleY = 1f
+                        }
+                    }
+                }
+            }
+
             when (item.itemId) {
                 R.id.nav_home -> {
                     homeContent.visibility = View.VISIBLE
                     programPage.visibility = View.GONE
                     settingsPage.visibility = View.GONE
+                    animateNavItem(bottomNavigation, 0)
                     true
                 }
                 R.id.nav_program -> {
                     homeContent.visibility = View.GONE
                     programPage.visibility = View.VISIBLE
                     settingsPage.visibility = View.GONE
+                    animateNavItem(bottomNavigation, 1)
                     true
                 }
                 R.id.nav_settings -> {
                     homeContent.visibility = View.GONE
                     programPage.visibility = View.GONE
                     settingsPage.visibility = View.VISIBLE
+                    animateNavItem(bottomNavigation, 2)
                     true
                 }
                 else -> false
@@ -679,6 +714,48 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
+    }
+
+    private fun animateNavItem(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView, index: Int) {
+        val menuView = bottomNav.getChildAt(0) as? android.view.ViewGroup ?: return
+        if (index >= menuView.childCount) return
+        val itemView = menuView.getChildAt(index) as? android.view.ViewGroup ?: return
+        val iconView = findImageView(itemView) ?: return
+
+        iconView.pivotX = iconView.width / 2f
+        iconView.pivotY = iconView.height / 2f
+
+        // 弹跳动画
+        iconView.animate()
+            .scaleX(0.7f)
+            .scaleY(0.7f)
+            .setDuration(100)
+            .withEndAction {
+                iconView.animate()
+                    .scaleX(1.1f)
+                    .scaleY(1.1f)
+                    .setDuration(100)
+                    .withEndAction {
+                        iconView.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(100)
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
+    }
+
+    private fun findImageView(view: android.view.View): android.widget.ImageView? {
+        if (view is android.widget.ImageView) return view
+        if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val result = findImageView(view.getChildAt(i))
+                if (result != null) return result
+            }
+        }
+        return null
     }
 
     private fun getStatusBarHeight(): Int {
