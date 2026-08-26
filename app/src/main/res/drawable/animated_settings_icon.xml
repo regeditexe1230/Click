@@ -9,6 +9,10 @@
         android:drawable="@drawable/ic_settings_new" />
 
     <transition
+        android:fromId="@id/state_unselected"
+        android:toId="@id/state_selected"
+        android:drawable="@drawable/animated_settings" />
+    <transition
         android:fromId="@id/state_selected"
         android:toId="@id/state_unselected"
         android:drawable="@drawable/animated_settings_reverse" />
