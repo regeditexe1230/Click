@@ -64,12 +64,6 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        // 只让底部延伸到导航栏区域
-        window.decorView.systemUiVisibility = (
-            android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-        )
-
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
