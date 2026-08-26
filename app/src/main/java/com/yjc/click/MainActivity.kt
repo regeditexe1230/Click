@@ -191,18 +191,9 @@ class MainActivity : AppCompatActivity() {
         val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> {
-                    // 主页 - 当前页面
-                    true
-                }
-                R.id.nav_program -> {
-                    Toast.makeText(this, "程序页面 - 开发中", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                R.id.nav_settings -> {
-                    Toast.makeText(this, "设置页面 - 开发中", Toast.LENGTH_SHORT).show()
-                    true
-                }
+                R.id.nav_home -> true
+                R.id.nav_program -> true
+                R.id.nav_settings -> true
                 else -> false
             }
         }
