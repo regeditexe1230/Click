@@ -476,45 +476,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun expandView(view: View) {
-        if (view.visibility == View.VISIBLE && view.height > 0) return
+        if (view.visibility == View.VISIBLE) return
         
         view.animate().cancel()
-        
-        // 测量目标高度
-        view.measure(
-            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val targetHeight = view.measuredHeight
-        
         view.visibility = View.VISIBLE
         view.alpha = 0f
-        
-        val params = view.layoutParams
-        params.height = 1
-        view.layoutParams = params
+        view.translationY = -20f
         
         view.animate()
             .alpha(1f)
-            .setDuration(250)
-            .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
-            .start()
-        
-        val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
-        animator.duration = 250
-        animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
-        animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
+            .translationY(0f)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .withEndAction {
                 view.alpha = 1f
+                view.translationY = 0f
             }
-        })
-        animator.start()
+            .start()
     }
 
     private fun collapseView(view: View) {
@@ -522,16 +500,18 @@ class MainActivity : AppCompatActivity() {
         
         view.animate().cancel()
         
-        val currentHeight = view.height
-        if (currentHeight <= 0) {
-            view.visibility = View.GONE
-            return
-        }
-        
-        view.alpha = 1f
-        
-        val params = view.layoutParams
-        
+        view.animate()
+            .alpha(0f)
+            .translationY(-20f)
+            .setDuration(150)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                view.visibility = View.GONE
+                view.alpha = 1f
+                view.translationY = 0f
+            }
+            .start()
+    }
         // 使用 ValueAnimator 平滑改变高度
         val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
         animator.duration = 200
