@@ -494,14 +494,12 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 Choreographer 确保帧同步
         view.animate()
             .alpha(1f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
         
-        // 使用 ValueAnimator 平滑改变高度
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
@@ -509,13 +507,6 @@ class MainActivity : AppCompatActivity() {
             params.height = anim.animatedValue as Int
             view.layoutParams = params
         }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
-                view.alpha = 1f
-            }
-        })
         animator.start()
     }
 
