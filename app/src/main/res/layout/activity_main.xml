@@ -30,7 +30,7 @@
         android:clipToPadding="false"
         android:paddingBottom="16dp"
         android:paddingHorizontal="16dp"
-        android:paddingTop="16dp">
+        android:paddingTop="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
