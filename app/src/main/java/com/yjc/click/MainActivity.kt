@@ -62,19 +62,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 让内容延伸到系统栏区域
+        setContentView(R.layout.activity_main)
+
+        // 只让底部延伸到导航栏区域
         window.decorView.systemUiVisibility = (
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         )
-
-        setContentView(R.layout.activity_main)
-
-        // 给顶栏添加状态栏高度的padding
-        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        val statusBarHeight = getStatusBarHeight()
-        toolbar.setPadding(0, statusBarHeight, 0, 0)
 
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
