@@ -4,15 +4,13 @@
     <aapt:attr name="android:drawable">
         <vector
             android:width="24dp"
-            android:height="24dp"
+            android:layout_height="24dp"
             android:viewportWidth="24"
             android:viewportHeight="24">
-            <!-- 底层：线稿，始终可见 -->
             <path
                 android:name="outline"
                 android:fillColor="#FF000000"
                 android:pathData="M12,5.69l5,4.5V18h-2v-6H9v6H7v-7.81l5,-4.5M12,3L2,12h3v8h6v-6h2v6h6v-8h3L12,3z" />
-            <!-- 上层：填充，用clip-path从顶部往下消失 -->
             <clip-path
                 android:name="clip"
                 android:pathData="M0,0 L24,0 L24,24 L0,24 Z" />
@@ -27,9 +25,9 @@
             <objectAnimator
                 android:propertyName="pathData"
                 android:valueFrom="M0,0 L24,0 L24,24 L0,24 Z"
-                android:valueTo="M0,0 L24,0 L24,0 L0,0 Z"
+                android:valueTo="M0,24 L24,24 L24,24 L0,24 Z"
                 android:valueType="pathType"
-                android:duration="250"
+                android:duration="1000"
                 android:interpolator="@android:interpolator/fast_out_slow_in" />
         </aapt:attr>
     </target>

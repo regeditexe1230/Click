@@ -212,6 +212,7 @@ class MainActivity : AppCompatActivity() {
         val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
         val homeContent = findViewById<View>(R.id.home_content)
         val programPage = findViewById<View>(R.id.program_page)
+        val settingsPage = findViewById<View>(R.id.settings_page)
         var previousItemId = R.id.nav_home
 
         bottomNavigation.setOnItemSelectedListener { item ->
