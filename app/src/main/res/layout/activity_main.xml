@@ -6,11 +6,11 @@
     android:fitsSystemWindows="false"
     android:orientation="vertical">
 
-    <!-- 顶栏 - MediumTopAppBar 高度约112dp -->
+    <!-- 顶栏 -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="112dp"
+        android:layout_height="90dp"
         android:paddingTop="4dp"
         android:gravity="bottom"
         android:background="?attr/colorSurface"
