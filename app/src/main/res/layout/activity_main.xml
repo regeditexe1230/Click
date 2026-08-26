@@ -10,6 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
+        android:paddingTop="4dp"
         android:background="?attr/colorSurface"
         app:title="Click"
         app:titleTextColor="?attr/colorOnSurface" />
