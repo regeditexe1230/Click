@@ -62,14 +62,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 启用edge-to-edge模式
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContentView(R.layout.activity_main)
 
-        // 只让底部导航栏区域透明延伸
+        // 底部导航栏延伸到系统导航栏区域
         val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav.setOnApplyWindowInsetsListener { view, insets ->
-            val systemBars = insets.getInsets(android.view.WindowInsets.Type.systemBars())
-            view.setPadding(0, 0, 0, systemBars.bottom)
-            insets
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, windowInsets ->
+            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, 0, 0, insets.bottom)
+            windowInsets
         }
 
         statusText = findViewById(R.id.statusText)
