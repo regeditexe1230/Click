@@ -224,8 +224,13 @@ class MainActivity : AppCompatActivity() {
             settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
 
             // 主页图标状态切换
-            val isSelected = item.itemId == R.id.nav_home
-            homeItem?.icon?.state = if (isSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
+            val isHomeSelected = item.itemId == R.id.nav_home
+            homeItem?.icon?.state = if (isHomeSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
+
+            // 设置图标状态切换
+            val settingsItem = bottomNavigation.menu.findItem(R.id.nav_settings)
+            val isSettingsSelected = item.itemId == R.id.nav_settings
+            settingsItem?.icon?.state = if (isSettingsSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
 
             // 程序图标缩放动画
             if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
