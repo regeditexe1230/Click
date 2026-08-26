@@ -227,6 +227,11 @@ class MainActivity : AppCompatActivity() {
             val isSelected = item.itemId == R.id.nav_home
             homeItem?.icon?.state = if (isSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
 
+            // 程序图标缩放动画
+            if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
+                animateProgramIcon(bottomNavigation, 1)
+            }
+
             previousItemId = item.itemId
             true
         }
@@ -674,6 +679,48 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
+    }
+
+    private fun animateProgramIcon(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView, index: Int) {
+        val menuView = bottomNav.getChildAt(0) as? android.view.ViewGroup ?: return
+        if (index >= menuView.childCount) return
+        val itemView = menuView.getChildAt(index) as? android.view.ViewGroup ?: return
+        val iconView = findImageView(itemView) ?: return
+
+        iconView.pivotX = iconView.width / 2f
+        iconView.pivotY = iconView.height / 2f
+
+        // 缩放动画
+        iconView.animate()
+            .scaleX(0.7f)
+            .scaleY(0.7f)
+            .setDuration(100)
+            .withEndAction {
+                iconView.animate()
+                    .scaleX(1.1f)
+                    .scaleY(1.1f)
+                    .setDuration(100)
+                    .withEndAction {
+                        iconView.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(100)
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
+    }
+
+    private fun findImageView(view: android.view.View): android.widget.ImageView? {
+        if (view is android.widget.ImageView) return view
+        if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val result = findImageView(view.getChildAt(i))
+                if (result != null) return result
+            }
+        }
+        return null
     }
 
     private fun getStatusBarHeight(): Int {
