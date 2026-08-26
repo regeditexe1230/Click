@@ -509,12 +509,9 @@ class MainActivity : AppCompatActivity() {
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                // 延迟一帧再恢复 WRAP_CONTENT，避免跳动
-                view.post {
-                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                    view.layoutParams = params
-                    view.alpha = 1f
-                }
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = params
+                view.alpha = 1f
             }
         })
         animator.start()
