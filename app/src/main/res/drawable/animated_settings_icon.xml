@@ -7,4 +7,9 @@
     <item
         android:id="@+id/state_unselected"
         android:drawable="@drawable/ic_settings_new" />
+
+    <transition
+        android:fromId="@id/state_selected"
+        android:toId="@id/state_unselected"
+        android:drawable="@drawable/animated_settings_reverse" />
 </animated-selector>
