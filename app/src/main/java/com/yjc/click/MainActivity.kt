@@ -494,18 +494,23 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
+        // 使用 ViewPropertyAnimator 处理 alpha（硬件加速）
         view.animate()
             .alpha(1f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
         
+        // 使用 ValueAnimator 处理高度，但减少更新频率
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
+            val newHeight = anim.animatedValue as Int
+            if (Math.abs(newHeight - params.height) > 2) { // 只在变化超过2px时更新
+                params.height = newHeight
+                view.layoutParams = params
+            }
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
@@ -536,9 +541,12 @@ class MainActivity : AppCompatActivity() {
         animator.duration = 250
         animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-            view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
+            val newHeight = anim.animatedValue as Int
+            if (Math.abs(newHeight - params.height) > 2) { // 只在变化超过2px时更新
+                params.height = newHeight
+                view.layoutParams = params
+                view.alpha = newHeight.toFloat() / currentHeight
+            }
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
