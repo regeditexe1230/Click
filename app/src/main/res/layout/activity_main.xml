@@ -10,8 +10,8 @@
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="90dp"
-        android:paddingTop="4dp"
+        android:layout_height="96dp"
+        android:paddingTop="0dp"
         android:gravity="bottom"
         android:background="?attr/colorSurface"
         app:title="Click"
