@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 底层：带缺口的边框 -->
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="1dp"
+                android:color="@color/md_theme_outline" />
+            <corners android:radius="12dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <!-- 顶部缺口覆盖 -->
+    <item
+        android:top="-2dp"
+        android:left="14dp"
+        android:right="60dp">
+        <shape android:shape="rectangle">
+            <solid android:color="?android:attr/colorBackground" />
+        </shape>
+    </item>
+</layer-list>
