@@ -225,15 +225,11 @@ class MainActivity : AppCompatActivity() {
 
             // 主页图标动画
             if (item.itemId == R.id.nav_home && previousItemId != R.id.nav_home) {
-                // 切到主页 - 播放填充动画
-                val avd = androidx.appcompat.content.res.AppCompatResources.getDrawable(this, R.drawable.avd_home_to_filled) as? android.graphics.drawable.AnimatedVectorDrawable
-                homeItem?.icon = avd
-                avd?.start()
+                // 切到主页 - 显示填充图标
+                homeItem?.setIcon(R.drawable.ic_home)
             } else if (item.itemId != R.id.nav_home && previousItemId == R.id.nav_home) {
-                // 离开主页 - 播放取消填充动画
-                val avd = androidx.appcompat.content.res.AppCompatResources.getDrawable(this, R.drawable.avd_home_to_outline) as? android.graphics.drawable.AnimatedVectorDrawable
-                homeItem?.icon = avd
-                avd?.start()
+                // 离开主页 - 显示线稿图标
+                homeItem?.setIcon(R.drawable.ic_home_outline)
             }
 
             previousItemId = item.itemId
