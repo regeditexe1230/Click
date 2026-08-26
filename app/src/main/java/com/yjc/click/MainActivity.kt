@@ -223,14 +223,9 @@ class MainActivity : AppCompatActivity() {
             programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
             settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
 
-            // 主页图标动画
-            if (item.itemId == R.id.nav_home && previousItemId != R.id.nav_home) {
-                // 切到主页 - 显示填充图标
-                homeItem?.setIcon(R.drawable.ic_home)
-            } else if (item.itemId != R.id.nav_home && previousItemId == R.id.nav_home) {
-                // 离开主页 - 显示线稿图标
-                homeItem?.setIcon(R.drawable.ic_home_outline)
-            }
+            // 主页图标状态切换
+            val isSelected = item.itemId == R.id.nav_home
+            homeItem?.icon?.state = if (isSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
 
             previousItemId = item.itemId
             true
