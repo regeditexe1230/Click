@@ -57,29 +57,19 @@
                     android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
 
-            <LinearLayout
+            <Button
+                android:id="@+id/btnEnableService"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:layout_marginHorizontal="4dp"
-                android:orientation="horizontal">
+                android:text="开启无障碍服务" />
 
-                <Button
-                    android:id="@+id/btnEnableService"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="无障碍服务" />
-
-                <Button
-                    android:id="@+id/btnEnableOverlay"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="悬浮窗权限" />
-            </LinearLayout>
+            <Button
+                android:id="@+id/btnEnableOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="开启悬浮窗权限" />
 
             <!-- 执行模式标题 -->
             <TextView
