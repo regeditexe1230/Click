@@ -39,12 +39,12 @@ class MainActivity : AppCompatActivity() {
 
     private var homeViewsReady = false
 
-    private lateinit var radioClick: TextView
-    private lateinit var radioSwipe: TextView
+    private lateinit var radioClick: Button
+    private lateinit var radioSwipe: Button
     private lateinit var modeIndicator: View
     private lateinit var swipeParams: LinearLayout
-    private lateinit var radioSwipeManual: TextView
-    private lateinit var radioSwipeGesture: TextView
+    private lateinit var radioSwipeManual: Button
+    private lateinit var radioSwipeGesture: Button
     private lateinit var swipeMethodIndicator: View
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
