@@ -61,6 +61,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 让内容延伸到系统栏区域
+        window.decorView.systemUiVisibility = (
+            android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        )
+
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.statusText)
