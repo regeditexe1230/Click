@@ -240,8 +240,7 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // 设置主页图标初始为outline
-        bottomNavigation.menu.findItem(R.id.nav_home)?.setIcon(R.drawable.ic_home_outline)
+        // 主页图标初始为填充状态（默认就是ic_home）
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
         onTextChanged(inputSwipeY1) { saveConfig(); updateStatus() }
