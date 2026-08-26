@@ -232,6 +232,11 @@ class MainActivity : AppCompatActivity() {
             val isSettingsSelected = item.itemId == R.id.nav_settings
             settingsItem?.icon?.state = if (isSettingsSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
 
+            // 设置图标选中时播放动画
+            if (isSettingsSelected && previousItemId != R.id.nav_settings) {
+                (settingsItem?.icon as? android.graphics.drawable.AnimatedVectorDrawable)?.start()
+            }
+
             // 程序图标缩放动画
             if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
                 animateProgramIcon(bottomNavigation, 1)
