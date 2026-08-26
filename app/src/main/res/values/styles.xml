@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Click.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/md_theme_primary</item>
+        <item name="android:textColor">@color/md_theme_onPrimary</item>
+    </style>
+
+    <style name="Theme.Click.Button.Disabled" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/md_theme_surfaceVariant</item>
+        <item name="android:textColor">@color/md_theme_onSurfaceVariant</item>
+    </style>
+</resources>
