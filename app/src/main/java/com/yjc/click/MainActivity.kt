@@ -189,11 +189,30 @@ class MainActivity : AppCompatActivity() {
 
         // 底部导航栏
         val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        val homeContent = findViewById<View>(R.id.home_content)
+        val programPage = findViewById<View>(R.id.program_page)
+        val settingsPage = findViewById<View>(R.id.settings_page)
+
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> true
-                R.id.nav_program -> true
-                R.id.nav_settings -> true
+                R.id.nav_home -> {
+                    homeContent.visibility = View.VISIBLE
+                    programPage.visibility = View.GONE
+                    settingsPage.visibility = View.GONE
+                    true
+                }
+                R.id.nav_program -> {
+                    homeContent.visibility = View.GONE
+                    programPage.visibility = View.VISIBLE
+                    settingsPage.visibility = View.GONE
+                    true
+                }
+                R.id.nav_settings -> {
+                    homeContent.visibility = View.GONE
+                    programPage.visibility = View.GONE
+                    settingsPage.visibility = View.VISIBLE
+                    true
+                }
                 else -> false
             }
         }
