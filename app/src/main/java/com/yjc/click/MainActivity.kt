@@ -71,6 +71,11 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // 给顶栏添加状态栏高度的padding
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        val statusBarHeight = getStatusBarHeight()
+        toolbar.setPadding(0, statusBarHeight, 0, 0)
+
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
@@ -666,5 +671,10 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
+    }
+
+    private fun getStatusBarHeight(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
     }
 }
