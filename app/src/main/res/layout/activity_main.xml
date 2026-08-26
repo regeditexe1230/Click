@@ -7,15 +7,19 @@
     android:orientation="vertical">
 
     <!-- 顶栏 -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="96dp"
-        android:paddingBottom="28dp"
-        android:gravity="bottom"
-        android:background="?attr/colorSurface"
-        app:title="Click"
-        app:titleTextColor="?attr/colorOnSurface" />
+        android:background="?attr/colorSurface">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            app:title="Click"
+            app:titleTextColor="?attr/colorOnSurface" />
+    </FrameLayout>
 
     <!-- 主页内容 -->
     <ScrollView
