@@ -486,7 +486,7 @@ class MainActivity : AppCompatActivity() {
         view.animate()
             .alpha(1f)
             .translationY(0f)
-            .setDuration(200)
+            .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .withEndAction {
                 view.alpha = 1f
@@ -503,7 +503,7 @@ class MainActivity : AppCompatActivity() {
         view.animate()
             .alpha(0f)
             .translationY(-20f)
-            .setDuration(150)
+            .setDuration(250)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .withEndAction {
                 view.visibility = View.GONE
@@ -511,25 +511,6 @@ class MainActivity : AppCompatActivity() {
                 view.translationY = 0f
             }
             .start()
-    }
-        // 使用 ValueAnimator 平滑改变高度
-        val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
-        animator.duration = 200
-        animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
-        animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-            view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                view.visibility = View.GONE
-                view.alpha = 1f
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
-            }
-        })
-        animator.start()
     }
 
     private fun onTextChanged(editText: TextInputEditText, action: () -> Unit) {
