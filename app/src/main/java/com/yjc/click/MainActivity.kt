@@ -7,16 +7,18 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
+import android.text.SpannableString
 import android.text.TextWatcher
+import android.text.style.ClickableSpan
 import android.view.View
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 
@@ -33,18 +35,12 @@ class MainActivity : AppCompatActivity() {
     private var isGestureMode = false
     private var isWarningDialogShowing = false
 
-    private lateinit var homeFragment: HomeFragment
-    private lateinit var programFragment: ProgramFragment
-    private lateinit var settingsFragment: SettingsFragment
-
-    private var homeViewsReady = false
-
-    private lateinit var radioClick: Button
-    private lateinit var radioSwipe: Button
+    private lateinit var radioClick: TextView
+    private lateinit var radioSwipe: TextView
     private lateinit var modeIndicator: View
     private lateinit var swipeParams: LinearLayout
-    private lateinit var radioSwipeManual: Button
-    private lateinit var radioSwipeGesture: Button
+    private lateinit var radioSwipeManual: TextView
+    private lateinit var radioSwipeGesture: TextView
     private lateinit var swipeMethodIndicator: View
     private lateinit var manualSwipeParams: LinearLayout
     private lateinit var gestureSwipeSection: LinearLayout
@@ -67,87 +63,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Setup toolbar
-        setSupportActionBar(findViewById(R.id.toolbar))
-
-        // Setup fragments
-        if (savedInstanceState == null) {
-            homeFragment = HomeFragment()
-            programFragment = ProgramFragment()
-            settingsFragment = SettingsFragment()
-
-            supportFragmentManager.beginTransaction()
-                .add(R.id.fragment_container, settingsFragment, "settings")
-                .hide(settingsFragment)
-                .add(R.id.fragment_container, programFragment, "program")
-                .hide(programFragment)
-                .add(R.id.fragment_container, homeFragment, "home")
-                .commitNow()
-        } else {
-            homeFragment = supportFragmentManager.findFragmentByTag("home") as HomeFragment
-            programFragment = supportFragmentManager.findFragmentByTag("program") as ProgramFragment
-            settingsFragment = supportFragmentManager.findFragmentByTag("settings") as SettingsFragment
-        }
-
-        // Setup bottom navigation
-        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    showFragment(homeFragment)
-                    true
-                }
-                R.id.nav_program -> {
-                    showFragment(programFragment)
-                    true
-                }
-                R.id.nav_settings -> {
-                    showFragment(settingsFragment)
-                    true
-                }
-                else -> false
-            }
-        }
-
-        // Initialize home views from fragment
-        initHomeViews(savedInstanceState)
-    }
-
-    private fun showFragment(target: Fragment) {
-        supportFragmentManager.beginTransaction().apply {
-            supportFragmentManager.fragments.forEach { if (it != target) hide(it) }
-            show(target)
-        }.commitNow()
-    }
-
-    private fun initHomeViews(savedInstanceState: Bundle?) {
-        val homeView = homeFragment.view ?: return
-
-        statusText = homeView.findViewById(R.id.statusText)
-        radioClick = homeView.findViewById(R.id.radioClick)
-        radioSwipe = homeView.findViewById(R.id.radioSwipe)
-        modeIndicator = homeView.findViewById(R.id.modeIndicator)
-        swipeParams = homeView.findViewById(R.id.swipeParams)
-        radioSwipeManual = homeView.findViewById(R.id.radioSwipeManual)
-        radioSwipeGesture = homeView.findViewById(R.id.radioSwipeGesture)
-        swipeMethodIndicator = homeView.findViewById(R.id.swipeMethodIndicator)
-        manualSwipeParams = homeView.findViewById(R.id.manualSwipeParams)
-        gestureSwipeSection = homeView.findViewById(R.id.gestureSwipeSection)
-        inputSwipeX1 = homeView.findViewById(R.id.inputSwipeX1)
-        inputSwipeY1 = homeView.findViewById(R.id.inputSwipeY1)
-        inputSwipeX2 = homeView.findViewById(R.id.inputSwipeX2)
-        inputSwipeY2 = homeView.findViewById(R.id.inputSwipeY2)
-        inputSwipeDuration = homeView.findViewById(R.id.inputSwipeDuration)
-        inputDelay = homeView.findViewById(R.id.inputDelay)
-        inputRepeat = homeView.findViewById(R.id.inputRepeat)
-        checkInfinite = homeView.findViewById(R.id.checkInfinite)
-        btnStartFloating = homeView.findViewById(R.id.btnStartFloating)
-        btnStartOverlay = homeView.findViewById(R.id.btnStartOverlay)
-        btnStopFloating = homeView.findViewById(R.id.btnStopFloating)
-        btnRecordGesture = homeView.findViewById(R.id.btnRecordGesture)
-        lblRecordedStatus = homeView.findViewById(R.id.lblRecordedStatus)
-
-        homeViewsReady = true
+        statusText = findViewById(R.id.statusText)
+        radioClick = findViewById(R.id.radioClick)
+        radioSwipe = findViewById(R.id.radioSwipe)
+        modeIndicator = findViewById(R.id.modeIndicator)
+        swipeParams = findViewById(R.id.swipeParams)
+        radioSwipeManual = findViewById(R.id.radioSwipeManual)
+        radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
+        swipeMethodIndicator = findViewById(R.id.swipeMethodIndicator)
+        manualSwipeParams = findViewById(R.id.manualSwipeParams)
+        gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
+        inputSwipeX1 = findViewById(R.id.inputSwipeX1)
+        inputSwipeY1 = findViewById(R.id.inputSwipeY1)
+        inputSwipeX2 = findViewById(R.id.inputSwipeX2)
+        inputSwipeY2 = findViewById(R.id.inputSwipeY2)
+        inputSwipeDuration = findViewById(R.id.inputSwipeDuration)
+        inputDelay = findViewById(R.id.inputDelay)
+        inputRepeat = findViewById(R.id.inputRepeat)
+        checkInfinite = findViewById(R.id.checkInfinite)
+        btnStartFloating = findViewById(R.id.btnStartFloating)
+        btnStartOverlay = findViewById(R.id.btnStartOverlay)
+        btnStopFloating = findViewById(R.id.btnStopFloating)
+        btnRecordGesture = findViewById(R.id.btnRecordGesture)
+        lblRecordedStatus = findViewById(R.id.lblRecordedStatus)
 
         savedInstanceState?.let {
             pendingPermissionStep = try {
@@ -157,13 +95,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        homeView.findViewById<Button>(R.id.btnEnableService).setOnClickListener {
+        findViewById<Button>(R.id.btnEnableService).setOnClickListener {
             showWarningDialog {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }
 
-        homeView.findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
+        findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!Settings.canDrawOverlays(this)) {
                     Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
@@ -247,6 +185,26 @@ class MainActivity : AppCompatActivity() {
         checkInfinite.setOnCheckedChangeListener { _, checked ->
             inputRepeat.isEnabled = !checked
             saveConfig()
+        }
+
+        // 底部导航栏
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    // 主页 - 当前页面
+                    true
+                }
+                R.id.nav_program -> {
+                    Toast.makeText(this, "程序页面 - 开发中", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_settings -> {
+                    Toast.makeText(this, "设置页面 - 开发中", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
         }
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
@@ -358,8 +316,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateStatus() {
-        if (!homeViewsReady) return
-
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
 
