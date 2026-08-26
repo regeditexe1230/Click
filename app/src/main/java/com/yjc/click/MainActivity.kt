@@ -64,6 +64,14 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // 只让底部导航栏区域透明延伸
+        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav.setOnApplyWindowInsetsListener { view, insets ->
+            val systemBars = insets.getInsets(android.view.WindowInsets.Type.systemBars())
+            view.setPadding(0, 0, 0, systemBars.bottom)
+            insets
+        }
+
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
