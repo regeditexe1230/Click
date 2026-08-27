@@ -280,15 +280,18 @@ class MainActivity : AppCompatActivity() {
 
             // 切换页面动画
             if (newItem != oldItem) {
+                val exitAnim = if (goingForward) R.anim.slide_out_left else R.anim.slide_out_right
+                val enterAnim = if (goingForward) R.anim.slide_in_right else R.anim.slide_in_left
+
+                // 退出动画
+                val exitAnimation = android.view.animation.AnimationUtils.loadAnimation(this, exitAnim)
+                oldItem.startAnimation(exitAnimation)
                 oldItem.visibility = View.GONE
+
+                // 进入动画
                 newItem.visibility = View.VISIBLE
-                
-                // 淡入动画
-                newItem.alpha = 0f
-                newItem.animate()
-                    .alpha(1f)
-                    .setDuration(200)
-                    .start()
+                val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
+                newItem.startAnimation(enterAnimation)
             }
 
             // 更新顶栏标题
