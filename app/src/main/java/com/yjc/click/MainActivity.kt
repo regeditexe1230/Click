@@ -71,6 +71,9 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // 恢复选中的底部导航项
+        val savedItemId = savedInstanceState?.getInt("selected_nav_item", R.id.nav_home) ?: R.id.nav_home
+
         // 顶栏适配状态栏
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, windowInsets ->
@@ -216,8 +219,19 @@ class MainActivity : AppCompatActivity() {
         val homeContent = findViewById<View>(R.id.home_content)
         val programPage = findViewById<View>(R.id.program_page)
         val settingsPage = findViewById<View>(R.id.settings_page)
-        var previousItemId = R.id.nav_home
+        var previousItemId = savedItemId
         var settingsFragmentLoaded = false
+
+        // 恢复选中的页面
+        homeContent.visibility = if (savedItemId == R.id.nav_home) View.VISIBLE else View.GONE
+        programPage.visibility = if (savedItemId == R.id.nav_program) View.VISIBLE else View.GONE
+        settingsPage.visibility = if (savedItemId == R.id.nav_settings) View.VISIBLE else View.GONE
+        toolbar.title = when (savedItemId) {
+            R.id.nav_program -> "程序"
+            R.id.nav_settings -> "设置"
+            else -> "Click"
+        }
+        bottomNavigation.selectedItemId = savedItemId
 
         bottomNavigation.setOnItemSelectedListener { item ->
             val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
@@ -364,6 +378,9 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("pending_step", pendingPermissionStep.name)
+        // 保存当前选中的底部导航项
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        outState.putInt("selected_nav_item", bottomNavigation.selectedItemId)
     }
 
     override fun onPause() {
