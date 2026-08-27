@@ -148,10 +148,10 @@ class MainActivity : AppCompatActivity() {
         radioSwipeManual.isSelected = !isGestureMode
         radioSwipeGesture.isSelected = isGestureMode
 
-        // 延迟初始化指示器，确保布局完全完成
-        radioClick.post {
+        // 使用Handler延迟确保布局完全完成
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             refreshIndicators()
-        }
+        }, 100)
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
