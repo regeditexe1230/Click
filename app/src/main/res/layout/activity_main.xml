@@ -482,13 +482,11 @@
         android:visibility="gone" />
 
     <!-- 设置页面 -->
-    <LinearLayout
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/settings_page"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
         android:visibility="gone" />
 
     <!-- 底部导航栏 -->

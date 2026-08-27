@@ -246,6 +246,13 @@ class MainActivity : AppCompatActivity() {
 
         // 主页图标初始为填充状态（默认就是ic_home）
 
+        // 加载设置页面Fragment
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settings_page, SettingsFragment())
+                .commit()
+        }
+
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
         onTextChanged(inputSwipeY1) { saveConfig(); updateStatus() }
         onTextChanged(inputSwipeX2) { saveConfig(); updateStatus() }
