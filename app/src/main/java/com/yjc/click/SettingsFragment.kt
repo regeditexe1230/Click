@@ -1,7 +1,11 @@
 package com.yjc.click
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,9 +32,19 @@ class SettingsFragment : Fragment() {
 
         languageValue = view.findViewById(R.id.settings_language_value)
 
-        // 语言设置
+        // 语言设置 - Android 13+ 使用系统设置，低版本使用对话框
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            showLanguageDialog()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    showLanguageDialog()
+                }
+            } else {
+                showLanguageDialog()
+            }
         }
 
         // 字体设置（暂无功能）
