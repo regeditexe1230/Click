@@ -19,9 +19,9 @@
             android:text="文字"
             android:textSize="14sp"
             android:textColor="?attr/colorPrimary"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="24dp"
             android:paddingTop="16dp"
-            android:paddingBottom="12dp" />
+            android:paddingBottom="10dp" />
 
         <!-- 圆角框包裹设置项 -->
         <LinearLayout
@@ -29,6 +29,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_card_bg"
+            android:padding="2dp"
             android:clipToOutline="true">
 
             <!-- 语言设置 -->
@@ -49,7 +50,7 @@
                     android:layout_height="24dp"
                     android:src="@drawable/ic_language"
                     android:tint="?attr/colorOnSurfaceVariant"
-                    android:layout_marginEnd="16dp" />
+                    android:layout_marginEnd="22dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -101,7 +102,7 @@
                     android:layout_height="24dp"
                     android:src="@drawable/ic_font"
                     android:tint="?attr/colorOnSurfaceVariant"
-                    android:layout_marginEnd="16dp" />
+                    android:layout_marginEnd="22dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
