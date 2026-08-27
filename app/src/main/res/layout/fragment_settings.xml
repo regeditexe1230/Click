@@ -18,7 +18,7 @@
             android:textSize="14sp"
             android:textColor="?attr/colorPrimary"
             android:paddingHorizontal="14dp"
-            android:paddingTop="16dp"
+            android:paddingTop="0dp"
             android:paddingBottom="10dp" />
 
         <!-- 圆角容器 -->
