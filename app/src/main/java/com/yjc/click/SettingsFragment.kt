@@ -9,7 +9,6 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -32,30 +31,14 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // 语言设置
-        val languageItem = view.findViewById<View>(R.id.settings_language)
-        languageItem?.let {
-            it.findViewById<ImageView>(R.id.settings_icon)?.setImageResource(R.drawable.ic_settings)
-            it.findViewById<TextView>(R.id.settings_title)?.text = "语言"
-            it.findViewById<TextView>(R.id.settings_description)?.text = "更改应用语言"
-            languageValue = it.findViewById(R.id.settings_value)!!
-            it.setOnClickListener {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                    startActivity(intent)
-                } else {
-                    showLanguageDialog()
-                }
-            }
+        languageValue = view.findViewById(R.id.settings_language_value)
+        view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
+            showLanguageDialog()
         }
 
-        // 字体设置
-        val fontItem = view.findViewById<View>(R.id.settings_font)
-        fontItem?.let {
-            it.findViewById<ImageView>(R.id.settings_icon)?.setImageResource(R.drawable.ic_settings)
-            it.findViewById<TextView>(R.id.settings_title)?.text = "字体"
-            it.findViewById<TextView>(R.id.settings_description)?.text = "更改应用字体"
-            it.findViewById<TextView>(R.id.settings_value)?.text = "默认"
+        // 字体设置（暂无功能）
+        view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
+            // 暂无功能
         }
 
         updateLanguageDisplay()
