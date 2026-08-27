@@ -1,11 +1,6 @@
 package com.yjc.click
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,23 +27,14 @@ class SettingsFragment : Fragment() {
 
         languageValue = view.findViewById(R.id.settings_language_value)
 
-        // 延迟设置点击监听器，确保视图完全加载
-        view.post {
-            // 语言设置
-            view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-                try {
-                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    showLanguageDialog()
-                }
-            }
+        // 语言设置
+        view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
+            showLanguageDialog()
+        }
 
-            // 字体设置（暂无功能）
-            view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
-                // 暂无功能
-            }
+        // 字体设置（暂无功能）
+        view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
+            // 暂无功能
         }
 
         updateLanguageDisplay()
