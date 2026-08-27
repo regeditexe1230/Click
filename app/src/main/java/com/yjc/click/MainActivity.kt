@@ -240,12 +240,23 @@ class MainActivity : AppCompatActivity() {
             radioClick.isSelected = false
             radioSwipe.isSelected = true
             swipeParams.visibility = View.VISIBLE
+            // 延迟设置指示器位置，等待布局完成
+            modeIndicator.post {
+                modeIndicator.x = radioSwipe.left.toFloat()
+                modeIndicator.layoutParams.width = radioSwipe.width
+                modeIndicator.requestLayout()
+            }
         }
         if (isGestureMode) {
             radioSwipeManual.isSelected = false
             radioSwipeGesture.isSelected = true
             manualSwipeParams.visibility = View.GONE
             gestureSwipeSection.visibility = View.VISIBLE
+            swipeMethodIndicator.post {
+                swipeMethodIndicator.x = radioSwipeGesture.left.toFloat()
+                swipeMethodIndicator.layoutParams.width = radioSwipeGesture.width
+                swipeMethodIndicator.requestLayout()
+            }
         }
 
         bottomNavigation.setOnItemSelectedListener { item ->
