@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+    <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">権限状態</string>
+    <string name="enable_accessibility_service">ユーザー補助サービスを有効化</string>
+    <string name="enable_overlay_permission">オーバーレイ権限を有効化</string>
+
+    <string name="execution_mode">実行モード</string>
+    <string name="click">クリック</string>
+    <string name="swipe">スワイプ</string>
+
+    <string name="swipe_method">スワイプ方法</string>
+    <string name="manual_params">手動パラメータ</string>
+    <string name="gesture_recording">ジェスチャー録画</string>
+
+    <string name="start_point">開始点</string>
+    <string name="end_point">終了点</string>
+    <string name="duration">時間</string>
+    <string name="start_x">開始 X (横座標)</string>
+    <string name="start_y">開始 Y (縦座標)</string>
+    <string name="end_x">終了 X (横座標)</string>
+    <string name="end_y">終了 Y (縦座標)</string>
+    <string name="swipe_duration">スワイプ時間(ミリ秒)</string>
+
+    <string name="record_gesture">ジェスチャー録画 (画面をスワイプ)</string>
+
+    <string name="execution_settings">実行設定</string>
+    <string name="pre_execution_delay">実行前遅延(ミリ秒)</string>
+    <string name="delay_milliseconds">遅延ミリ秒</string>
+    <string name="repeat_count">繰り返し回数</string>
+    <string name="count">回数</string>
+    <string name="infinite_loop">無限ループ</string>
+
+    <string name="start_floating_ball">フローティング開始</string>
+    <string name="stop_floating_ball">フローティング停止</string>
+
+    <string name="program_page">プログラム</string>
+    <string name="under_development">このページは開発中です...</string>
+
+    <string name="settings">設定</string>
+    <string name="text_section">テキスト</string>
+    <string name="language">言語</string>
+    <string name="change_app_language">アプリの言語を変更</string>
+    <string name="follow_system">システムに従う</string>
+    <string name="font">フォント</string>
+    <string name="change_app_font">アプリのフォントを変更</string>
+    <string name="default_font">デフォルト</string>
+
+    <string name="nav_home">ホーム</string>
+    <string name="nav_program">プログラム</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="select_language">言語を選択</string>
+    <string name="cancel">キャンセル</string>
+    <string name="confirm">確認</string>
+    <string name="ok">OK</string>
+
+    <string name="lang_follow_system">システムに従う</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+</resources>
