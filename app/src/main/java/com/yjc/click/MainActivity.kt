@@ -148,17 +148,10 @@ class MainActivity : AppCompatActivity() {
         radioSwipeManual.isSelected = !isGestureMode
         radioSwipeGesture.isSelected = isGestureMode
 
-        // 使用ViewTreeObserver确保布局完成后再设置指示器
-        modeIndicator.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                modeIndicator.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                val params = modeIndicator.layoutParams
-                params.width = radioClick.width
-                modeIndicator.layoutParams = params
-                modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
-                modeIndicator.visibility = View.VISIBLE
-            }
-        })
+        // 延迟初始化指示器，确保布局完全完成
+        window.decorView.post {
+            refreshIndicators()
+        }
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
@@ -596,6 +589,24 @@ class MainActivity : AppCompatActivity() {
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
+    }
+
+    private fun refreshIndicators() {
+        // 刷新执行模式指示器
+        val modeParams = modeIndicator.layoutParams
+        modeParams.width = radioClick.width
+        modeIndicator.layoutParams = modeParams
+        modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
+        modeIndicator.visibility = View.VISIBLE
+
+        // 刷新滑动方式指示器
+        if (isSwipeMode) {
+            val swipeParams = swipeMethodIndicator.layoutParams
+            swipeParams.width = radioSwipeManual.width
+            swipeMethodIndicator.layoutParams = swipeParams
+            swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
+            swipeMethodIndicator.visibility = View.VISIBLE
+        }
     }
 
     private fun expandView(view: View) {
