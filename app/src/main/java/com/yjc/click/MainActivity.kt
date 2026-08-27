@@ -150,8 +150,9 @@ class MainActivity : AppCompatActivity() {
 
         // 使用Handler延迟确保布局完全完成
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            android.util.Log.d("MainActivity", "refreshIndicators called, radioClick.width=${radioClick.width}, modeIndicator.width=${modeIndicator.width}")
             refreshIndicators()
-        }, 100)
+        }, 500)
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
@@ -593,13 +594,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshIndicators() {
         // 刷新执行模式指示器
+        android.util.Log.d("MainActivity", "refreshIndicators: radioClick.width=${radioClick.width}, radioSwipe.left=${radioSwipe.left}, radioClick.left=${radioClick.left}, isSwipeMode=$isSwipeMode")
         if (radioClick.width > 0) {
             val modeParams = modeIndicator.layoutParams
             modeParams.width = radioClick.width
             modeIndicator.layoutParams = modeParams
             modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
             modeIndicator.visibility = View.VISIBLE
-            modeIndicator.invalidate()
+            android.util.Log.d("MainActivity", "modeIndicator set: width=${modeParams.width}, x=${modeIndicator.x}")
+        } else {
+            android.util.Log.d("MainActivity", "radioClick.width is 0, skipping")
         }
 
         // 刷新滑动方式指示器
@@ -609,7 +613,6 @@ class MainActivity : AppCompatActivity() {
             swipeMethodIndicator.layoutParams = swipeParams
             swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
             swipeMethodIndicator.visibility = View.VISIBLE
-            swipeMethodIndicator.invalidate()
         }
     }
 
