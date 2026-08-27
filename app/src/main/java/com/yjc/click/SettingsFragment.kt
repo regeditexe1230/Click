@@ -18,6 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class SettingsFragment : Fragment() {
 
     private lateinit var languageValue: TextView
+    private lateinit var languageDesc: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,11 +33,18 @@ class SettingsFragment : Fragment() {
 
         // 语言设置
         languageValue = view.findViewById(R.id.settings_language_value)
+        languageDesc = view.findViewById(R.id.settings_language_desc)
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            // 直接跳转系统语言设置页
-            val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-            intent.data = Uri.fromParts("package", requireContext().packageName, null)
-            startActivity(intent)
+            val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            if (isAboveTiramisu) {
+                // Android 13+ 使用系统语言设置
+                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                startActivity(intent)
+            } else {
+                // 低版本使用自定义对话框
+                showLanguageDialog()
+            }
         }
 
         // 字体设置（暂无功能）
@@ -52,7 +60,40 @@ class SettingsFragment : Fragment() {
         updateLanguageDisplay()
     }
 
+    private fun showLanguageDialog() {
+        val languages = arrayOf("跟随系统", "简体中文", "繁體中文", "English", "日本語", "한국어")
+        val localeCodes = arrayOf("", "zh-CN", "zh-TW", "en", "ja", "ko")
+
+        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val currentLocale = prefs.getString("app_locale", "")
+        val currentIndex = localeCodes.indexOf(currentLocale).coerceAtLeast(0)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择语言")
+            .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
+                val selectedLocale = localeCodes[which]
+                prefs.edit().putString("app_locale", selectedLocale).apply()
+                applyLanguage(selectedLocale)
+                updateLanguageDisplay()
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun applyLanguage(localeCode: String) {
+        val localeListCompat = if (localeCode.isEmpty()) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(localeCode)
+        }
+        AppCompatDelegate.setApplicationLocales(localeListCompat)
+    }
+
     private fun updateLanguageDisplay() {
+        val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        languageDesc.text = if (isAboveTiramisu) "更改应用语言" else "更改应用语言（需Android 13+）"
+
         val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
         languageValue.text = when {
             currentLocale.isEmpty() || currentLocale == "und" -> "跟随系统"
