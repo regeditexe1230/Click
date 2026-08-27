@@ -1,11 +1,7 @@
 package com.yjc.click
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -37,6 +33,7 @@ class SettingsFragment : Fragment() {
             showLanguageDialog()
         }
 
+        // 字体设置（暂无功能）
         view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
             // 暂无功能
         }
@@ -53,7 +50,7 @@ class SettingsFragment : Fragment() {
         val languages = arrayOf("跟随系统", "简体中文", "繁體中文", "English", "日本語", "한국어")
         val localeCodes = arrayOf("", "zh-CN", "zh-TW", "en", "ja", "ko")
 
-        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val currentLocale = prefs.getString("app_locale", "")
         val currentIndex = localeCodes.indexOf(currentLocale).coerceAtLeast(0)
 
@@ -63,7 +60,6 @@ class SettingsFragment : Fragment() {
                 val selectedLocale = localeCodes[which]
                 prefs.edit().putString("app_locale", selectedLocale).apply()
                 applyLanguage(selectedLocale)
-                updateLanguageDisplay()
                 dialog.dismiss()
             }
             .setNegativeButton("取消", null)
