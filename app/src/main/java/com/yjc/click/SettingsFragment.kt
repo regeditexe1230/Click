@@ -47,22 +47,36 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showLanguageDialog() {
-        val languages = arrayOf("跟随系统", "简体中文", "繁體中文", "English", "日本語", "한국어")
+        val languages = arrayOf(
+            getString(R.string.lang_follow_system),
+            getString(R.string.lang_simplified_chinese),
+            getString(R.string.lang_traditional_chinese),
+            getString(R.string.lang_english),
+            getString(R.string.lang_japanese),
+            getString(R.string.lang_korean)
+        )
         val localeCodes = arrayOf("", "zh-CN", "zh-TW", "en", "ja", "ko")
 
-        val prefs = requireContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        val currentLocale = prefs.getString("app_locale", "")
-        val currentIndex = localeCodes.indexOf(currentLocale).coerceAtLeast(0)
+        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        val currentIndex = when {
+            currentLocale.isEmpty() || currentLocale == "und" -> 0
+            currentLocale.startsWith("zh-CN") -> 1
+            currentLocale.startsWith("zh-TW") || currentLocale.startsWith("zh-Hant") -> 2
+            currentLocale.startsWith("en") -> 3
+            currentLocale.startsWith("ja") -> 4
+            currentLocale.startsWith("ko") -> 5
+            else -> 0
+        }
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("选择语言")
+            .setTitle(R.string.select_language)
             .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
                 val selectedLocale = localeCodes[which]
-                prefs.edit().putString("app_locale", selectedLocale).apply()
                 applyLanguage(selectedLocale)
+                updateLanguageDisplay()
                 dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -78,13 +92,13 @@ class SettingsFragment : Fragment() {
     private fun updateLanguageDisplay() {
         val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
         languageValue.text = when {
-            currentLocale.isEmpty() || currentLocale == "und" -> "跟随系统"
-            currentLocale.startsWith("zh-CN") -> "简体中文"
-            currentLocale.startsWith("zh-TW") || currentLocale.startsWith("zh-Hant") -> "繁體中文"
-            currentLocale.startsWith("en") -> "English"
-            currentLocale.startsWith("ja") -> "日本語"
-            currentLocale.startsWith("ko") -> "한국어"
-            else -> "跟随系统"
+            currentLocale.isEmpty() || currentLocale == "und" -> getString(R.string.lang_follow_system)
+            currentLocale.startsWith("zh-CN") -> getString(R.string.lang_simplified_chinese)
+            currentLocale.startsWith("zh-TW") || currentLocale.startsWith("zh-Hant") -> getString(R.string.lang_traditional_chinese)
+            currentLocale.startsWith("en") -> getString(R.string.lang_english)
+            currentLocale.startsWith("ja") -> getString(R.string.lang_japanese)
+            currentLocale.startsWith("ko") -> getString(R.string.lang_korean)
+            else -> getString(R.string.lang_follow_system)
         }
     }
 }
