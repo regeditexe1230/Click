@@ -146,13 +146,17 @@ class MainActivity : AppCompatActivity() {
         radioClick.isSelected = true
         radioSwipeManual.isSelected = true
 
-        // 延迟初始化指示器，确保布局完成
-        radioClick.post {
-            val params = modeIndicator.layoutParams
-            params.width = radioClick.width - 8
-            modeIndicator.layoutParams = params
-            modeIndicator.visibility = View.VISIBLE
-        }
+        // 使用ViewTreeObserver确保布局完成后再设置指示器
+        modeIndicator.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                modeIndicator.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                val params = modeIndicator.layoutParams
+                params.width = radioClick.width
+                modeIndicator.layoutParams = params
+                modeIndicator.x = 0f
+                modeIndicator.visibility = View.VISIBLE
+            }
+        })
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
