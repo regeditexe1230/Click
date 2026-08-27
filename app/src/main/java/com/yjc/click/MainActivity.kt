@@ -145,16 +145,13 @@ class MainActivity : AppCompatActivity() {
         // 初始状态
         radioClick.isSelected = true
         radioSwipeManual.isSelected = true
-        modeIndicator.post {
-            val params = modeIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
+
+        // 延迟初始化指示器，确保布局完成
+        radioClick.post {
+            val params = modeIndicator.layoutParams
             params.width = radioClick.width - 8
             modeIndicator.layoutParams = params
-            // 设置指示器位置
-            if (isSwipeMode) {
-                modeIndicator.x = radioSwipe.left.toFloat()
-            } else {
-                modeIndicator.x = 0f
-            }
+            modeIndicator.visibility = View.VISIBLE
         }
 
         radioClick.setOnClickListener {
