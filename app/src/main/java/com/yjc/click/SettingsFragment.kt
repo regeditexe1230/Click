@@ -35,16 +35,7 @@ class SettingsFragment : Fragment() {
         languageValue = view.findViewById(R.id.settings_language_value)
         languageDesc = view.findViewById(R.id.settings_language_desc)
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-            if (isAboveTiramisu) {
-                // Android 13+ 使用系统语言设置
-                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                startActivity(intent)
-            } else {
-                // 低版本使用自定义对话框
-                showLanguageDialog()
-            }
+            openLanguageSettings()
         }
 
         // 字体设置（暂无功能）
@@ -58,6 +49,22 @@ class SettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateLanguageDisplay()
+    }
+
+    private fun openLanguageSettings() {
+        try {
+            // Android 13+ 使用系统语言设置
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                startActivity(intent)
+            } else {
+                showLanguageDialog()
+            }
+        } catch (e: Exception) {
+            // 如果系统设置不可用，使用自定义对话框
+            showLanguageDialog()
+        }
     }
 
     private fun showLanguageDialog() {
@@ -91,9 +98,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun updateLanguageDisplay() {
-        val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        languageDesc.text = if (isAboveTiramisu) "更改应用语言" else "更改应用语言（需Android 13+）"
-
         val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
         languageValue.text = when {
             currentLocale.isEmpty() || currentLocale == "und" -> "跟随系统"
