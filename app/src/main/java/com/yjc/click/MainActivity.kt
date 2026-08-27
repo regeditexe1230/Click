@@ -292,10 +292,37 @@ class MainActivity : AppCompatActivity() {
                 newItem.visibility = View.VISIBLE
                 val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
                 newItem.startAnimation(enterAnimation)
+
+                // 顶栏标题淡入淡出动画
+                toolbar.animate()
+                    .alpha(0f)
+                    .setDuration(126)
+                    .withEndAction {
+                        toolbar.title = when (item.itemId) {
+                            R.id.nav_home -> "Click"
+                            R.id.nav_program -> getString(R.string.nav_program)
+                            R.id.nav_settings -> getString(R.string.nav_settings)
+                            else -> "Click"
+                        }
+                        toolbar.animate()
+                            .alpha(1f)
+                            .setDuration(162)
+                            .start()
+                    }
+                    .start()
+            } else {
+                // 首次加载时设置标题
+                toolbar.title = when (item.itemId) {
+                    R.id.nav_home -> "Click"
+                    R.id.nav_program -> getString(R.string.nav_program)
+                    R.id.nav_settings -> getString(R.string.nav_settings)
+                    else -> "Click"
+                }
             }
 
-            // 更新顶栏标题
-            toolbar.title = when (item.itemId) {
+            // 更新顶栏标题（备用）
+            if (newItem == oldItem) {
+                toolbar.title = when (item.itemId) {
                 R.id.nav_home -> "Click"
                 R.id.nav_program -> getString(R.string.nav_program)
                 R.id.nav_settings -> getString(R.string.nav_settings)
