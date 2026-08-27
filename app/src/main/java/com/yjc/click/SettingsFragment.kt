@@ -30,14 +30,25 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 语言设置
         languageValue = view.findViewById(R.id.settings_language_value)
-        view.findViewById<View>(R.id.settings_language_card)?.setOnClickListener {
-            openLanguageSettings()
+
+        // 语言设置 - 直接从朋友项目复制
+        val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
+            if (isAboveTiramisu) {
+                try {
+                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    showLanguageDialog()
+                }
+            } else {
+                showLanguageDialog()
+            }
         }
 
-        // 字体设置（暂无功能）
-        view.findViewById<View>(R.id.settings_font_card)?.setOnClickListener {
+        view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
             // 暂无功能
         }
 
@@ -47,20 +58,6 @@ class SettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateLanguageDisplay()
-    }
-
-    private fun openLanguageSettings() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                startActivity(intent)
-            } else {
-                showLanguageDialog()
-            }
-        } catch (e: Exception) {
-            showLanguageDialog()
-        }
     }
 
     private fun showLanguageDialog() {
