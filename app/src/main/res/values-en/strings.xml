@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+    <string name="accessibility_service_description">Simulated click assist service for performing screen clicks and swipe operations</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+</resources>
