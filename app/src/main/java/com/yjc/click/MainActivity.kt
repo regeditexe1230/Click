@@ -143,22 +143,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 初始状态
-        radioClick.isSelected = !isSwipeMode
-        radioSwipe.isSelected = isSwipeMode
-        radioSwipeManual.isSelected = !isGestureMode
-        radioSwipeGesture.isSelected = isGestureMode
-
-        // 循环检查直到视图宽度有效
-        val checkRunnable = object : Runnable {
-            override fun run() {
-                if (radioClick.width > 0) {
-                    refreshIndicators()
-                } else {
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 50)
-                }
-            }
+        radioClick.isSelected = true
+        radioSwipeManual.isSelected = true
+        modeIndicator.post {
+            val params = modeIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
+            params.width = radioClick.width - 8
+            modeIndicator.layoutParams = params
         }
-        android.os.Handler(android.os.Looper.getMainLooper()).post(checkRunnable)
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
@@ -259,70 +250,14 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigation.setOnItemSelectedListener { item ->
             val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
-            val newItem = when (item.itemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
-            val oldItem = when (previousItemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
 
-            // 判断切换方向
-            val navItems = listOf(R.id.nav_home, R.id.nav_program, R.id.nav_settings)
-            val oldIndex = navItems.indexOf(previousItemId)
-            val newIndex = navItems.indexOf(item.itemId)
-            val goingForward = newIndex > oldIndex
+            // 切换页面
+            homeContent.visibility = if (item.itemId == R.id.nav_home) View.VISIBLE else View.GONE
+            programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
+            settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
 
-            // 切换页面动画
-            if (newItem != oldItem) {
-                val exitAnim = if (goingForward) R.anim.slide_out_left else R.anim.slide_out_right
-                val enterAnim = if (goingForward) R.anim.slide_in_right else R.anim.slide_in_left
-
-                // 退出动画
-                val exitAnimation = android.view.animation.AnimationUtils.loadAnimation(this, exitAnim)
-                oldItem.startAnimation(exitAnimation)
-                oldItem.visibility = View.GONE
-
-                // 进入动画
-                newItem.visibility = View.VISIBLE
-                val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
-                newItem.startAnimation(enterAnimation)
-
-                // 顶栏标题淡入淡出动画
-                toolbar.animate()
-                    .alpha(0f)
-                    .setDuration(126)
-                    .withEndAction {
-                        toolbar.title = when (item.itemId) {
-                            R.id.nav_home -> "Click"
-                            R.id.nav_program -> getString(R.string.nav_program)
-                            R.id.nav_settings -> getString(R.string.nav_settings)
-                            else -> "Click"
-                        }
-                        toolbar.animate()
-                            .alpha(1f)
-                            .setDuration(162)
-                            .start()
-                    }
-                    .start()
-            } else {
-                // 首次加载时设置标题
-                toolbar.title = when (item.itemId) {
-                    R.id.nav_home -> "Click"
-                    R.id.nav_program -> getString(R.string.nav_program)
-                    R.id.nav_settings -> getString(R.string.nav_settings)
-                    else -> "Click"
-                }
-            }
-
-            // 更新顶栏标题（备用）
-            if (newItem == oldItem) {
-                toolbar.title = when (item.itemId) {
+            // 更新顶栏标题
+            toolbar.title = when (item.itemId) {
                 R.id.nav_home -> "Click"
                 R.id.nav_program -> getString(R.string.nav_program)
                 R.id.nav_settings -> getString(R.string.nav_settings)
@@ -654,30 +589,6 @@ class MainActivity : AppCompatActivity() {
             .start()
     }
 
-    private fun refreshIndicators() {
-        // 刷新执行模式指示器
-        android.util.Log.d("MainActivity", "refreshIndicators: radioClick.width=${radioClick.width}, radioSwipe.left=${radioSwipe.left}, radioClick.left=${radioClick.left}, isSwipeMode=$isSwipeMode")
-        if (radioClick.width > 0) {
-            val modeParams = modeIndicator.layoutParams
-            modeParams.width = radioClick.width
-            modeIndicator.layoutParams = modeParams
-            modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
-            modeIndicator.visibility = View.VISIBLE
-            android.util.Log.d("MainActivity", "modeIndicator set: width=${modeParams.width}, x=${modeIndicator.x}")
-        } else {
-            android.util.Log.d("MainActivity", "radioClick.width is 0, skipping")
-        }
-
-        // 刷新滑动方式指示器
-        if (isSwipeMode && radioSwipeManual.width > 0) {
-            val swipeParams = swipeMethodIndicator.layoutParams
-            swipeParams.width = radioSwipeManual.width
-            swipeMethodIndicator.layoutParams = swipeParams
-            swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
-            swipeMethodIndicator.visibility = View.VISIBLE
-        }
-    }
-
     private fun expandView(view: View) {
         if (view.visibility == View.VISIBLE && view.height > 0) return
         
@@ -873,6 +784,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return null
+    }
+
+    private fun refreshIndicators() {
+        // 刷新执行模式指示器
+        if (radioClick.width > 0) {
+            val modeParams = modeIndicator.layoutParams
+            modeParams.width = radioClick.width
+            modeIndicator.layoutParams = modeParams
+            modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
+            modeIndicator.visibility = View.VISIBLE
+        }
+
+        // 刷新滑动方式指示器
+        if (isSwipeMode && radioSwipeManual.width > 0) {
+            val swipeParams = swipeMethodIndicator.layoutParams
+            swipeParams.width = radioSwipeManual.width
+            swipeMethodIndicator.layoutParams = swipeParams
+            swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
+            swipeMethodIndicator.visibility = View.VISIBLE
+        }
     }
 
     private fun applyLanguage() {
