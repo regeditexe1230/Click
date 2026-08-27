@@ -32,20 +32,9 @@ class SettingsFragment : Fragment() {
 
         languageValue = view.findViewById(R.id.settings_language_value)
 
-        // 语言设置 - 直接从朋友项目复制
-        val isAboveTiramisu = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        // 语言设置
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            if (isAboveTiramisu) {
-                try {
-                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    showLanguageDialog()
-                }
-            } else {
-                showLanguageDialog()
-            }
+            showLanguageDialog()
         }
 
         view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
