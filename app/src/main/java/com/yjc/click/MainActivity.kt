@@ -90,6 +90,19 @@ class MainActivity : AppCompatActivity() {
             windowInsets
         }
 
+        // 底栏启动动画：从底部滑入（仅首次启动）
+        if (savedInstanceState == null) {
+            bottomNav.post {
+                bottomNav.translationY = bottomNav.height.toFloat()
+                bottomNav.animate()
+                    .translationY(0f)
+                    .setDuration(300)
+                    .setStartDelay(100)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
+                    .start()
+            }
+        }
+
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
         radioSwipe = findViewById(R.id.radioSwipe)
