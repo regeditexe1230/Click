@@ -33,7 +33,10 @@ class SettingsFragment : Fragment() {
         // 语言设置
         languageValue = view.findViewById(R.id.settings_language_value)
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            showLanguageDialog()
+            // 直接跳转系统语言设置页
+            val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+            intent.data = Uri.fromParts("package", requireContext().packageName, null)
+            startActivity(intent)
         }
 
         // 字体设置（暂无功能）
@@ -44,46 +47,20 @@ class SettingsFragment : Fragment() {
         updateLanguageDisplay()
     }
 
-    private fun showLanguageDialog() {
-        val languages = arrayOf("跟随系统", "简体中文", "繁體中文", "English", "日本語", "한국어")
-        val localeCodes = arrayOf("", "zh-CN", "zh-TW", "en", "ja", "ko")
-
-        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val currentLocale = prefs.getString("app_locale", "")
-        val currentIndex = localeCodes.indexOf(currentLocale).coerceAtLeast(0)
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("选择语言")
-            .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
-                val selectedLocale = localeCodes[which]
-                prefs.edit().putString("app_locale", selectedLocale).apply()
-                applyLanguage(selectedLocale)
-                updateLanguageDisplay()
-                dialog.dismiss()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
-    private fun applyLanguage(localeCode: String) {
-        val localeListCompat = if (localeCode.isEmpty()) {
-            LocaleListCompat.getEmptyLocaleList()
-        } else {
-            LocaleListCompat.forLanguageTags(localeCode)
-        }
-        AppCompatDelegate.setApplicationLocales(localeListCompat)
+    override fun onResume() {
+        super.onResume()
+        updateLanguageDisplay()
     }
 
     private fun updateLanguageDisplay() {
-        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val currentLocale = prefs.getString("app_locale", "")
-        languageValue.text = when (currentLocale) {
-            "" -> "跟随系统"
-            "zh-CN" -> "简体中文"
-            "zh-TW" -> "繁體中文"
-            "en" -> "English"
-            "ja" -> "日本語"
-            "ko" -> "한국어"
+        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        languageValue.text = when {
+            currentLocale.isEmpty() || currentLocale == "und" -> "跟随系统"
+            currentLocale.startsWith("zh-CN") -> "简体中文"
+            currentLocale.startsWith("zh-TW") || currentLocale.startsWith("zh-Hant") -> "繁體中文"
+            currentLocale.startsWith("en") -> "English"
+            currentLocale.startsWith("ja") -> "日本語"
+            currentLocale.startsWith("ko") -> "한국어"
             else -> "跟随系统"
         }
     }
