@@ -25,21 +25,32 @@
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp" />
 
-            <!-- 语言 -->
-            <include
-                android:id="@+id/settings_language"
-                layout="@layout/item_settings" />
-
-            <View
+            <!-- 圆角框包裹设置项 -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginStart="56dp"
-                android:background="?attr/colorOutlineVariant" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_card_bg"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="4dp">
 
-            <!-- 字体 -->
-            <include
-                android:id="@+id/settings_font"
-                layout="@layout/item_settings" />
+                <!-- 语言 -->
+                <include
+                    android:id="@+id/settings_language"
+                    layout="@layout/item_settings" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="56dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- 字体 -->
+                <include
+                    android:id="@+id/settings_font"
+                    layout="@layout/item_settings" />
+
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
