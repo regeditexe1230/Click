@@ -1,10 +1,15 @@
 package com.yjc.click
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -26,17 +31,28 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        languageValue = view.findViewById(R.id.settings_language_value)
-
         // 语言设置
-        view.findViewById<View>(R.id.settings_language).setOnClickListener {
-            showLanguageDialog()
+        val languageItem = view.findViewById<View>(R.id.settings_language)
+        languageItem.findViewById<ImageView>(R.id.settings_icon).setImageResource(R.drawable.ic_settings)
+        languageItem.findViewById<TextView>(R.id.settings_title).text = "语言"
+        languageItem.findViewById<TextView>(R.id.settings_description).text = "更改应用语言"
+        languageValue = languageItem.findViewById(R.id.settings_value)
+        languageItem.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                startActivity(intent)
+            } else {
+                showLanguageDialog()
+            }
         }
 
-        // 字体设置（暂无功能）
-        view.findViewById<View>(R.id.settings_font).setOnClickListener {
-            // 暂无功能
-        }
+        // 字体设置
+        val fontItem = view.findViewById<View>(R.id.settings_font)
+        fontItem.findViewById<ImageView>(R.id.settings_icon).setImageResource(R.drawable.ic_settings)
+        fontItem.findViewById<TextView>(R.id.settings_title).text = "字体"
+        fontItem.findViewById<TextView>(R.id.settings_description).text = "更改应用字体"
+        fontItem.findViewById<TextView>(R.id.settings_value).text = "默认"
 
         updateLanguageDisplay()
     }
