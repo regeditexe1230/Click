@@ -259,11 +259,37 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigation.setOnItemSelectedListener { item ->
             val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
+            val newItem = when (item.itemId) {
+                R.id.nav_home -> homeContent
+                R.id.nav_program -> programPage
+                R.id.nav_settings -> settingsPage
+                else -> homeContent
+            }
+            val oldItem = when (previousItemId) {
+                R.id.nav_home -> homeContent
+                R.id.nav_program -> programPage
+                R.id.nav_settings -> settingsPage
+                else -> homeContent
+            }
 
-            // 切换页面
-            homeContent.visibility = if (item.itemId == R.id.nav_home) View.VISIBLE else View.GONE
-            programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
-            settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
+            // 判断切换方向
+            val navItems = listOf(R.id.nav_home, R.id.nav_program, R.id.nav_settings)
+            val oldIndex = navItems.indexOf(previousItemId)
+            val newIndex = navItems.indexOf(item.itemId)
+            val goingForward = newIndex > oldIndex
+
+            // 切换页面动画
+            if (newItem != oldItem) {
+                oldItem.visibility = View.GONE
+                newItem.visibility = View.VISIBLE
+                
+                // 淡入动画
+                newItem.alpha = 0f
+                newItem.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+            }
 
             // 更新顶栏标题
             toolbar.title = when (item.itemId) {
