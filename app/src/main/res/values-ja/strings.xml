@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Click</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">クリックサービス</string>
+    <string name="notification_recording">ジェスチャー録画中...</string>
+    <string name="notification_infinite">無限ループ中</string>
+    <string name="notification_idle">フローティングボールをタップして実行</string>
+    <string name="notification_title">フローティングボール実行中</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_drag_to_position">まずフローティングボールをクリック位置にドラッグしてください</string>
+    <string name="toast_operation_paused">操作が一時停止されました</string>
+    <string name="toast_enable_overlay">オーバーレイ権限を有効にしてください</string>
+    <string name="toast_overlay_enabled">オーバーレイ権限が有効になりました</string>
+    <string name="toast_fill_manual_params">手動パラメータを入力してください</string>
+    <string name="toast_record_gesture_first">まずジェスチャーを録画してください</string>
+    <string name="toast_need_overlay_for_record">ジェスチャー録画にはオーバーレイ権限が必要です</string>
+    <string name="toast_need_accessibility_for_record">ジェスチャー録画にはユーザー補助サービスが必要です</string>
+    <string name="toast_swipe_to_record">画面をスワイプしてジェスチャーを録画</string>
+    <string name="toast_floating_started">フローティングボールが開始されました</string>
+
+    <!-- Status Text -->
+    <string name="status_accessibility">ユーザー補助：%s</string>
+    <string name="status_overlay">オーバーレイ：%s</string>
+    <string name="status_enabled">✅ 有効</string>
+    <string name="status_disabled">❌ 無効</string>
+    <string name="status_gesture_recorded">ジェスチャー録画済み：%dポイント、%dms</string>
+    <string name="status_gesture_not_recorded">ジェスチャー未録画</string>
+
+    <!-- Dialogs -->
+    <string name="security_warning">セキュリティ警告</string>
+    <string name="usage_instructions">使用説明</string>
+    <string name="floating_ball_instructions">フローティングボールの使い方</string>
     <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
