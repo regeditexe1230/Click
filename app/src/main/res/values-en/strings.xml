@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Click</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Click Service</string>
+    <string name="notification_recording">Recording gesture...</string>
+    <string name="notification_infinite">Infinite looping</string>
+    <string name="notification_idle">Tap floating ball to execute</string>
+    <string name="notification_title">Floating ball running</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_drag_to_position">Please drag the floating ball to the click position first</string>
+    <string name="toast_operation_paused">Operation paused</string>
+    <string name="toast_enable_overlay">Please enable overlay permission</string>
+    <string name="toast_overlay_enabled">Overlay permission enabled</string>
+    <string name="toast_fill_manual_params">Please fill in manual parameters</string>
+    <string name="toast_record_gesture_first">Please record a gesture first</string>
+    <string name="toast_need_overlay_for_record">Overlay permission required to record gesture</string>
+    <string name="toast_need_accessibility_for_record">Accessibility service required to record gesture</string>
+    <string name="toast_swipe_to_record">Swipe on screen to record gesture</string>
+    <string name="toast_floating_started">Floating ball started</string>
+
+    <!-- Status Text -->
+    <string name="status_accessibility">Accessibility: %s</string>
+    <string name="status_overlay">Overlay: %s</string>
+    <string name="status_enabled">✅ Enabled</string>
+    <string name="status_disabled">❌ Disabled</string>
+    <string name="status_gesture_recorded">Gesture recorded: %d points, %dms</string>
+    <string name="status_gesture_not_recorded">No gesture recorded</string>
+
+    <!-- Dialogs -->
+    <string name="security_warning">Security Warning</string>
+    <string name="usage_instructions">Usage Instructions</string>
+    <string name="floating_ball_instructions">Floating Ball Instructions</string>
     <string name="accessibility_service_description">Simulated click assist service for screen clicks and swipe operations</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>

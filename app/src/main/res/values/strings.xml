@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Click</string>
+
+    <!-- 通知 -->
+    <string name="notification_channel_name">点击服务</string>
+    <string name="notification_recording">录制手势中...</string>
+    <string name="notification_infinite">无限循环中</string>
+    <string name="notification_idle">点击悬浮球执行操作</string>
+    <string name="notification_title">悬浮球运行中</string>
+
+    <!-- Toast消息 -->
+    <string name="toast_drag_to_position">请先拖动悬浮球设到点击位置</string>
+    <string name="toast_operation_paused">操作已暂停</string>
+    <string name="toast_enable_overlay">请开启悬浮窗权限</string>
+    <string name="toast_overlay_enabled">悬浮窗权限已开启</string>
+    <string name="toast_fill_manual_params">请填写手动参数</string>
+    <string name="toast_record_gesture_first">请先录制手势</string>
+    <string name="toast_need_overlay_for_record">需要悬浮窗权限才能录制手势</string>
+    <string name="toast_need_accessibility_for_record">需要无障碍服务才能录制手势</string>
+    <string name="toast_swipe_to_record">请在屏幕上滑动手指录制手势</string>
+    <string name="toast_floating_started">悬浮球已启动</string>
+
+    <!-- 状态文字 -->
+    <string name="status_accessibility">无障碍服务：%s</string>
+    <string name="status_overlay">悬浮窗权限：%s</string>
+    <string name="status_enabled">✅ 已开启</string>
+    <string name="status_disabled">❌ 未开启</string>
+    <string name="status_gesture_recorded">已录制手势：%d个点，%dms</string>
+    <string name="status_gesture_not_recorded">尚未录制手势</string>
     <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -69,6 +96,9 @@
     <string name="cancel">取消</string>
     <string name="confirm">确认</string>
     <string name="ok">知道了</string>
+    <string name="security_warning">安全警告</string>
+    <string name="usage_instructions">使用说明</string>
+    <string name="floating_ball_instructions">悬浮球使用说明</string>
 
     <!-- 语言选项 -->
     <string name="lang_follow_system">跟随系统</string>
