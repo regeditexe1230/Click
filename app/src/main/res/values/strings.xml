@@ -1,6 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Click</string>
     <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
     <string name="app_developer">yjc</string>
-    <string name="app_website">https://github.com/regeditexe1230/Cilck</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <!-- 权限状态 -->
+    <string name="permission_status">权限状态</string>
+    <string name="enable_accessibility_service">开启无障碍服务</string>
+    <string name="enable_overlay_permission">开启悬浮窗权限</string>
+
+    <!-- 执行模式 -->
+    <string name="execution_mode">执行模式</string>
+    <string name="click">点击</string>
+    <string name="swipe">滑动</string>
+
+    <!-- 滑动方式 -->
+    <string name="swipe_method">滑动方式</string>
+    <string name="manual_params">手动参数</string>
+    <string name="gesture_recording">手势录制</string>
+
+    <!-- 滑动参数 -->
+    <string name="start_point">起点</string>
+    <string name="end_point">终点</string>
+    <string name="duration">时长</string>
+    <string name="start_x">起点 X (横向坐标)</string>
+    <string name="start_y">起点 Y (纵向坐标)</string>
+    <string name="end_x">终点 X (横向坐标)</string>
+    <string name="end_y">终点 Y (纵向坐标)</string>
+    <string name="swipe_duration">滑动耗时(毫秒)</string>
+
+    <!-- 手势录制 -->
+    <string name="record_gesture">录制手势 (在屏幕上滑动)</string>
+
+    <!-- 执行设置 -->
+    <string name="execution_settings">执行设置</string>
+    <string name="pre_execution_delay">执行前延时(毫秒)</string>
+    <string name="delay_milliseconds">延时毫秒数</string>
+    <string name="repeat_count">重复次数</string>
+    <string name="count">次数</string>
+    <string name="infinite_loop">无限循环</string>
+
+    <!-- 操作按钮 -->
+    <string name="start_floating_ball">启动悬浮球</string>
+    <string name="stop_floating_ball">停止悬浮球</string>
+
+    <!-- 程序页面 -->
+    <string name="program_page">程序页面</string>
+    <string name="under_development">此页面正在开发中...</string>
+
+    <!-- 设置页面 -->
+    <string name="settings">设置</string>
+    <string name="text_section">文字</string>
+    <string name="language">语言</string>
+    <string name="change_app_language">更改应用语言</string>
+    <string name="follow_system">跟随系统</string>
+    <string name="font">字体</string>
+    <string name="change_app_font">更改应用字体</string>
+    <string name="default_font">默认</string>
+
+    <!-- 导航栏 -->
+    <string name="nav_home">主页</string>
+    <string name="nav_program">程序</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- 弹窗 -->
+    <string name="select_language">选择语言</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确认</string>
+    <string name="ok">知道了</string>
+
+    <!-- 语言选项 -->
+    <string name="lang_follow_system">跟随系统</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
 </resources>

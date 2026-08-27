@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="权限状态"
+        android:text="@string/permission_status"
         android:textSize="12sp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:background="@android:color/transparent"
@@ -41,21 +41,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="开启无障碍服务" />
+        android:text="@string/enable_accessibility_service" />
 
     <Button
         android:id="@+id/btnEnableOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="开启悬浮窗权限" />
+        android:text="@string/enable_overlay_permission" />
 
     <!-- 执行模式标题 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="执行模式"
+        android:text="@string/execution_mode"
         android:textSize="12sp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:background="@android:color/transparent"
@@ -87,7 +87,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginEnd="4dp"
-                    android:text="点击"
+                    android:text="@string/click"
                     android:background="@drawable/btn_ripple_selector"
                     android:textColor="@color/btn_text_selector" />
 
@@ -97,7 +97,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="4dp"
-                    android:text="滑动"
+                    android:text="@string/swipe"
                     android:background="@drawable/btn_ripple_selector"
                     android:textColor="@color/btn_text_selector" />
             </LinearLayout>
@@ -127,7 +127,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="滑动方式"
+                android:text="@string/swipe_method"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface" />
@@ -148,7 +148,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="4dp"
-                        android:text="手动参数"
+                        android:text="@string/manual_params"
                         android:background="@drawable/btn_ripple_selector"
                         android:textColor="@color/btn_text_selector" />
 
@@ -158,7 +158,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:text="手势录制"
+                        android:text="@string/gesture_recording"
                         android:background="@drawable/btn_ripple_selector"
                         android:textColor="@color/btn_text_selector" />
                 </LinearLayout>
@@ -181,7 +181,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="起点"
+                    android:text="@string/start_point"
                     android:textSize="13sp"
                     android:textColor="?attr/colorPrimary" />
 
@@ -196,7 +196,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="4dp"
-                        android:hint="起点 X (横向坐标)"
+                        android:hint="@string/start_x"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -211,7 +211,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:hint="起点 Y (纵向坐标)"
+                        android:hint="@string/start_y"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -226,7 +226,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="终点"
+                    android:text="@string/end_point"
                     android:textSize="13sp"
                     android:textColor="?attr/colorPrimary" />
 
@@ -241,7 +241,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="4dp"
-                        android:hint="终点 X (横向坐标)"
+                        android:hint="@string/end_x"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -256,7 +256,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:hint="终点 Y (纵向坐标)"
+                        android:hint="@string/end_y"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -271,7 +271,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="时长"
+                    android:text="@string/duration"
                     android:textSize="13sp"
                     android:textColor="?attr/colorPrimary" />
 
@@ -279,7 +279,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:hint="滑动耗时(毫秒)"
+                    android:hint="@string/swipe_duration"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -311,7 +311,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="录制手势 (在屏幕上滑动)" />
+                    android:text="@string/record_gesture" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -321,7 +321,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="执行设置"
+        android:text="@string/execution_settings"
         android:textSize="12sp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:background="@android:color/transparent"
@@ -341,7 +341,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="执行前延时(毫秒)"
+            android:text="@string/pre_execution_delay"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface" />
@@ -350,7 +350,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:hint="延时毫秒数"
+            android:hint="@string/delay_milliseconds"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -371,7 +371,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="重复次数"
+            android:text="@string/repeat_count"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface" />
@@ -387,7 +387,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="次数"
+                android:hint="@string/count"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -403,7 +403,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="无限循环" />
+                android:text="@string/infinite_loop" />
         </LinearLayout>
     </LinearLayout>
 
@@ -416,7 +416,7 @@
             android:id="@+id/btnStartFloating"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="启动悬浮球"
+            android:text="@string/start_floating_ball"
             android:enabled="false" />
 
         <View
@@ -433,7 +433,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="停止悬浮球"
+        android:text="@string/stop_floating_ball"
         android:enabled="false" />
 
 </LinearLayout>

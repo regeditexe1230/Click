@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="程序页面"
+        android:text="@string/program_page"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="?attr/colorOnSurface" />
@@ -18,7 +18,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="此页面正在开发中..."
+        android:text="@string/under_development"
         android:textSize="16sp"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
