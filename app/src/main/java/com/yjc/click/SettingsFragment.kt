@@ -34,14 +34,9 @@ class SettingsFragment : Fragment() {
 
         // 语言设置
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            try {
-                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                startActivity(intent)
-            } catch (e: Exception) {
-                // 如果系统设置不可用，弹出对话框
-                showLanguageDialog()
-            }
+            val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+            intent.data = Uri.fromParts("package", requireContext().packageName, null)
+            startActivity(intent)
         }
 
         // 字体设置（暂无功能）
