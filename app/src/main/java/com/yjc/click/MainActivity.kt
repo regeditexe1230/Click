@@ -143,8 +143,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 初始状态
-        radioClick.isSelected = true
-        radioSwipeManual.isSelected = true
+        radioClick.isSelected = !isSwipeMode
+        radioSwipe.isSelected = isSwipeMode
+        radioSwipeManual.isSelected = !isGestureMode
+        radioSwipeGesture.isSelected = isGestureMode
 
         // 使用ViewTreeObserver确保布局完成后再设置指示器
         modeIndicator.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
@@ -153,7 +155,7 @@ class MainActivity : AppCompatActivity() {
                 val params = modeIndicator.layoutParams
                 params.width = radioClick.width
                 modeIndicator.layoutParams = params
-                modeIndicator.x = 0f
+                modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
                 modeIndicator.visibility = View.VISIBLE
             }
         })
