@@ -32,19 +32,9 @@ class SettingsFragment : Fragment() {
 
         languageValue = view.findViewById(R.id.settings_language_value)
 
-        // 语言设置 - Android 13+ 使用系统设置，低版本使用对话框
+        // 语言设置
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                try {
-                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    showLanguageDialog()
-                }
-            } else {
-                showLanguageDialog()
-            }
+            showLanguageDialog()
         }
 
         // 字体设置（暂无功能）
