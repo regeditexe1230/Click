@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Click</string>
+
+    <!-- 알림 -->
+    <string name="notification_channel_name">클릭 서비스</string>
+    <string name="notification_recording">제스처 녹화 중...</string>
+    <string name="notification_infinite">무한 반복 중</string>
+    <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
+    <string name="notification_title">플로팅 볼 실행 중</string>
+
+    <!-- 토스트 메시지 -->
+    <string name="toast_drag_to_position">먼저 플로팅 볼을 클릭 위치로 드래그하세요</string>
+    <string name="toast_operation_paused">작업이 일시정지되었습니다</string>
+    <string name="toast_enable_overlay">오버레이 권한을 활성화하세요</string>
+    <string name="toast_overlay_enabled">오버레이 권한이 활성화되었습니다</string>
+    <string name="toast_fill_manual_params">수동 매개변수를 입력하세요</string>
+    <string name="toast_record_gesture_first">먼저 제스처를 녹화하세요</string>
+    <string name="toast_need_overlay_for_record">제스처 녹화에는 오버레이 권한이 필요합니다</string>
+    <string name="toast_need_accessibility_for_record">제스처 녹화에는 접근성 서비스가 필요합니다</string>
+    <string name="toast_swipe_to_record">화면을 스와이프하여 제스처 녹화</string>
+    <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>
+
+    <!-- 상태 텍스트 -->
+    <string name="status_accessibility">접근성: %s</string>
+    <string name="status_overlay">오버레이: %s</string>
+    <string name="status_enabled">✅ 활성</string>
+    <string name="status_disabled">❌ 비활성</string>
+    <string name="status_gesture_recorded">제스처 녹화됨: %d포인트, %dms</string>
+    <string name="status_gesture_not_recorded">제스처 미녹화</string>
+
+    <!-- 대화상자 -->
+    <string name="security_warning">보안 경고</string>
+    <string name="usage_instructions">사용 설명</string>
+    <string name="floating_ball_instructions">플로팅 볼 사용법</string>
     <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
