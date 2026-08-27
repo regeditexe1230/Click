@@ -1,6 +1,11 @@
 package com.yjc.click
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,14 +32,23 @@ class SettingsFragment : Fragment() {
 
         languageValue = view.findViewById(R.id.settings_language_value)
 
-        // 语言设置
-        view.findViewById<View>(R.id.settings_language_card)?.setOnClickListener {
-            showLanguageDialog()
-        }
+        // 延迟设置点击监听器，确保视图完全加载
+        view.post {
+            // 语言设置
+            view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
+                try {
+                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                    intent.data = Uri.fromParts("package", requireContext().packageName, null)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    showLanguageDialog()
+                }
+            }
 
-        // 字体设置（暂无功能）
-        view.findViewById<View>(R.id.settings_font_card)?.setOnClickListener {
-            // 暂无功能
+            // 字体设置（暂无功能）
+            view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
+                // 暂无功能
+            }
         }
 
         updateLanguageDisplay()
@@ -49,23 +63,16 @@ class SettingsFragment : Fragment() {
         val languages = arrayOf("跟随系统", "简体中文", "繁體中文", "English", "日本語", "한국어")
         val localeCodes = arrayOf("", "zh-CN", "zh-TW", "en", "ja", "ko")
 
-        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-        val currentIndex = when {
-            currentLocale.isEmpty() || currentLocale == "und" -> 0
-            currentLocale.startsWith("zh-CN") -> 1
-            currentLocale.startsWith("zh-TW") || currentLocale.startsWith("zh-Hant") -> 2
-            currentLocale.startsWith("en") -> 3
-            currentLocale.startsWith("ja") -> 4
-            currentLocale.startsWith("ko") -> 5
-            else -> 0
-        }
+        val prefs = requireContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        val currentLocale = prefs.getString("app_locale", "")
+        val currentIndex = localeCodes.indexOf(currentLocale).coerceAtLeast(0)
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("选择语言")
             .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
                 val selectedLocale = localeCodes[which]
+                prefs.edit().putString("app_locale", selectedLocale).apply()
                 applyLanguage(selectedLocale)
-                updateLanguageDisplay()
                 dialog.dismiss()
             }
             .setNegativeButton("取消", null)
