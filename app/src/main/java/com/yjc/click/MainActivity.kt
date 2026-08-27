@@ -226,6 +226,14 @@ class MainActivity : AppCompatActivity() {
             programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
             settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
 
+            // 更新顶栏标题
+            toolbar.title = when (item.itemId) {
+                R.id.nav_home -> "Click"
+                R.id.nav_program -> "程序"
+                R.id.nav_settings -> "设置"
+                else -> "Click"
+            }
+
             // 主页图标状态切换
             val isHomeSelected = item.itemId == R.id.nav_home
             homeItem?.icon?.state = if (isHomeSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
