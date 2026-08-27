@@ -217,6 +217,7 @@ class MainActivity : AppCompatActivity() {
         val programPage = findViewById<View>(R.id.program_page)
         val settingsPage = findViewById<View>(R.id.settings_page)
         var previousItemId = R.id.nav_home
+        var settingsFragmentLoaded = false
 
         bottomNavigation.setOnItemSelectedListener { item ->
             val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
@@ -248,18 +249,19 @@ class MainActivity : AppCompatActivity() {
                 animateProgramIcon(bottomNavigation, 1)
             }
 
+            // 加载设置页面Fragment（首次切换时）
+            if (item.itemId == R.id.nav_settings && !settingsFragmentLoaded) {
+                settingsFragmentLoaded = true
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.settings_page, SettingsFragment())
+                    .commit()
+            }
+
             previousItemId = item.itemId
             true
         }
 
         // 主页图标初始为填充状态（默认就是ic_home）
-
-        // 加载设置页面Fragment
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.settings_page, SettingsFragment())
-                .commit()
-        }
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
         onTextChanged(inputSwipeY1) { saveConfig(); updateStatus() }
