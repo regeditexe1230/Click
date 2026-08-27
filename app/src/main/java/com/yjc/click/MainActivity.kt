@@ -148,11 +148,17 @@ class MainActivity : AppCompatActivity() {
         radioSwipeManual.isSelected = !isGestureMode
         radioSwipeGesture.isSelected = isGestureMode
 
-        // 使用Handler延迟确保布局完全完成
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            android.util.Log.d("MainActivity", "refreshIndicators called, radioClick.width=${radioClick.width}, modeIndicator.width=${modeIndicator.width}")
-            refreshIndicators()
-        }, 500)
+        // 循环检查直到视图宽度有效
+        val checkRunnable = object : Runnable {
+            override fun run() {
+                if (radioClick.width > 0) {
+                    refreshIndicators()
+                } else {
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 50)
+                }
+            }
+        }
+        android.os.Handler(android.os.Looper.getMainLooper()).post(checkRunnable)
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
