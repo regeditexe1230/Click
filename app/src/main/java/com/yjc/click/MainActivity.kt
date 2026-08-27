@@ -17,6 +17,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -61,7 +62,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 启用edge-to-edge模式
+        enableEdgeToEdge()
+
         setContentView(R.layout.activity_main)
+
+        // 顶栏适配状态栏
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, windowInsets ->
+            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, insets.top, 0, 0)
+            windowInsets
+        }
+
+        // 底部导航栏延伸到系统导航栏区域
+        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, windowInsets ->
+            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, 0, 0, insets.bottom)
+            windowInsets
+        }
 
         statusText = findViewById(R.id.statusText)
         radioClick = findViewById(R.id.radioClick)
@@ -186,6 +207,41 @@ class MainActivity : AppCompatActivity() {
             inputRepeat.isEnabled = !checked
             saveConfig()
         }
+
+        // 底部导航栏
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        val homeContent = findViewById<View>(R.id.home_content)
+        val programPage = findViewById<View>(R.id.program_page)
+        val settingsPage = findViewById<View>(R.id.settings_page)
+        var previousItemId = R.id.nav_home
+
+        bottomNavigation.setOnItemSelectedListener { item ->
+            val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
+
+            // 切换页面
+            homeContent.visibility = if (item.itemId == R.id.nav_home) View.VISIBLE else View.GONE
+            programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
+            settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
+
+            // 主页图标状态切换
+            val isHomeSelected = item.itemId == R.id.nav_home
+            homeItem?.icon?.state = if (isHomeSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
+
+            // 设置图标状态切换
+            val settingsItem = bottomNavigation.menu.findItem(R.id.nav_settings)
+            val isSettingsSelected = item.itemId == R.id.nav_settings
+            settingsItem?.icon?.state = if (isSettingsSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
+
+            // 程序图标缩放动画
+            if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
+                animateProgramIcon(bottomNavigation, 1)
+            }
+
+            previousItemId = item.itemId
+            true
+        }
+
+        // 主页图标初始为填充状态（默认就是ic_home）
 
         onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
         onTextChanged(inputSwipeY1) { saveConfig(); updateStatus() }
@@ -494,14 +550,13 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 Choreographer 确保帧同步
+        // 使用 ViewPropertyAnimator 处理 alpha（硬件加速）
         view.animate()
             .alpha(1f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
         
-        // 使用 ValueAnimator 平滑改变高度
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
@@ -534,9 +589,8 @@ class MainActivity : AppCompatActivity() {
         
         val params = view.layoutParams
         
-        // 使用 ValueAnimator 平滑改变高度
         val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
-        animator.duration = 200
+        animator.duration = 250
         animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
             params.height = anim.animatedValue as Int
@@ -630,5 +684,52 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
+    }
+
+    private fun animateProgramIcon(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView, index: Int) {
+        val menuView = bottomNav.getChildAt(0) as? android.view.ViewGroup ?: return
+        if (index >= menuView.childCount) return
+        val itemView = menuView.getChildAt(index) as? android.view.ViewGroup ?: return
+        val iconView = findImageView(itemView) ?: return
+
+        iconView.pivotX = iconView.width / 2f
+        iconView.pivotY = iconView.height / 2f
+
+        // 缩放动画
+        iconView.animate()
+            .scaleX(0.7f)
+            .scaleY(0.7f)
+            .setDuration(100)
+            .withEndAction {
+                iconView.animate()
+                    .scaleX(1.1f)
+                    .scaleY(1.1f)
+                    .setDuration(100)
+                    .withEndAction {
+                        iconView.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(100)
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
+    }
+
+    private fun findImageView(view: android.view.View): android.widget.ImageView? {
+        if (view is android.widget.ImageView) return view
+        if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val result = findImageView(view.getChildAt(i))
+                if (result != null) return result
+            }
+        }
+        return null
+    }
+
+    private fun getStatusBarHeight(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
     }
 }
