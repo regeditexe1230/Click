@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 文字栏目标题 - 紧贴顶栏 -->
+        <!-- 文字栏目标题 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -65,6 +65,7 @@
                         android:textColor="?attr/colorOnSurface" />
 
                     <TextView
+                        android:id="@+id/settings_language_desc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="更改应用语言"
@@ -81,12 +82,6 @@
                     android:textSize="14sp"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginStart="62dp"
-                android:background="?attr/colorOutlineVariant" />
 
             <!-- 字体设置 -->
             <LinearLayout
