@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+    <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">권한 상태</string>
+    <string name="enable_accessibility_service">접근성 서비스 활성화</string>
+    <string name="enable_overlay_permission">오버레이 권한 활성화</string>
+
+    <string name="execution_mode">실행 모드</string>
+    <string name="click">클릭</string>
+    <string name="swipe">스와이프</string>
+
+    <string name="swipe_method">스와이프 방법</string>
+    <string name="manual_params">수동 매개변수</string>
+    <string name="gesture_recording">제스처 녹화</string>
+
+    <string name="start_point">시작점</string>
+    <string name="end_point">종료점</string>
+    <string name="duration">시간</string>
+    <string name="start_x">시작 X (가로 좌표)</string>
+    <string name="start_y">시작 Y (세로 좌표)</string>
+    <string name="end_x">종료 X (가로 좌표)</string>
+    <string name="end_y">종료 Y (세로 좌표)</string>
+    <string name="swipe_duration">스와이프 시간(밀리초)</string>
+
+    <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
+
+    <string name="execution_settings">실행 설정</string>
+    <string name="pre_execution_delay">실행 전 지연(밀리초)</string>
+    <string name="delay_milliseconds">지연 밀리초</string>
+    <string name="repeat_count">반복 횟수</string>
+    <string name="count">횟수</string>
+    <string name="infinite_loop">무한 반복</string>
+
+    <string name="start_floating_ball">플로팅 시작</string>
+    <string name="stop_floating_ball">플로팅 중지</string>
+
+    <string name="program_page">프로그램</string>
+    <string name="under_development">이 페이지는 개발 중입니다...</string>
+
+    <string name="settings">설정</string>
+    <string name="text_section">텍스트</string>
+    <string name="language">언어</string>
+    <string name="change_app_language">앱 언어 변경</string>
+    <string name="follow_system">시스템 따르기</string>
+    <string name="font">글꼴</string>
+    <string name="change_app_font">앱 글꼴 변경</string>
+    <string name="default_font">기본</string>
+
+    <string name="nav_home">홈</string>
+    <string name="nav_program">프로그램</string>
+    <string name="nav_settings">설정</string>
+
+    <string name="select_language">언어 선택</string>
+    <string name="cancel">취소</string>
+    <string name="confirm">확인</string>
+    <string name="ok">확인</string>
+
+    <string name="lang_follow_system">시스템 따르기</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+</resources>

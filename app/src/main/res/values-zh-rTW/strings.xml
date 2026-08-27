@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+    <string name="accessibility_service_description">螢幕點擊和滑動操作的模擬點擊輔助服務</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">權限狀態</string>
+    <string name="enable_accessibility_service">開啟無障礙服務</string>
+    <string name="enable_overlay_permission">開啟懸浮窗權限</string>
+
+    <string name="execution_mode">執行模式</string>
+    <string name="click">點擊</string>
+    <string name="swipe">滑動</string>
+
+    <string name="swipe_method">滑動方式</string>
+    <string name="manual_params">手動參數</string>
+    <string name="gesture_recording">手勢錄製</string>
+
+    <string name="start_point">起點</string>
+    <string name="end_point">終點</string>
+    <string name="duration">時長</string>
+    <string name="start_x">起點 X (橫向座標)</string>
+    <string name="start_y">起點 Y (縱向座標)</string>
+    <string name="end_x">終點 X (橫向座標)</string>
+    <string name="end_y">終點 Y (縱向座標)</string>
+    <string name="swipe_duration">滑動耗時(毫秒)</string>
+
+    <string name="record_gesture">錄製手勢 (在螢幕上滑動)</string>
+
+    <string name="execution_settings">執行設定</string>
+    <string name="pre_execution_delay">執行前延時(毫秒)</string>
+    <string name="delay_milliseconds">延時毫秒數</string>
+    <string name="repeat_count">重複次數</string>
+    <string name="count">次數</string>
+    <string name="infinite_loop">無限循環</string>
+
+    <string name="start_floating_ball">啟動懸浮球</string>
+    <string name="stop_floating_ball">停止懸浮球</string>
+
+    <string name="program_page">程式</string>
+    <string name="under_development">此頁面正在開發中...</string>
+
+    <string name="settings">設定</string>
+    <string name="text_section">文字</string>
+    <string name="language">語言</string>
+    <string name="change_app_language">變更應用語言</string>
+    <string name="follow_system">跟隨系統</string>
+    <string name="font">字型</string>
+    <string name="change_app_font">變更應用字型</string>
+    <string name="default_font">預設</string>
+
+    <string name="nav_home">主頁</string>
+    <string name="nav_program">程式</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="select_language">選擇語言</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">確認</string>
+    <string name="ok">知道了</string>
+
+    <string name="lang_follow_system">跟隨系統</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+</resources>
