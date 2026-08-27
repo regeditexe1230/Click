@@ -63,6 +63,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 应用语言设置
+        applyLanguage()
+
         // 启用edge-to-edge模式
         enableEdgeToEdge()
 
@@ -726,6 +729,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return null
+    }
+
+    private fun applyLanguage() {
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val localeCode = prefs.getString("app_locale", "")
+        if (!localeCode.isNullOrEmpty()) {
+            val localeListCompat = androidx.core.os.LocaleListCompat.forLanguageTags(localeCode)
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeListCompat)
+        }
     }
 
     private fun getStatusBarHeight(): Int {
