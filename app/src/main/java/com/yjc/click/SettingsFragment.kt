@@ -18,7 +18,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class SettingsFragment : Fragment() {
 
     private lateinit var languageValue: TextView
-    private lateinit var languageDesc: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,13 +32,12 @@ class SettingsFragment : Fragment() {
 
         // 语言设置
         languageValue = view.findViewById(R.id.settings_language_value)
-        languageDesc = view.findViewById(R.id.settings_language_desc)
-        view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
+        view.findViewById<View>(R.id.settings_language_card)?.setOnClickListener {
             openLanguageSettings()
         }
 
         // 字体设置（暂无功能）
-        view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
+        view.findViewById<View>(R.id.settings_font_card)?.setOnClickListener {
             // 暂无功能
         }
 
@@ -53,7 +51,6 @@ class SettingsFragment : Fragment() {
 
     private fun openLanguageSettings() {
         try {
-            // Android 13+ 使用系统语言设置
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
                 intent.data = Uri.fromParts("package", requireContext().packageName, null)
@@ -62,7 +59,6 @@ class SettingsFragment : Fragment() {
                 showLanguageDialog()
             }
         } catch (e: Exception) {
-            // 如果系统设置不可用，使用自定义对话框
             showLanguageDialog()
         }
     }

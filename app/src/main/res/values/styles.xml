@@ -9,4 +9,9 @@
         <item name="backgroundTint">@color/md_theme_surfaceVariant</item>
         <item name="android:textColor">@color/md_theme_onSurfaceVariant</item>
     </style>
+
+    <style name="SettingsCardContainer">
+        <item name="android:padding">2dp</item>
+        <item name="android:background">@drawable/settings_card_bg</item>
+    </style>
 </resources>
