@@ -869,8 +869,18 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val localeCode = prefs.getString("app_locale", "")
         if (!localeCode.isNullOrEmpty()) {
+            // 用户手动选择了语言
             val localeListCompat = androidx.core.os.LocaleListCompat.forLanguageTags(localeCode)
             androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeListCompat)
+        } else {
+            // 跟随系统 - 检查系统语言是否在支持范围内
+            val systemLocale = java.util.Locale.getDefault().language
+            val supportedLanguages = listOf("zh", "en", "ja", "ko")
+            if (systemLocale !in supportedLanguages) {
+                // 系统语言不在支持范围内，fallback到英文
+                val localeListCompat = androidx.core.os.LocaleListCompat.forLanguageTags("en")
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeListCompat)
+            }
         }
     }
 
