@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         radioSwipeGesture.isSelected = isGestureMode
 
         // 延迟初始化指示器，确保布局完全完成
-        window.decorView.post {
+        radioClick.post {
             refreshIndicators()
         }
 
@@ -593,19 +593,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshIndicators() {
         // 刷新执行模式指示器
-        val modeParams = modeIndicator.layoutParams
-        modeParams.width = radioClick.width
-        modeIndicator.layoutParams = modeParams
-        modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
-        modeIndicator.visibility = View.VISIBLE
+        if (radioClick.width > 0) {
+            val modeParams = modeIndicator.layoutParams
+            modeParams.width = radioClick.width
+            modeIndicator.layoutParams = modeParams
+            modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
+            modeIndicator.visibility = View.VISIBLE
+            modeIndicator.invalidate()
+        }
 
         // 刷新滑动方式指示器
-        if (isSwipeMode) {
+        if (isSwipeMode && radioSwipeManual.width > 0) {
             val swipeParams = swipeMethodIndicator.layoutParams
             swipeParams.width = radioSwipeManual.width
             swipeMethodIndicator.layoutParams = swipeParams
             swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
             swipeMethodIndicator.visibility = View.VISIBLE
+            swipeMethodIndicator.invalidate()
         }
     }
 
