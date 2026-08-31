@@ -97,4 +97,17 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+
+    <!-- フォント -->
+    <string name="select_font">フォントを選択</string>
+    <string name="font_default">システムデフォルト</string>
+    <string name="add_font">フォントを追加</string>
+    <string name="delete_font">フォントを削除</string>
+    <string name="delete_font_confirm">フォント「%s」を削除しますか？</string>
+    <string name="delete">削除</string>
+    <string name="error">エラー</string>
+    <string name="font_read_error">フォントファイルを読み取れません</string>
+    <string name="font_invalid">無効なフォントファイルです</string>
+    <string name="font_no_language_support">このフォントは%sの文字に対応していません</string>
+    <string name="font_unsupported_format">サポートされていないファイル形式です。.ttf および .otf フォントファイルのみ対応しています。</string>
 </resources>

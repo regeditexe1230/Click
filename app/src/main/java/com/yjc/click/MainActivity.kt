@@ -66,6 +66,9 @@ class MainActivity : AppCompatActivity() {
         // 应用语言设置
         applyLanguage()
 
+        // 初始化字体管理
+        FontManager.init(this)
+
         // 启用edge-to-edge模式
         enableEdgeToEdge()
 
@@ -416,10 +419,16 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+
+        // 应用自定义字体
+        FontManager.applyFont(window.decorView)
     }
 
     override fun onResume() {
         super.onResume()
+        // 应用字体（从设置页切换字体后）
+        FontManager.init(this)
+        FontManager.applyFont(window.decorView)
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))

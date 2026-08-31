@@ -109,4 +109,17 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+
+    <!-- Font -->
+    <string name="select_font">Select Font</string>
+    <string name="font_default">System Default</string>
+    <string name="add_font">Add Font</string>
+    <string name="delete_font">Delete Font</string>
+    <string name="delete_font_confirm">Delete font \"%s\"?</string>
+    <string name="delete">Delete</string>
+    <string name="error">Error</string>
+    <string name="font_read_error">Cannot read font file</string>
+    <string name="font_invalid">Invalid font file</string>
+    <string name="font_no_language_support">This font does not support %s characters</string>
+    <string name="font_unsupported_format">Unsupported file format. Only .ttf and .otf files are supported.</string>
 </resources>
