@@ -138,31 +138,25 @@ object FontParser {
         raf.skipBytes(2) // version
         val numSubtables = raf.readUnsignedShort()
 
-        // 收集所有子表，优先 format 12 > format 4
-        data class SubtableEntry(val offset: Long, val format: Int)
-        val candidates = mutableListOf<SubtableEntry>()
-
+        // Find best subtable (prefer platform 3 encoding 3 or platform 0)
+        var bestOffset = -1L
         for (i in 0 until numSubtables) {
             val platformID = raf.readUnsignedShort()
             val encodingID = raf.readUnsignedShort()
-            val subtableOffset = cmapOffset + raf.readUnsignedInt()
+            val subtableOffset = raf.readUnsignedInt()
 
-            if (platformID == 0 || (platformID == 3 && (encodingID == 1 || encodingID == 10))) {
-                // Read format to decide priority
-                val savedPos = raf.filePointer
-                raf.seek(subtableOffset)
-                val format = raf.readUnsignedShort()
-                raf.seek(savedPos)
-                candidates.add(SubtableEntry(subtableOffset, format))
+            if (platformID == 0) { // Unicode
+                bestOffset = cmapOffset + subtableOffset
+                break
+            }
+            if (platformID == 3 && (encodingID == 1 || encodingID == 10)) {
+                bestOffset = cmapOffset + subtableOffset
+                // don't break, prefer platform 0 if exists
             }
         }
 
-        // 优先 format 12（完整Unicode），其次 format 4（BMP）
-        val sorted = candidates.sortedByDescending { if (it.format == 12) 1 else 0 }
-        for (entry in sorted) {
-            if (readCmapSubtable(raf, entry.offset, ranges)) return true
-        }
-        return false
+        if (bestOffset < 0) return false
+        return readCmapSubtable(raf, bestOffset, ranges)
     }
 
     private fun readCmapSubtable(raf: RandomAccessFile, subtableOffset: Long, ranges: List<IntRange>): Boolean {
@@ -194,25 +188,21 @@ object FontParser {
         val idRangeOffsetsPos = raf.filePointer
         val idRangeOffsets = IntArray(segCount) { raf.readUnsignedShort() }
 
+        // Check coverage for each range
         for (range in ranges) {
-            val bmpRange = if (range.first > 0xFFFF) continue else
-                maxOf(range.first, 0)..minOf(range.last, 0xFFFF)
-            if (bmpRange.isEmpty()) continue
-
-            // 均匀采样100个点
-            val sampleCount = minOf(100, bmpRange.last - bmpRange.first + 1)
-            val step = maxOf(1, (bmpRange.last - bmpRange.first) / sampleCount)
             var total = 0
             var covered = 0
-            var cp = bmpRange.first
-            while (cp <= bmpRange.last && total < sampleCount) {
-                total++
+            for (codepoint in range) {
+                if (codepoint > 0xFFFF) continue // Format 4 only covers BMP
+                if (++total > 50) break // Sample at most 50 codepoints per range
                 for (seg in 0 until segCount) {
-                    if (cp in startCodes[seg]..endCodes[seg]) {
+                    if (codepoint in startCodes[seg]..endCodes[seg]) {
                         if (idRangeOffsets[seg] == 0) {
+                            // Character is mapped
                             covered++
                         } else {
-                            val glyphIndexAddr = idRangeOffsetsPos + seg * 2 + idRangeOffsets[seg] + (cp - startCodes[seg]) * 2
+                            // Check via offset
+                            val glyphIndexAddr = idRangeOffsetsPos + seg * 2 + idRangeOffsets[seg] + (codepoint - startCodes[seg]) * 2
                             raf.seek(glyphIndexAddr)
                             val glyphId = raf.readUnsignedShort()
                             if (glyphId != 0) covered++
@@ -220,8 +210,8 @@ object FontParser {
                         break
                     }
                 }
-                cp += step
             }
+            // At least 50% of sampled codepoints must be covered
             if (total > 0 && covered * 2 >= total) return true
         }
         return false
@@ -241,22 +231,16 @@ object FontParser {
         }
 
         for (range in ranges) {
-            // 均匀采样100个点
-            val rangeSize = range.last.toLong() - range.first.toLong() + 1
-            val sampleCount = minOf(100L, rangeSize).toInt()
-            val step = maxOf(1L, rangeSize / sampleCount)
             var total = 0
             var covered = 0
-            var cp = range.first.toLong()
-            while (cp <= range.last && total < sampleCount) {
-                total++
+            for (codepoint in range) {
+                if (++total > 50) break
                 for ((startCode, endCode, _) in groups) {
-                    if (cp in startCode..endCode) {
+                    if (codepoint.toLong() in startCode..endCode) {
                         covered++
                         break
                     }
                 }
-                cp += step
             }
             if (total > 0 && covered * 2 >= total) return true
         }
