@@ -97,4 +97,17 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+
+    <!-- 글꼴 -->
+    <string name="select_font">글꼴 선택</string>
+    <string name="font_default">시스템 기본값</string>
+    <string name="add_font">글꼴 추가</string>
+    <string name="delete_font">글꼴 삭제</string>
+    <string name="delete_font_confirm">글꼴 \"%s\"을(를) 삭제하시겠습니까?</string>
+    <string name="delete">삭제</string>
+    <string name="error">오류</string>
+    <string name="font_read_error">글꼴 파일을 읽을 수 없습니다</string>
+    <string name="font_invalid">잘못된 글꼴 파일입니다</string>
+    <string name="font_no_language_support">이 글꼴은 %s 문자를 지원하지 않습니다</string>
+    <string name="font_unsupported_format">지원되지 않는 파일 형식입니다. .ttf 및 .otf 글꼴 파일만 지원됩니다.</string>
 </resources>

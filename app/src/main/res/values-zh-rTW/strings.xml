@@ -97,4 +97,17 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+
+    <!-- 字型 -->
+    <string name="select_font">選擇字型</string>
+    <string name="font_default">系統預設</string>
+    <string name="add_font">新增字型</string>
+    <string name="delete_font">刪除字型</string>
+    <string name="delete_font_confirm">確定要刪除字型「%s」嗎？</string>
+    <string name="delete">刪除</string>
+    <string name="error">錯誤</string>
+    <string name="font_read_error">無法讀取字型檔案</string>
+    <string name="font_invalid">無效的字型檔案</string>
+    <string name="font_no_language_support">該字型不支援目前語言（%s）的字元</string>
+    <string name="font_unsupported_format">不支援的檔案格式，僅支援 .ttf 和 .otf 字型檔案</string>
 </resources>

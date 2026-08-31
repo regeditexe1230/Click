@@ -1,19 +1,31 @@
 package com.yjc.click
 
-import android.content.Context
+import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.io.File
 
 class SettingsFragment : Fragment() {
 
     private lateinit var languageValue: TextView
+    private lateinit var fontValue: TextView
+
+    private val fontPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri ?: return@registerForActivityResult
+        handleFontSelected(uri)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,24 +39,27 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         languageValue = view.findViewById(R.id.settings_language_value)
+        fontValue = view.findViewById(R.id.settings_font_value)
 
-        // 语言设置
         view.findViewById<View>(R.id.settings_language)?.setOnClickListener {
             showLanguageDialog()
         }
 
-        // 字体设置（暂无功能）
         view.findViewById<View>(R.id.settings_font)?.setOnClickListener {
-            // 暂无功能
+            showFontDialog()
         }
 
         updateLanguageDisplay()
+        updateFontDisplay()
     }
 
     override fun onResume() {
         super.onResume()
         updateLanguageDisplay()
+        updateFontDisplay()
     }
+
+    // ==================== 语言 ====================
 
     private fun showLanguageDialog() {
         val languages = arrayOf(
@@ -100,5 +115,211 @@ class SettingsFragment : Fragment() {
             currentLocale.startsWith("ko") -> getString(R.string.lang_korean)
             else -> getString(R.string.lang_follow_system)
         }
+    }
+
+    // ==================== 字体 ====================
+
+    private fun showFontDialog() {
+        val ctx = requireContext()
+        val customFonts = FontManager.getCustomFonts(ctx)
+        val selectedPath = FontManager.getSelectedFontPath(ctx)
+
+        // 构建字体名称列表（与语言弹窗完全一致的逻辑）
+        val names = mutableListOf<String>()
+        val paths = mutableListOf<String>()  // "" = 系统默认
+        val typefaces = mutableListOf<Typeface?>()
+
+        names.add(getString(R.string.font_default))
+        paths.add("")
+        typefaces.add(null)
+
+        for (font in customFonts) {
+            names.add(font.familyName)
+            paths.add(font.filePath)
+            typefaces.add(FontManager.loadTypefaceForPreview(font.filePath))
+        }
+
+        names.add(getString(R.string.add_font))
+        paths.add("__add__")
+        typefaces.add(null)
+
+        val currentIndex = paths.indexOf(selectedPath).coerceAtLeast(0)
+
+        val dialog = MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.select_font)
+            .setSingleChoiceItems(names.toTypedArray(), currentIndex) { dialog, which ->
+                val path = paths[which]
+                dialog.dismiss()
+                if (path == "__add__") {
+                    fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+                } else {
+                    val font = customFonts.find { it.filePath == path }
+                    FontManager.setSelectedFont(ctx, font)
+                    FontManager.applyFont(requireActivity().window.decorView)
+                    updateFontDisplay()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        // 弹窗显示后：1) 应用字体预览 2) "添加字体"项着色
+        dialog.setOnShowListener {
+            val listView = dialog.listView ?: return@setOnShowListener
+            val primaryColor = android.util.TypedValue().let {
+                ctx.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, it, true)
+                it.data
+            }
+
+            for (i in 0 until listView.childCount) {
+                val child = listView.getChildAt(i)
+                if (child is TextView) {
+                    // 应用字体预览（非"添加字体"项）
+                    if (i < typefaces.size && paths[i] != "__add__") {
+                        typefaces[i]?.let { child.typeface = it }
+                    }
+                    // "添加字体"项：主题色 + 加号图标
+                    if (i < paths.size && paths[i] == "__add__") {
+                        child.setTextColor(primaryColor)
+                        val icon = ContextCompat.getDrawable(ctx, android.R.drawable.ic_input_add)
+                        icon?.setTint(primaryColor)
+                        child.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
+                        child.compoundDrawablePadding = (12 * resources.displayMetrics.density).toInt()
+                    }
+                }
+            }
+        }
+
+        // 长按自定义字体项触发删除
+        dialog.listView?.setOnItemLongClickListener { _, _, position, _ ->
+            if (position < paths.size && paths[position].isNotEmpty() && paths[position] != "__add__") {
+                val font = customFonts.find { it.filePath == paths[position] }
+                if (font != null) {
+                    dialog.dismiss()
+                    showDeleteFontDialog(font)
+                }
+                true
+            } else false
+        }
+
+        dialog.show()
+    }
+
+    private fun handleFontSelected(uri: Uri) {
+        val ctx = requireContext()
+
+        // 获取文件名并检查后缀
+        val fileName = getFileNameFromUri(uri)
+        val ext = fileName?.substringAfterLast('.', "")?.lowercase() ?: ""
+        if (ext !in listOf("ttf", "otf")) {
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle(R.string.error)
+                .setMessage(getString(R.string.font_unsupported_format))
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        // Copy URI to temp file (保留原后缀)
+        val tempFile = File(ctx.cacheDir, "temp_font.$ext")
+        try {
+            ctx.contentResolver.openInputStream(uri)?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        } catch (e: Exception) {
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle(R.string.error)
+                .setMessage(getString(R.string.font_read_error))
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        // Check if it's a valid font
+        val typeface = FontParser.loadTypeface(tempFile)
+        if (typeface == null) {
+            tempFile.delete()
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle(R.string.error)
+                .setMessage(getString(R.string.font_invalid))
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        // Check language support
+        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        val langTag = when {
+            currentLocale.startsWith("zh") -> "zh"
+            currentLocale.startsWith("ja") -> "ja"
+            currentLocale.startsWith("ko") -> "ko"
+            currentLocale.startsWith("en") -> "en"
+            else -> java.util.Locale.getDefault().language
+        }
+
+        if (!FontParser.supportsLanguage(tempFile, langTag)) {
+            tempFile.delete()
+            val langName = when (langTag) {
+                "zh" -> getString(R.string.lang_simplified_chinese)
+                "ja" -> getString(R.string.lang_japanese)
+                "ko" -> getString(R.string.lang_korean)
+                "en" -> getString(R.string.lang_english)
+                else -> langTag
+            }
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle(R.string.error)
+                .setMessage(getString(R.string.font_no_language_support, langName))
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        // Add font
+        val fontInfo = FontManager.addCustomFont(ctx, tempFile)
+        tempFile.delete()
+
+        if (fontInfo != null) {
+            // Refresh dialog by reopening
+            showFontDialog()
+        }
+    }
+
+    private fun showDeleteFontDialog(font: FontParser.FontInfo) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.delete_font)
+            .setMessage(getString(R.string.delete_font_confirm, font.familyName))
+            .setPositiveButton(R.string.delete) { _, _ ->
+                FontManager.removeCustomFont(requireContext(), font)
+                FontManager.applyFont(requireActivity().window.decorView)
+                updateFontDisplay()
+                showFontDialog()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun updateFontDisplay() {
+        val selectedPath = FontManager.getSelectedFontPath(requireContext())
+        fontValue.text = if (selectedPath.isEmpty()) {
+            getString(R.string.font_default)
+        } else {
+            val fonts = FontManager.getCustomFonts(requireContext())
+            fonts.find { it.filePath == selectedPath }?.familyName ?: getString(R.string.font_default)
+        }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String? {
+        // 尝试从 ContentResolver 获取文件名
+        if (uri.scheme == "content") {
+            requireContext().contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (idx >= 0) return cursor.getString(idx)
+                }
+            }
+        }
+        // fallback: 从 URI path 提取
+        return uri.lastPathSegment
     }
 }

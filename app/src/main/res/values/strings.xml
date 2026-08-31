@@ -99,6 +99,17 @@
     <string name="security_warning">安全警告</string>
     <string name="usage_instructions">使用说明</string>
     <string name="floating_ball_instructions">悬浮球使用说明</string>
+    <string name="select_font">选择字体</string>
+    <string name="font_default">系统默认</string>
+    <string name="add_font">添加字体</string>
+    <string name="delete_font">删除字体</string>
+    <string name="delete_font_confirm">确定要删除字体\"%s\"吗？</string>
+    <string name="delete">删除</string>
+    <string name="error">错误</string>
+    <string name="font_read_error">无法读取字体文件</string>
+    <string name="font_invalid">无效的字体文件</string>
+    <string name="font_no_language_support">该字体不支持当前语言（%s）的字符</string>
+    <string name="font_unsupported_format">不支持的文件格式，仅支持 .ttf 和 .otf 字体文件</string>
 
     <!-- 语言选项 -->
     <string name="lang_follow_system">跟随系统</string>
