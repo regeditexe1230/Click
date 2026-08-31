@@ -30,9 +30,6 @@
     <string name="status_gesture_not_recorded">제스처 미녹화</string>
 
     <!-- 대화상자 -->
-    <string name="security_warning">보안 경고</string>
-    <string name="usage_instructions">사용 설명</string>
-    <string name="floating_ball_instructions">플로팅 볼 사용법</string>
     <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -90,6 +87,12 @@
     <string name="cancel">취소</string>
     <string name="confirm">확인</string>
     <string name="ok">확인</string>
+    <string name="security_warning">보안 경고</string>
+    <string name="security_warning_message">이 앱이 GitHub에서 다운로드된 것인지 확인하세요. 다른 곳에서 다운로드한 앱에는 악성 코드가 포함되어 있을 수 있습니다. 접근성 권한 부여에 주의하세요.</string>
+    <string name="usage_instructions">사용 방법</string>
+    <string name="usage_instructions_message">첫 사용:\n\n1. 상단의 두 버튼을 눌러 접근성 서비스와 오버레이 권한을 활성화하세요 (Android 보안 정책상 앱 재시작 시 접근성 권한을 다시 인증해야 합니다)\n\n2. 모드 선택: 클릭 또는 스와이프\n\n3. 클릭 모드: 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)\n\n4. 스와이프 모드: 제스처 녹화 (화면 스와이프) 또는 수동 매개변수 (시작/종료 좌표 입력) → 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)</string>
+    <string name="floating_ball_instructions">플로팅 볼 사용법</string>
+    <string name="floating_ball_instructions_message">1. 작업을 실행할 앱으로 전환하세요\n\n2. 플로팅 볼을 길게 눌러 드래그하면 이동할 수 있습니다. 드래그 중에는 반투명되어 위치 지정이 쉽습니다\n\n3. 위치를 정한 후 플로팅 볼을 한 번 탭하면 작업을 시작합니다\n\n4. 더블 탭으로 일시정지합니다\n\n참고: 다른 앱에서 이 앱으로 전환하면 플로팅 볼이 자동으로 중지됩니다. 다시 시작 버튼을 탭하여 재개하세요.</string>
 
     <string name="lang_follow_system">시스템 따르기</string>
     <string name="lang_simplified_chinese">简体中文</string>

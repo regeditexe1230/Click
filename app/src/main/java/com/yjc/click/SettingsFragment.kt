@@ -156,7 +156,26 @@ class SettingsFragment : Fragment() {
                 dialog.dismiss()
                 if (path == "__add__") {
                     fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+                } else if (path.isEmpty()) {
+                    // 系统默认，直接应用
+                    FontManager.setSelectedFont(ctx, null)
+                    FontManager.applyFont(requireActivity().window.decorView)
+                    updateFontDisplay()
                 } else {
+                    // 检查字体是否支持当前语言
+                    val file = java.io.File(path)
+                    val langTag = getCurrentLanguageTag()
+                    if (!FontParser.supportsLanguage(file, langTag)) {
+                        val langName = getCurrentLanguageName()
+                        val d = MaterialAlertDialogBuilder(ctx)
+                            .setTitle(R.string.error)
+                            .setMessage(getString(R.string.font_no_language_support, langName))
+                            .setPositiveButton(R.string.ok, null)
+                            .create()
+                        d.show()
+                        FontManager.applyFontToDialog(d)
+                        return@setSingleChoiceItems
+                    }
                     val font = customFonts.find { it.filePath == path }
                     FontManager.setSelectedFont(ctx, font)
                     FontManager.applyFont(requireActivity().window.decorView)
@@ -261,24 +280,11 @@ class SettingsFragment : Fragment() {
         }
 
         // Check language support
-        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-        val langTag = when {
-            currentLocale.startsWith("zh") -> "zh"
-            currentLocale.startsWith("ja") -> "ja"
-            currentLocale.startsWith("ko") -> "ko"
-            currentLocale.startsWith("en") -> "en"
-            else -> java.util.Locale.getDefault().language
-        }
+        val langTag = getCurrentLanguageTag()
 
         if (!FontParser.supportsLanguage(tempFile, langTag)) {
             tempFile.delete()
-            val langName = when (langTag) {
-                "zh" -> getString(R.string.lang_simplified_chinese)
-                "ja" -> getString(R.string.lang_japanese)
-                "ko" -> getString(R.string.lang_korean)
-                "en" -> getString(R.string.lang_english)
-                else -> langTag
-            }
+            val langName = getCurrentLanguageName()
             val d = MaterialAlertDialogBuilder(ctx)
                 .setTitle(R.string.error)
                 .setMessage(getString(R.string.font_no_language_support, langName))
@@ -337,5 +343,26 @@ class SettingsFragment : Fragment() {
         }
         // fallback: 从 URI path 提取
         return uri.lastPathSegment
+    }
+
+    private fun getCurrentLanguageTag(): String {
+        val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        return when {
+            currentLocale.startsWith("zh") -> "zh"
+            currentLocale.startsWith("ja") -> "ja"
+            currentLocale.startsWith("ko") -> "ko"
+            currentLocale.startsWith("en") -> "en"
+            else -> java.util.Locale.getDefault().language
+        }
+    }
+
+    private fun getCurrentLanguageName(): String {
+        return when (getCurrentLanguageTag()) {
+            "zh" -> getString(R.string.lang_simplified_chinese)
+            "ja" -> getString(R.string.lang_japanese)
+            "ko" -> getString(R.string.lang_korean)
+            "en" -> getString(R.string.lang_english)
+            else -> getCurrentLanguageTag()
+        }
     }
 }

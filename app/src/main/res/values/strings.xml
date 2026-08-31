@@ -97,8 +97,11 @@
     <string name="confirm">确认</string>
     <string name="ok">知道了</string>
     <string name="security_warning">安全警告</string>
+    <string name="security_warning_message">请确认此软件是从github下载获得，从其他地方下载此软件可能会含有恶意代码，请谨慎授予无障碍权限</string>
     <string name="usage_instructions">使用说明</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 开启无障碍服务和悬浮窗权限，点击软件上方两个按钮即可跳转设置页（无障碍权限由于安卓安全机制每次重启软件需重新授权）\n\n2. 选择滑动模式：点击或滑动\n\n3. 点击模式：设置点击延时→设置重复次数→启动悬浮球（缺权限会弹出授权设置页）\n\n4. 滑动模式：手势录制（在屏幕滑动）或手动参数（填写起点终点坐标）→设置延时→设置重复次数→启动悬浮球（缺权限会弹出授权设置页）</string>
     <string name="floating_ball_instructions">悬浮球使用说明</string>
+    <string name="floating_ball_instructions_message">1.切到想执行操作的应用\n\n2.按住悬浮球拖动即可拖动悬浮球，可拖动到想执行操作的位置，拖动时悬浮球会半透明，以便定位\n\n3.拖动完毕后点击一下悬浮球即可开始操作\n\n4.双击悬浮球可暂停操作\n\n注意：从一个应用切回本软件时悬浮球会自动停止，恢复可以再点击启动悬浮球按钮</string>
     <string name="select_font">选择字体</string>
     <string name="font_default">系统默认</string>
     <string name="add_font">添加字体</string>
