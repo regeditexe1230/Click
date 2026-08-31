@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -126,12 +127,27 @@ object FontManager {
     }
 
     fun applyFont(view: View) {
-        val typeface = currentTypeface ?: return
+        val typeface = currentTypeface ?: Typeface.DEFAULT
         applyTypefaceRecursive(view, typeface)
+    }
+
+    fun applyFontToDialog(dialog: android.app.Dialog) {
+        val typeface = currentTypeface ?: Typeface.DEFAULT
+        val decorView = dialog.window?.decorView ?: return
+        // 标题
+        decorView.findViewById<TextView>(androidx.appcompat.R.id.alertTitle)?.typeface = typeface
+        // 消息
+        decorView.findViewById<TextView>(android.R.id.message)?.typeface = typeface
+        // 按钮
+        (dialog as? androidx.appcompat.app.AlertDialog)?.let {
+            it.getButton(android.content.DialogInterface.BUTTON_NEGATIVE)?.typeface = typeface
+            it.getButton(android.content.DialogInterface.BUTTON_POSITIVE)?.typeface = typeface
+        }
     }
 
     private fun applyTypefaceRecursive(view: View, typeface: Typeface) {
         when (view) {
+            is TextInputLayout -> view.typeface = typeface
             is TextView -> view.typeface = typeface
             is Button -> view.typeface = typeface
         }

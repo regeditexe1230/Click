@@ -646,6 +646,7 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.setOnDismissListener { isWarningDialogShowing = false }
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun openOverlaySettings() {
@@ -808,6 +809,7 @@ class MainActivity : AppCompatActivity() {
         // 平滑显示，避免闪烁
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
@@ -819,6 +821,7 @@ class MainActivity : AppCompatActivity() {
             .create()
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun decodeFloatTutorialText(): String {
