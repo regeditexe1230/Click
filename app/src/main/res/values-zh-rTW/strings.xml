@@ -30,9 +30,6 @@
     <string name="status_gesture_not_recorded">尚未錄製手勢</string>
 
     <!-- 對話框 -->
-    <string name="security_warning">安全警告</string>
-    <string name="usage_instructions">使用說明</string>
-    <string name="floating_ball_instructions">懸浮球使用說明</string>
     <string name="accessibility_service_description">螢幕點擊和滑動操作的模擬點擊輔助服務</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -90,6 +87,12 @@
     <string name="cancel">取消</string>
     <string name="confirm">確認</string>
     <string name="ok">知道了</string>
+    <string name="security_warning">安全警告</string>
+    <string name="security_warning_message">請確認此軟體是從github下載獲得，從其他地方下載此軟體可能會含有惡意程式碼，請謹慎授予無障礙服務權限</string>
+    <string name="usage_instructions">使用說明</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
+    <string name="floating_ball_instructions">懸浮球使用說明</string>
+    <string name="floating_ball_instructions_message">1.切到想執行操作的應用\n\n2.按住懸浮球拖動即可拖動懸浮球，可拖動到想執行操作的位置，拖動時懸浮球會半透明，以便定位\n\n3.拖動完畢後點擊一下懸浮球即可開始操作\n\n4.雙擊懸浮球可暫停操作\n\n注意：從一個應用切回本軟體時懸浮球會自動停止，恢復可以再點擊啟動懸浮球按鈕</string>
 
     <string name="lang_follow_system">跟隨系統</string>
     <string name="lang_simplified_chinese">简体中文</string>

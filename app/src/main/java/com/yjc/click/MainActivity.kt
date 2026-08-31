@@ -631,15 +631,10 @@ class MainActivity : AppCompatActivity() {
     private fun showWarningDialog(onConfirmed: () -> Unit) {
         if (isWarningDialogShowing) return
         
-        val message = decodeWarning()
-        if (!message.contains("github")) {
-            throw RuntimeException("App integrity verification failed")
-        }
-        
         isWarningDialogShowing = true
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.security_warning)
-            .setMessage(message)
+            .setMessage(R.string.security_warning_message)
             .setPositiveButton(R.string.confirm) { _, _ -> onConfirmed() }
             .setCancelable(false)
             .create()
@@ -802,7 +797,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFirstLaunchDialog() {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.usage_instructions)
-            .setMessage("\n" + decodeTutorialText())
+            .setMessage(R.string.usage_instructions_message)
             .setPositiveButton(R.string.ok) { d, _ -> d.dismiss() }
             .setCancelable(false)
             .create()
@@ -815,7 +810,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.floating_ball_instructions)
-            .setMessage("\n" + decodeFloatTutorialText())
+            .setMessage(R.string.floating_ball_instructions_message)
             .setPositiveButton(R.string.ok) { _, _ -> onStart() }
             .setCancelable(false)
             .create()

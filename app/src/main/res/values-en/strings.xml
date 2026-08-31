@@ -30,9 +30,6 @@
     <string name="status_gesture_not_recorded">No gesture recorded</string>
 
     <!-- Dialogs -->
-    <string name="security_warning">Security Warning</string>
-    <string name="usage_instructions">Usage Instructions</string>
-    <string name="floating_ball_instructions">Floating Ball Instructions</string>
     <string name="accessibility_service_description">Simulated click assist service for screen clicks and swipe operations</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -101,6 +98,12 @@
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
     <string name="ok">OK</string>
+    <string name="security_warning">Security Warning</string>
+    <string name="security_warning_message">Please confirm this app was downloaded from GitHub. Apps downloaded from other sources may contain malicious code. Grant Accessibility permission with caution.</string>
+    <string name="usage_instructions">Usage Instructions</string>
+    <string name="usage_instructions_message">First time use:\n\n1. Enable Accessibility Service and Overlay permission by tapping the two buttons at the top (Accessibility permission needs to be re-authorized each time the app restarts due to Android security policy)\n\n2. Select mode: Click or Swipe\n\n3. Click mode: Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)\n\n4. Swipe mode: Record gesture (swipe on screen) or set manual parameters (enter start/end coordinates) → Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)</string>
+    <string name="floating_ball_instructions">Floating Ball Instructions</string>
+    <string name="floating_ball_instructions_message">1. Switch to the app where you want to perform actions\n\n2. Press and drag the floating ball to reposition it. The ball becomes semi-transparent while dragging for easier positioning\n\n3. After positioning, tap the floating ball once to start the operation\n\n4. Double-tap the floating ball to pause\n\nNote: The floating ball automatically stops when switching back to this app from another app. Tap the start button again to resume.</string>
 
     <!-- Language Options -->
     <string name="lang_follow_system">Follow System</string>

@@ -30,9 +30,6 @@
     <string name="status_gesture_not_recorded">ジェスチャー未録画</string>
 
     <!-- Dialogs -->
-    <string name="security_warning">セキュリティ警告</string>
-    <string name="usage_instructions">使用説明</string>
-    <string name="floating_ball_instructions">フローティングボールの使い方</string>
     <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -90,6 +87,12 @@
     <string name="cancel">キャンセル</string>
     <string name="confirm">確認</string>
     <string name="ok">OK</string>
+    <string name="security_warning">セキュリティ警告</string>
+    <string name="security_warning_message">このアプリがGitHubからダウンロードされたことを確認してください。他のソースからダウンロードしたアプリには悪意のあるコードが含まれている可能性があります。无障碍サービスの権限付与にはご注意ください。</string>
+    <string name="usage_instructions">使い方</string>
+    <string name="usage_instructions_message">初回使用：\n\n1. 上部の2つのボタンをタップして、无障碍サービスとオーバーレイ権限を有効にします（Androidのセキュリティにより、アプリ再起動時に无障碍権限の再認証が必要です）\n\n2. モードを選択：タップまたはスワイプ\n\n3. タップモード：遅延設定→繰り返し回数設定→フローティングボールを起動（権限不足時は設定画面が表示されます）\n\n4. スワイプモード：ジェスチャー録画（画面をスワイプ）または手動パラメータ（始点・終点の座標を入力）→遅延設定→繰り返し回数設定→フローティングボールを起動（権限不足時は設定画面が表示されます）</string>
+    <string name="floating_ball_instructions">フローティングボールの使い方</string>
+    <string name="floating_ball_instructions_message">1. 操作を実行したいアプリに切り替えます\n\n2. フローティングボールを長押ししてドラッグで移動できます。ドラッグ中は半透明になり、位置合わせがしやすくなります\n\n3. 位置を決めたら、フローティングボールをタップすると操作を開始します\n\n4. ダブルタップで一時停止します\n\n注意：他のアプリからこのアプリに切り戻ると、フローティングボールは自動的に停止します。再度起動ボタンをタップして再開してください。</string>
 
     <string name="lang_follow_system">システムに従う</string>
     <string name="lang_simplified_chinese">简体中文</string>
