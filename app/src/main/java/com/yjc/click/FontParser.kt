@@ -50,12 +50,14 @@ object FontParser {
         return try {
             RandomAccessFile(file, "r").use { raf ->
                 val cmapOffset = findTableOffset(raf, "cmap") ?: return listOf("en")
-                // 英文始终视为支持（几乎所有字体都能渲染Basic Latin）
                 val langs = mutableListOf("en")
-                langs.addAll(readCmapForLanguages(raf, cmapOffset))
+                val detected = readCmapForLanguages(raf, cmapOffset)
+                langs.addAll(detected)
+                android.util.Log.d("FontParser", "file=${file.name} supported=$langs")
                 langs
             }
         } catch (e: Exception) {
+            android.util.Log.d("FontParser", "file=${file.name} error=${e.message}")
             listOf("en")
         }
     }
@@ -112,15 +114,18 @@ object FontParser {
             for (range in ranges) {
                 if (range.first > 0xFFFF) continue
                 val rEnd = minOf(range.last.toInt(), 0xFFFF)
-                for (seg in 0 until segCount - 1) { // 跳过最后一个哨兵段
+                for (seg in 0 until segCount - 1) {
                     if (startCodes[seg] <= rEnd && endCodes[seg] >= range.first.toInt()) {
-                        supported = true; break
+                        supported = true
+                        android.util.Log.d("FontParser", "  $lang HIT seg=${String.format("0x%04X-0x%04X", startCodes[seg], endCodes[seg])} range=${String.format("0x%04X-0x%04X", range.first, range.last)}")
+                        break
                     }
                 }
                 if (supported) break
             }
             if (supported) result.add(lang)
         }
+        android.util.Log.d("FontParser", "format4 segCount=$segCount detected=$result")
         return result
     }
 
