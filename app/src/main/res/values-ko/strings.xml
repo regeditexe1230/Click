@@ -114,4 +114,5 @@
     <string name="font_no_language_support">이 글꼴은 %s 문자를 지원하지 않습니다</string>
     <string name="font_unsupported_format">지원되지 않는 파일 형식입니다. .ttf 및 .otf 글꼴 파일만 지원됩니다.</string>
     <string name="font_checking">글꼴 파일 확인 중…</string>
+    <string name="font_already_added">이 글꼴은 이미 추가되었습니다</string>
 </resources>

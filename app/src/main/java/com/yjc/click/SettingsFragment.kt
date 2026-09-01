@@ -302,10 +302,12 @@ class SettingsFragment : Fragment() {
 
             // 存入缓存
             val fontInfo = FontParser.getFontFamilyName(tempFile)
-            val finalFile = File(ctx.filesDir, "fonts/${tempFile.name}")
-            // 先复制到最终位置以获取路径
+            // 用字体名+时间戳生成唯一文件名，避免同名文件覆盖
+            val safeName = (fontInfo ?: "font").replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fff]"), "_")
+            val uniqueName = "${safeName}_${System.currentTimeMillis()}.${ext}"
+            val finalFile = File(ctx.filesDir, "fonts/$uniqueName")
             if (!finalFile.parentFile!!.exists()) finalFile.parentFile!!.mkdirs()
-            tempFile.copyTo(finalFile, overwrite = true)
+            tempFile.copyTo(finalFile, overwrite = false)
             tempFile.delete()
             FontLangCache.putSupportedLanguages(ctx, finalFile.absolutePath, supportedLanguages)
 
@@ -323,18 +325,35 @@ class SettingsFragment : Fragment() {
                     d.show()
                     FontManager.applyFontToDialog(d)
                 } else {
-                    // 添加字体到列表
+                    // 添加字体到列表（先检查是否已存在）
                     val name = fontInfo ?: finalFile.nameWithoutExtension
                     val prefs = ctx.getSharedPreferences("font_settings", Context.MODE_PRIVATE)
                     val json = prefs.getString("custom_fonts", "[]") ?: "[]"
                     val arr = org.json.JSONArray(json)
-                    val obj = org.json.JSONObject().apply {
-                        put("name", name)
-                        put("path", finalFile.absolutePath)
+                    var exists = false
+                    for (i in 0 until arr.length()) {
+                        if (arr.getJSONObject(i).getString("path") == finalFile.absolutePath) {
+                            exists = true; break
+                        }
                     }
-                    arr.put(obj)
-                    prefs.edit().putString("custom_fonts", arr.toString()).apply()
-                    showFontDialog()
+                    if (exists) {
+                        finalFile.delete()
+                        val d = MaterialAlertDialogBuilder(ctx)
+                            .setTitle(R.string.error)
+                            .setMessage(getString(R.string.font_already_added))
+                            .setPositiveButton(R.string.ok, null)
+                            .create()
+                        d.show()
+                        FontManager.applyFontToDialog(d)
+                    } else {
+                        val obj = org.json.JSONObject().apply {
+                            put("name", name)
+                            put("path", finalFile.absolutePath)
+                        }
+                        arr.put(obj)
+                        prefs.edit().putString("custom_fonts", arr.toString()).apply()
+                        showFontDialog()
+                    }
                 }
             }
         }.start()

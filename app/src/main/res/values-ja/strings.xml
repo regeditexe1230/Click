@@ -114,4 +114,5 @@
     <string name="font_no_language_support">このフォントは%sの文字に対応していません</string>
     <string name="font_unsupported_format">サポートされていないファイル形式です。.ttf および .otf フォントファイルのみ対応しています。</string>
     <string name="font_checking">フォントファイルを確認中…</string>
+    <string name="font_already_added">このフォントは既に追加されています</string>
 </resources>
