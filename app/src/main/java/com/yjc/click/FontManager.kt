@@ -48,6 +48,27 @@ object FontManager {
         val fontsDir = File(context.filesDir, "fonts")
         if (!fontsDir.exists()) fontsDir.mkdirs()
 
+        // 计算MD5
+        val md5 = sourceFile.inputStream().use { input ->
+            val digest = java.security.MessageDigest.getInstance("MD5")
+            val buffer = ByteArray(8192)
+            var read: Int
+            while (input.read(buffer).also { read = it } != -1) {
+                digest.update(buffer, 0, read)
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        }
+
+        // 检查是否已存在（按MD5）
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val json = prefs.getString(KEY_FONTS, "[]") ?: "[]"
+        val arr = JSONArray(json)
+        for (i in 0 until arr.length()) {
+            if (arr.getJSONObject(i).optString("md5") == md5) {
+                return null // 已存在
+            }
+        }
+
         // Copy file to internal storage
         val destFile = File(fontsDir, sourceFile.name)
         sourceFile.inputStream().use { input ->
@@ -60,12 +81,10 @@ object FontManager {
         val familyName = FontParser.getFontFamilyName(destFile) ?: destFile.nameWithoutExtension
 
         // Save to preferences
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val json = prefs.getString(KEY_FONTS, "[]") ?: "[]"
-        val arr = JSONArray(json)
         val obj = JSONObject().apply {
             put("name", familyName)
             put("path", destFile.absolutePath)
+            put("md5", md5)
         }
         arr.put(obj)
         prefs.edit().putString(KEY_FONTS, arr.toString()).apply()

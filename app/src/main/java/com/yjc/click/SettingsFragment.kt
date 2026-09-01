@@ -300,9 +300,45 @@ class SettingsFragment : Fragment() {
             val langTag = getCurrentLanguageTag()
             val supportsCurrent = langTag in supportedLanguages
 
+            // 计算MD5
+            val md5 = tempFile.inputStream().use { input ->
+                val digest = java.security.MessageDigest.getInstance("MD5")
+                val buffer = ByteArray(8192)
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    digest.update(buffer, 0, read)
+                }
+                digest.digest().joinToString("") { "%02x".format(it) }
+            }
+
+            // 检查是否已存在（按MD5）
+            val prefs = ctx.getSharedPreferences("font_settings", Context.MODE_PRIVATE)
+            val json = prefs.getString("custom_fonts", "[]") ?: "[]"
+            val arr = org.json.JSONArray(json)
+            var exists = false
+            for (i in 0 until arr.length()) {
+                if (arr.getJSONObject(i).optString("md5") == md5) {
+                    exists = true; break
+                }
+            }
+
+            if (exists) {
+                tempFile.delete()
+                activity?.runOnUiThread {
+                    loadingDialog.dismiss()
+                    val d = MaterialAlertDialogBuilder(ctx)
+                        .setTitle(R.string.error)
+                        .setMessage(getString(R.string.font_already_added))
+                        .setPositiveButton(R.string.ok, null)
+                        .create()
+                    d.show()
+                    FontManager.applyFontToDialog(d)
+                }
+                return@Thread
+            }
+
             // 存入缓存
             val fontInfo = FontParser.getFontFamilyName(tempFile)
-            // 用字体名+时间戳生成唯一文件名，避免同名文件覆盖
             val safeName = (fontInfo ?: "font").replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fff]"), "_")
             val uniqueName = "${safeName}_${System.currentTimeMillis()}.${ext}"
             val finalFile = File(ctx.filesDir, "fonts/$uniqueName")
@@ -325,35 +361,16 @@ class SettingsFragment : Fragment() {
                     d.show()
                     FontManager.applyFontToDialog(d)
                 } else {
-                    // 添加字体到列表（先检查是否已存在）
+                    // 添加字体到列表
                     val name = fontInfo ?: finalFile.nameWithoutExtension
-                    val prefs = ctx.getSharedPreferences("font_settings", Context.MODE_PRIVATE)
-                    val json = prefs.getString("custom_fonts", "[]") ?: "[]"
-                    val arr = org.json.JSONArray(json)
-                    var exists = false
-                    for (i in 0 until arr.length()) {
-                        if (arr.getJSONObject(i).getString("path") == finalFile.absolutePath) {
-                            exists = true; break
-                        }
+                    val obj = org.json.JSONObject().apply {
+                        put("name", name)
+                        put("path", finalFile.absolutePath)
+                        put("md5", md5)
                     }
-                    if (exists) {
-                        finalFile.delete()
-                        val d = MaterialAlertDialogBuilder(ctx)
-                            .setTitle(R.string.error)
-                            .setMessage(getString(R.string.font_already_added))
-                            .setPositiveButton(R.string.ok, null)
-                            .create()
-                        d.show()
-                        FontManager.applyFontToDialog(d)
-                    } else {
-                        val obj = org.json.JSONObject().apply {
-                            put("name", name)
-                            put("path", finalFile.absolutePath)
-                        }
-                        arr.put(obj)
-                        prefs.edit().putString("custom_fonts", arr.toString()).apply()
-                        showFontDialog()
-                    }
+                    arr.put(obj)
+                    prefs.edit().putString("custom_fonts", arr.toString()).apply()
+                    showFontDialog()
                 }
             }
         }.start()
