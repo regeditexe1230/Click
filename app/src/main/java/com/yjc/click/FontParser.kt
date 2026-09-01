@@ -49,18 +49,20 @@ object FontParser {
     fun getSupportedLanguages(file: File): List<String> {
         return try {
             RandomAccessFile(file, "r").use { raf ->
-                val cmapOffset = findTableOffset(raf, "cmap") ?: return emptyList()
-                readCmapForLanguages(raf, cmapOffset)
+                val cmapOffset = findTableOffset(raf, "cmap") ?: return listOf("en")
+                // 英文始终视为支持（几乎所有字体都能渲染Basic Latin）
+                val langs = mutableListOf("en")
+                langs.addAll(readCmapForLanguages(raf, cmapOffset))
+                langs
             }
         } catch (e: Exception) {
-            emptyList()
+            listOf("en")
         }
     }
 
     private val languageRanges = mapOf(
-        "en" to listOf(0x0020L..0x007EL),
         "ja" to listOf(0x3040L..0x309FL, 0x30A0L..0x30FFL, 0x4E00L..0x9FFFL),
-        "ko" to listOf(0xAC00L..0xD7AFL, 0x4E00L..0x9FFFL),
+        "ko" to listOf(0xAC00L..0xD7AFL), // 仅Hangul，不含CJK
         "zh" to listOf(0x4E00L..0x9FFFL, 0x3400L..0x4DBFL)
     )
 
