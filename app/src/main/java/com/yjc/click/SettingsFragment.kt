@@ -101,6 +101,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun applyLanguage(localeCode: String) {
+        // 切换语言时重置字体为系统默认
+        FontManager.setSelectedFont(requireContext(), null)
         val localeListCompat = if (localeCode.isEmpty()) {
             LocaleListCompat.getEmptyLocaleList()
         } else {
