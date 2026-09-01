@@ -1,5 +1,6 @@
 package com.yjc.click
 
+import android.content.Context
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -162,10 +163,11 @@ class SettingsFragment : Fragment() {
                     FontManager.applyFont(requireActivity().window.decorView)
                     updateFontDisplay()
                 } else {
-                    // 检查字体是否支持当前语言
-                    val file = java.io.File(path)
+                    // 从缓存查语言支持
                     val langTag = getCurrentLanguageTag()
-                    if (!FontParser.supportsLanguage(file, langTag)) {
+                    val cachedLangs = FontLangCache.getSupportedLanguages(ctx, path)
+                    val supportsCurrent = cachedLangs?.contains(langTag) ?: true // 无缓存默认允许
+                    if (!supportsCurrent) {
                         val langName = getCurrentLanguageName()
                         val d = MaterialAlertDialogBuilder(ctx)
                             .setTitle(R.string.error)
@@ -265,7 +267,7 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        // Check if it's a valid font
+        // 检查是否是有效字体
         val typeface = FontParser.loadTypeface(tempFile)
         if (typeface == null) {
             tempFile.delete()
@@ -279,30 +281,63 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        // Check language support
-        val langTag = getCurrentLanguageTag()
+        // 显示 Material 3 加载弹窗
+        val progressBar = android.widget.ProgressBar(ctx).apply {
+            isIndeterminate = true
+            val dp48 = (48 * resources.displayMetrics.density).toInt()
+            setPadding(dp48, dp48, dp48, dp48)
+        }
+        val loadingDialog = MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.font_checking)
+            .setView(progressBar)
+            .setCancelable(false)
+            .create()
+        loadingDialog.show()
 
-        if (!FontParser.supportsLanguage(tempFile, langTag)) {
+        // 后台线程读取 cmap 表检测语言支持
+        Thread {
+            val supportedLanguages = FontParser.getSupportedLanguages(tempFile)
+            val langTag = getCurrentLanguageTag()
+            val supportsCurrent = langTag in supportedLanguages
+
+            // 存入缓存
+            val fontInfo = FontParser.getFontFamilyName(tempFile)
+            val finalFile = File(ctx.filesDir, "fonts/${tempFile.name}")
+            // 先复制到最终位置以获取路径
+            if (!finalFile.parentFile!!.exists()) finalFile.parentFile!!.mkdirs()
+            tempFile.copyTo(finalFile, overwrite = true)
             tempFile.delete()
-            val langName = getCurrentLanguageName()
-            val d = MaterialAlertDialogBuilder(ctx)
-                .setTitle(R.string.error)
-                .setMessage(getString(R.string.font_no_language_support, langName))
-                .setPositiveButton(R.string.ok, null)
-                .create()
-            d.show()
-            FontManager.applyFontToDialog(d)
-            return
-        }
+            FontLangCache.putSupportedLanguages(ctx, finalFile.absolutePath, supportedLanguages)
 
-        // Add font
-        val fontInfo = FontManager.addCustomFont(ctx, tempFile)
-        tempFile.delete()
-
-        if (fontInfo != null) {
-            // Refresh dialog by reopening
-            showFontDialog()
-        }
+            activity?.runOnUiThread {
+                loadingDialog.dismiss()
+                if (!supportsCurrent) {
+                    finalFile.delete()
+                    FontLangCache.remove(ctx, finalFile.absolutePath)
+                    val langName = getCurrentLanguageName()
+                    val d = MaterialAlertDialogBuilder(ctx)
+                        .setTitle(R.string.error)
+                        .setMessage(getString(R.string.font_no_language_support, langName))
+                        .setPositiveButton(R.string.ok, null)
+                        .create()
+                    d.show()
+                    FontManager.applyFontToDialog(d)
+                } else {
+                    // 添加字体到列表
+                    val name = fontInfo ?: finalFile.nameWithoutExtension
+                    val prefs = ctx.getSharedPreferences("font_settings", Context.MODE_PRIVATE)
+                    val json = prefs.getString("custom_fonts", "[]") ?: "[]"
+                    val arr = org.json.JSONArray(json)
+                    val obj = org.json.JSONObject().apply {
+                        put("name", name)
+                        put("path", finalFile.absolutePath)
+                    }
+                    arr.put(obj)
+                    prefs.edit().putString("custom_fonts", arr.toString()).apply()
+                    showFontDialog()
+                }
+            }
+        }.start()
     }
 
     private fun showDeleteFontDialog(font: FontParser.FontInfo) {

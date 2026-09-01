@@ -78,6 +78,9 @@ object FontManager {
         val file = File(font.filePath)
         if (file.exists()) file.delete()
 
+        // Remove language cache
+        FontLangCache.remove(context, font.filePath)
+
         // Remove from preferences
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val json = prefs.getString(KEY_FONTS, "[]") ?: "[]"

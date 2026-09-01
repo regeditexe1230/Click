@@ -113,6 +113,7 @@
     <string name="font_invalid">无效的字体文件</string>
     <string name="font_no_language_support">该字体不支持当前语言（%s）的字符</string>
     <string name="font_unsupported_format">不支持的文件格式，仅支持 .ttf 和 .otf 字体文件</string>
+    <string name="font_checking">正在检查字体文件…</string>
 
     <!-- 语言选项 -->
     <string name="lang_follow_system">跟随系统</string>
