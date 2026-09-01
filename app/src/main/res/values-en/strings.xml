@@ -125,4 +125,5 @@
     <string name="font_invalid">Invalid font file</string>
     <string name="font_no_language_support">This font does not support %s characters</string>
     <string name="font_unsupported_format">Unsupported file format. Only .ttf and .otf files are supported.</string>
+    <string name="font_checking">Checking font file…</string>
 </resources>

@@ -113,4 +113,5 @@
     <string name="font_invalid">無效的字型檔案</string>
     <string name="font_no_language_support">該字型不支援目前語言（%s）的字元</string>
     <string name="font_unsupported_format">不支援的檔案格式，僅支援 .ttf 和 .otf 字型檔案</string>
+    <string name="font_checking">正在檢查字型檔案…</string>
 </resources>

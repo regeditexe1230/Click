@@ -3,7 +3,6 @@ package com.yjc.click
 import android.graphics.Typeface
 import java.io.File
 import java.io.RandomAccessFile
-import java.nio.ByteOrder
 
 /**
  * 解析 OpenType/TTF 字体文件的 cmap 表，检查是否支持当前语言的 Unicode 字符。
@@ -40,35 +39,113 @@ object FontParser {
      * languageTag: "zh" / "en" / "ja" / "ko"
      */
     fun supportsLanguage(file: File, languageTag: String): Boolean {
+        return languageTag in getSupportedLanguages(file)
+    }
+
+    /**
+     * 读取整个 cmap 表，返回字体支持的语言列表。
+     * 直接读取 cmap 段表，检查各语言区间是否有段覆盖。
+     */
+    fun getSupportedLanguages(file: File): List<String> {
         return try {
             RandomAccessFile(file, "r").use { raf ->
-                val cmapOffset = findTableOffset(raf, "cmap") ?: return false
-                val codepoints = getLanguageCodepoints(languageTag)
-                readCmapAndCheck(raf, cmapOffset, codepoints)
+                val cmapOffset = findTableOffset(raf, "cmap") ?: return emptyList()
+                readCmapForLanguages(raf, cmapOffset)
             }
         } catch (e: Exception) {
-            false
+            emptyList()
         }
     }
 
-    private fun getLanguageCodepoints(languageTag: String): List<IntRange> {
-        return when (languageTag) {
-            "en" -> listOf(0x0020..0x007E) // Basic Latin
-            "ja" -> listOf(
-                0x3040..0x309F, // Hiragana
-                0x30A0..0x30FF, // Katakana
-                0x4E00..0x9FFF  // CJK (shared)
-            )
-            "ko" -> listOf(
-                0xAC00..0xD7AF, // Hangul Syllables
-                0x4E00..0x9FFF  // CJK (shared)
-            )
-            "zh" -> listOf(
-                0x4E00..0x9FFF,  // CJK Unified Ideographs
-                0x3400..0x4DBF  // CJK Extension A (optional but good to check)
-            )
-            else -> listOf(0x0020..0x007E) // fallback to Basic Latin
+    private val languageRanges = mapOf(
+        "en" to listOf(0x0020L..0x007EL),
+        "ja" to listOf(0x3040L..0x309FL, 0x30A0L..0x30FFL, 0x4E00L..0x9FFFL),
+        "ko" to listOf(0xAC00L..0xD7AFL, 0x4E00L..0x9FFFL),
+        "zh" to listOf(0x4E00L..0x9FFFL, 0x3400L..0x4DBFL)
+    )
+
+    private fun readCmapForLanguages(raf: RandomAccessFile, cmapOffset: Long): List<String> {
+        raf.seek(cmapOffset)
+        raf.skipBytes(2)
+        val numSubtables = raf.readUnsignedShort()
+
+        var bestOffset = -1L
+        for (i in 0 until numSubtables) {
+            val platformID = raf.readUnsignedShort()
+            val encodingID = raf.readUnsignedShort()
+            val subtableOffset = cmapOffset + raf.readUnsignedInt()
+            if (platformID == 0) { bestOffset = subtableOffset; break }
+            if (platformID == 3 && (encodingID == 1 || encodingID == 10)) bestOffset = subtableOffset
         }
+        if (bestOffset < 0) return emptyList()
+
+        raf.seek(bestOffset)
+        val format = raf.readUnsignedShort()
+
+        return when (format) {
+            4 -> readFormat4Languages(raf, bestOffset)
+            12 -> readFormat12Languages(raf, bestOffset)
+            else -> emptyList()
+        }
+    }
+
+    private fun readFormat4Languages(raf: RandomAccessFile, start: Long): List<String> {
+        raf.seek(start)
+        // Header: format(2) + language(2) + reserved(2) + segCountX2(2) + searchRange(2) + entrySelector(2) + rangeShift(2) = 16字节
+        val buf = ByteArray(16)
+        raf.readFully(buf)
+        val segCount = (((buf[6].toInt() and 0xFF) shl 8) or (buf[7].toInt() and 0xFF)) / 2
+        if (segCount == 0) return emptyList()
+
+        raf.seek(start + 16)
+        val endCodes = IntArray(segCount) { raf.readUnsignedShort() }
+        raf.skipBytes(2) // reservedPad
+        val startCodes = IntArray(segCount) { raf.readUnsignedShort() }
+        raf.skipBytes(segCount * 2) // idDeltas
+        raf.skipBytes(segCount * 2) // idRangeOffsets
+
+        val result = mutableListOf<String>()
+        for ((lang, ranges) in languageRanges) {
+            var supported = false
+            for (range in ranges) {
+                if (range.first > 0xFFFF) continue
+                val rEnd = minOf(range.last.toInt(), 0xFFFF)
+                for (seg in 0 until segCount - 1) { // 跳过最后一个哨兵段
+                    if (startCodes[seg] <= rEnd && endCodes[seg] >= range.first.toInt()) {
+                        supported = true; break
+                    }
+                }
+                if (supported) break
+            }
+            if (supported) result.add(lang)
+        }
+        return result
+    }
+
+    private fun readFormat12Languages(raf: RandomAccessFile, start: Long): List<String> {
+        raf.seek(start + 4)
+        raf.readInt()
+        raf.readInt()
+        val numGroups = raf.readInt()
+
+        val groups = Array(numGroups) {
+            Triple(raf.readUnsignedInt(), raf.readUnsignedInt(), raf.readUnsignedInt())
+        }
+
+        val result = mutableListOf<String>()
+        for ((lang, ranges) in languageRanges) {
+            var supported = false
+            for (range in ranges) {
+                for ((gStart, gEnd, _) in groups) {
+                    if (gStart <= range.last && gEnd >= range.first) {
+                        supported = true; break
+                    }
+                }
+                if (supported) break
+            }
+            if (supported) result.add(lang)
+        }
+        return result
     }
 
     private fun findTableOffset(raf: RandomAccessFile, tag: String): Long? {
