@@ -682,11 +682,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun expandView(view: View) {
-        if (view.visibility == View.VISIBLE && view.height > 0) return
+        // 只在完全展开（WRAP_CONTENT + VISIBLE）时跳过
+        if (view.visibility == View.VISIBLE && view.layoutParams.height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) return
+        
+        // 取消正在运行的 ValueAnimator（可能来自 collapseView）
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
         
         view.animate().cancel()
         
-        // 测量目标高度
         view.measure(
             View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -700,14 +704,15 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 ViewPropertyAnimator 处理 alpha（硬件加速）
         view.animate()
             .alpha(1f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
         
+        var cancelled = false
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
+        view.setTag(R.id.anim_cancel_tag, animator)
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -715,10 +720,16 @@ class MainActivity : AppCompatActivity() {
             view.layoutParams = params
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
-                view.alpha = 1f
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    view.layoutParams = params
+                    view.alpha = 1f
+                }
             }
         })
         animator.start()
@@ -726,6 +737,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
+        
+        // 取消正在运行的 ValueAnimator（可能来自 expandView）
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
         
         view.animate().cancel()
         
@@ -739,7 +754,9 @@ class MainActivity : AppCompatActivity() {
         
         val params = view.layoutParams
         
+        var cancelled = false
         val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
+        view.setTag(R.id.anim_cancel_tag, animator)
         animator.duration = 250
         animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -748,11 +765,17 @@ class MainActivity : AppCompatActivity() {
             view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                view.visibility = View.GONE
-                view.alpha = 1f
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    view.visibility = View.GONE
+                    view.alpha = 1f
+                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    view.layoutParams = params
+                }
             }
         })
         animator.start()
