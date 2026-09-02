@@ -95,13 +95,27 @@ object FontParser {
 
     private fun readFormat4Languages(raf: RandomAccessFile, start: Long): List<String> {
         raf.seek(start)
-        // Header: format(2) + language(2) + reserved(2) + segCountX2(2) + searchRange(2) + entrySelector(2) + rangeShift(2) = 16字节
-        val buf = ByteArray(16)
+        // 读取 header 原始字节（标准14字节或非标准16字节）
+        val buf = ByteArray(18)
         raf.readFully(buf)
-        val segCount = (((buf[6].toInt() and 0xFF) shl 8) or (buf[7].toInt() and 0xFF)) / 2
-        if (segCount == 0) return emptyList()
 
-        raf.seek(start + 16)
+        // 先尝试标准偏移4，segCount 为 0 则尝试偏移6
+        var segCountAt4 = (((buf[4].toInt() and 0xFF) shl 8) or (buf[5].toInt() and 0xFF)) / 2
+        val segCountAt6 = (((buf[6].toInt() and 0xFF) shl 8) or (buf[7].toInt() and 0xFF)) / 2
+
+        val segCount: Int
+        val headerSize: Int
+        if (segCountAt4 > 0 && segCountAt4 < 10000) {
+            segCount = segCountAt4
+            headerSize = 14
+        } else if (segCountAt6 > 0 && segCountAt6 < 10000) {
+            segCount = segCountAt6
+            headerSize = 16
+        } else {
+            return emptyList()
+        }
+
+        raf.seek(start + headerSize)
         val endCodes = IntArray(segCount) { raf.readUnsignedShort() }
         raf.skipBytes(2) // reservedPad
         val startCodes = IntArray(segCount) { raf.readUnsignedShort() }
@@ -125,7 +139,7 @@ object FontParser {
             }
             if (supported) result.add(lang)
         }
-        android.util.Log.d("FontParser", "format4 segCount=$segCount detected=$result")
+        android.util.Log.d("FontParser", "format4 headerSize=$headerSize segCount=$segCount detected=$result")
         return result
     }
 
@@ -211,124 +225,6 @@ object FontParser {
             }
         }
         return null
-    }
-
-    /**
-     * 解析 cmap 表，检查给定的 Unicode 区间是否至少有部分字符被覆盖。
-     * 只要有 >= 50% 的采样点命中就认为支持。
-     */
-    private fun readCmapAndCheck(raf: RandomAccessFile, cmapOffset: Long, ranges: List<IntRange>): Boolean {
-        raf.seek(cmapOffset)
-        raf.skipBytes(2) // version
-        val numSubtables = raf.readUnsignedShort()
-
-        // Find best subtable (prefer platform 3 encoding 3 or platform 0)
-        var bestOffset = -1L
-        for (i in 0 until numSubtables) {
-            val platformID = raf.readUnsignedShort()
-            val encodingID = raf.readUnsignedShort()
-            val subtableOffset = raf.readUnsignedInt()
-
-            if (platformID == 0) { // Unicode
-                bestOffset = cmapOffset + subtableOffset
-                break
-            }
-            if (platformID == 3 && (encodingID == 1 || encodingID == 10)) {
-                bestOffset = cmapOffset + subtableOffset
-                // don't break, prefer platform 0 if exists
-            }
-        }
-
-        if (bestOffset < 0) return false
-        return readCmapSubtable(raf, bestOffset, ranges)
-    }
-
-    private fun readCmapSubtable(raf: RandomAccessFile, subtableOffset: Long, ranges: List<IntRange>): Boolean {
-        raf.seek(subtableOffset)
-        val format = raf.readUnsignedShort()
-
-        return when (format) {
-            4 -> readCmapFormat4(raf, subtableOffset, ranges)
-            12 -> readCmapFormat12(raf, subtableOffset, ranges)
-            else -> false
-        }
-    }
-
-    /**
-     * cmap Format 4: BMP characters (U+0000..U+FFFF)
-     */
-    private fun readCmapFormat4(raf: RandomAccessFile, start: Long, ranges: List<IntRange>): Boolean {
-        raf.seek(start)
-        raf.skipBytes(2) // format
-        val length = raf.readUnsignedShort()
-        raf.skipBytes(2) // language
-        val segCount = raf.readUnsignedShort() / 2
-        raf.skipBytes(6) // searchRange, entrySelector, rangeShift
-
-        val endCodes = IntArray(segCount) { raf.readUnsignedShort() }
-        raf.skipBytes(2) // reservedPad
-        val startCodes = IntArray(segCount) { raf.readUnsignedShort() }
-        val idDeltas = IntArray(segCount) { raf.readUnsignedShort().toShort().toInt() }
-        val idRangeOffsetsPos = raf.filePointer
-        val idRangeOffsets = IntArray(segCount) { raf.readUnsignedShort() }
-
-        // Check coverage for each range
-        for (range in ranges) {
-            var total = 0
-            var covered = 0
-            for (codepoint in range) {
-                if (codepoint > 0xFFFF) continue // Format 4 only covers BMP
-                if (++total > 50) break // Sample at most 50 codepoints per range
-                for (seg in 0 until segCount) {
-                    if (codepoint in startCodes[seg]..endCodes[seg]) {
-                        if (idRangeOffsets[seg] == 0) {
-                            // Character is mapped
-                            covered++
-                        } else {
-                            // Check via offset
-                            val glyphIndexAddr = idRangeOffsetsPos + seg * 2 + idRangeOffsets[seg] + (codepoint - startCodes[seg]) * 2
-                            raf.seek(glyphIndexAddr)
-                            val glyphId = raf.readUnsignedShort()
-                            if (glyphId != 0) covered++
-                        }
-                        break
-                    }
-                }
-            }
-            // At least 50% of sampled codepoints must be covered
-            if (total > 0 && covered * 2 >= total) return true
-        }
-        return false
-    }
-
-    /**
-     * cmap Format 12: Full Unicode coverage (U+0000..U+10FFFF)
-     */
-    private fun readCmapFormat12(raf: RandomAccessFile, start: Long, ranges: List<IntRange>): Boolean {
-        raf.seek(start + 4) // skip format + reserved
-        raf.readInt() // length
-        raf.readInt() // language
-        val numGroups = raf.readInt()
-
-        val groups = Array(numGroups) {
-            Triple(raf.readUnsignedInt(), raf.readUnsignedInt(), raf.readUnsignedInt())
-        }
-
-        for (range in ranges) {
-            var total = 0
-            var covered = 0
-            for (codepoint in range) {
-                if (++total > 50) break
-                for ((startCode, endCode, _) in groups) {
-                    if (codepoint.toLong() in startCode..endCode) {
-                        covered++
-                        break
-                    }
-                }
-            }
-            if (total > 0 && covered * 2 >= total) return true
-        }
-        return false
     }
 
     private fun RandomAccessFile.readUnsignedInt(): Long {
