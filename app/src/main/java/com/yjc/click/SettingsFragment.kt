@@ -236,54 +236,7 @@ class SettingsFragment : Fragment() {
     private fun handleFontSelected(uri: Uri) {
         val ctx = requireContext()
 
-        // 获取文件名并检查后缀
-        val fileName = getFileNameFromUri(uri)
-        val ext = fileName?.substringAfterLast('.', "")?.lowercase() ?: ""
-        if (ext !in listOf("ttf", "otf")) {
-            val d = MaterialAlertDialogBuilder(ctx)
-                .setTitle(R.string.error)
-                .setMessage(getString(R.string.font_unsupported_format))
-                .setPositiveButton(R.string.ok, null)
-                .create()
-            d.show()
-            FontManager.applyFontToDialog(d)
-            return
-        }
-
-        // Copy URI to temp file (保留原后缀)
-        val tempFile = File(ctx.cacheDir, "temp_font.$ext")
-        try {
-            ctx.contentResolver.openInputStream(uri)?.use { input ->
-                tempFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-        } catch (e: Exception) {
-            val d = MaterialAlertDialogBuilder(ctx)
-                .setTitle(R.string.error)
-                .setMessage(getString(R.string.font_read_error))
-                .setPositiveButton(R.string.ok, null)
-                .create()
-            d.show()
-            FontManager.applyFontToDialog(d)
-            return
-        }
-
-        // 检查是否是有效字体
-        val typeface = FontParser.loadTypeface(tempFile)
-        if (typeface == null) {
-            tempFile.delete()
-            val d = MaterialAlertDialogBuilder(ctx)
-                .setTitle(R.string.error)
-                .setMessage(getString(R.string.font_invalid))
-                .setPositiveButton(R.string.ok, null)
-                .create()
-            d.show()
-            FontManager.applyFontToDialog(d)
-            return
-        }
-
-        // 显示 Material 3 加载弹窗
+        // 立即显示加载弹窗（主线程）
         val progressBar = android.widget.ProgressBar(ctx).apply {
             isIndeterminate = true
             val dp48 = (48 * resources.displayMetrics.density).toInt()
@@ -296,8 +249,65 @@ class SettingsFragment : Fragment() {
             .create()
         loadingDialog.show()
 
-        // 后台线程读取 cmap 表检测语言支持
+        // 后台线程处理所有耗时操作
         Thread {
+            // 获取文件名并检查后缀
+            val fileName = getFileNameFromUri(uri)
+            val ext = fileName?.substringAfterLast('.', "")?.lowercase() ?: ""
+            if (ext !in listOf("ttf", "otf")) {
+                activity?.runOnUiThread {
+                    loadingDialog.dismiss()
+                    val d = MaterialAlertDialogBuilder(ctx)
+                        .setTitle(R.string.error)
+                        .setMessage(getString(R.string.font_unsupported_format))
+                        .setPositiveButton(R.string.ok, null)
+                        .create()
+                    d.show()
+                    FontManager.applyFontToDialog(d)
+                }
+                return@Thread
+            }
+
+            // 复制文件到临时目录
+            val tempFile = File(ctx.cacheDir, "temp_font.$ext")
+            try {
+                ctx.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } catch (e: Exception) {
+                activity?.runOnUiThread {
+                    loadingDialog.dismiss()
+                    val d = MaterialAlertDialogBuilder(ctx)
+                        .setTitle(R.string.error)
+                        .setMessage(getString(R.string.font_read_error))
+                        .setPositiveButton(R.string.ok, null)
+                        .create()
+                    d.show()
+                    FontManager.applyFontToDialog(d)
+                }
+                return@Thread
+            }
+
+            // 检查是否是有效字体
+            val typeface = FontParser.loadTypeface(tempFile)
+            if (typeface == null) {
+                tempFile.delete()
+                activity?.runOnUiThread {
+                    loadingDialog.dismiss()
+                    val d = MaterialAlertDialogBuilder(ctx)
+                        .setTitle(R.string.error)
+                        .setMessage(getString(R.string.font_invalid))
+                        .setPositiveButton(R.string.ok, null)
+                        .create()
+                    d.show()
+                    FontManager.applyFontToDialog(d)
+                }
+                return@Thread
+            }
+
+            // 检测语言支持
             val supportedLanguages = FontParser.getSupportedLanguages(tempFile)
             val langTag = getCurrentLanguageTag()
             val supportsCurrent = langTag in supportedLanguages
