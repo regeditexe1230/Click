@@ -78,7 +78,7 @@ class FloatingService : Service() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "点击服务", NotificationManager.IMPORTANCE_LOW
+                CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
@@ -87,12 +87,12 @@ class FloatingService : Service() {
 
     private fun createNotification(): Notification {
         val text = when {
-            AppConfig.recordRequested -> "录制手势中..."
-            AppConfig.current.isInfinite -> "无限循环中"
-            else -> "点击悬浮球执行操作"
+            AppConfig.recordRequested -> getString(R.string.notification_recording)
+            AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            else -> getString(R.string.notification_idle)
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("悬浮球运行中")
+            .setContentTitle(getString(R.string.notification_title))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -182,7 +182,7 @@ class FloatingService : Service() {
                         if (AppConfig.current.mode == Mode.CLICK && targetMarker == null) {
                             Toast.makeText(
                                 this@FloatingService,
-                                "请先拖动悬浮球设到点击位置",
+                                R.string.toast_drag_to_position,
                                 Toast.LENGTH_SHORT
                             ).show()
                             return@setOnTouchListener true
@@ -355,7 +355,7 @@ class FloatingService : Service() {
                 AppConfig.running = false
                 operationPaused = true
                 job?.cancel()
-                Toast.makeText(this, "操作已暂停", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.toast_operation_paused, Toast.LENGTH_SHORT).show()
             } else {
                 android.util.Log.d("FloatingService", "executeAction: first tap while running")
                 lastTapTime = now
