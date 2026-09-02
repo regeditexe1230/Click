@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var isSwipeMode = false
     private var isGestureMode = false
     private var isWarningDialogShowing = false
+    private var expandCollapseAnimator: android.animation.ValueAnimator? = null
 
     private lateinit var radioClick: TextView
     private lateinit var radioSwipe: TextView
@@ -600,7 +601,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!overlayGranted) {
-            Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
             openOverlaySettings()
         }
     }
@@ -663,17 +664,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshIndicators() {
-        // 刷新执行模式指示器
-        android.util.Log.d("MainActivity", "refreshIndicators: radioClick.width=${radioClick.width}, radioSwipe.left=${radioSwipe.left}, radioClick.left=${radioClick.left}, isSwipeMode=$isSwipeMode")
         if (radioClick.width > 0) {
             val modeParams = modeIndicator.layoutParams
             modeParams.width = radioClick.width
             modeIndicator.layoutParams = modeParams
             modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
             modeIndicator.visibility = View.VISIBLE
-            android.util.Log.d("MainActivity", "modeIndicator set: width=${modeParams.width}, x=${modeIndicator.x}")
-        } else {
-            android.util.Log.d("MainActivity", "radioClick.width is 0, skipping")
         }
 
         // 刷新滑动方式指示器
@@ -689,7 +685,9 @@ class MainActivity : AppCompatActivity() {
     private fun expandView(view: View) {
         if (view.visibility == View.VISIBLE && view.height > 0) return
         
+        // 取消所有正在运行的动画
         view.animate().cancel()
+        expandCollapseAnimator?.cancel()
         
         // 测量目标高度
         view.measure(
@@ -705,7 +703,6 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 ViewPropertyAnimator 处理 alpha（硬件加速）
         view.animate()
             .alpha(1f)
             .setDuration(250)
@@ -713,6 +710,7 @@ class MainActivity : AppCompatActivity() {
             .start()
         
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
+        expandCollapseAnimator = animator
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -721,6 +719,7 @@ class MainActivity : AppCompatActivity() {
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
+                if (expandCollapseAnimator == animator) expandCollapseAnimator = null
                 params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
                 view.layoutParams = params
                 view.alpha = 1f
@@ -732,7 +731,9 @@ class MainActivity : AppCompatActivity() {
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
         
+        // 取消所有正在运行的动画
         view.animate().cancel()
+        expandCollapseAnimator?.cancel()
         
         val currentHeight = view.height
         if (currentHeight <= 0) {
@@ -745,6 +746,7 @@ class MainActivity : AppCompatActivity() {
         val params = view.layoutParams
         
         val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
+        expandCollapseAnimator = animator
         animator.duration = 250
         animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -754,6 +756,7 @@ class MainActivity : AppCompatActivity() {
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
+                if (expandCollapseAnimator == animator) expandCollapseAnimator = null
                 view.visibility = View.GONE
                 view.alpha = 1f
                 params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
