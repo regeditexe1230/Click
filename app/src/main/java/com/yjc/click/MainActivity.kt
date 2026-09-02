@@ -63,10 +63,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 应用语言设置
+        applyLanguage()
+
+        // 初始化字体管理
+        FontManager.init(this)
+
         // 启用edge-to-edge模式
         enableEdgeToEdge()
 
         setContentView(R.layout.activity_main)
+
+        // 恢复选中的底部导航项
+        val savedItemId = savedInstanceState?.getInt("selected_nav_item", R.id.nav_home) ?: R.id.nav_home
 
         // 顶栏适配状态栏
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
@@ -82,6 +91,19 @@ class MainActivity : AppCompatActivity() {
             val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             view.setPadding(0, 0, 0, insets.bottom)
             windowInsets
+        }
+
+        // 底栏启动动画：从底部滑入（仅首次启动）
+        if (savedInstanceState == null) {
+            bottomNav.post {
+                bottomNav.translationY = bottomNav.height.toFloat()
+                bottomNav.animate()
+                    .translationY(0f)
+                    .setDuration(300)
+                    .setStartDelay(100)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
+                    .start()
+            }
         }
 
         statusText = findViewById(R.id.statusText)
@@ -125,25 +147,34 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!Settings.canDrawOverlays(this)) {
-                    Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
                     startActivity(Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:$packageName")
                     ))
                 } else {
-                    Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, R.string.toast_overlay_enabled, Toast.LENGTH_SHORT).show()
                 }
             }
         }
 
         // 初始状态
-        radioClick.isSelected = true
-        radioSwipeManual.isSelected = true
-        modeIndicator.post {
-            val params = modeIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
-            params.width = radioClick.width - 8
-            modeIndicator.layoutParams = params
+        radioClick.isSelected = !isSwipeMode
+        radioSwipe.isSelected = isSwipeMode
+        radioSwipeManual.isSelected = !isGestureMode
+        radioSwipeGesture.isSelected = isGestureMode
+
+        // 循环检查直到视图宽度有效
+        val checkRunnable = object : Runnable {
+            override fun run() {
+                if (radioClick.width > 0) {
+                    refreshIndicators()
+                } else {
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 50)
+                }
+            }
         }
+        android.os.Handler(android.os.Looper.getMainLooper()).post(checkRunnable)
 
         radioClick.setOnClickListener {
             if (isSwipeMode) {
@@ -172,7 +203,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 saveConfig()
                 if (!isSwipeConfigValid()) {
-                    val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                    val hint = if (!isGestureMode) getString(R.string.toast_fill_manual_params) else getString(R.string.toast_record_gesture_first)
                     Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
                 }
                 updateStatus()
@@ -213,15 +244,96 @@ class MainActivity : AppCompatActivity() {
         val homeContent = findViewById<View>(R.id.home_content)
         val programPage = findViewById<View>(R.id.program_page)
         val settingsPage = findViewById<View>(R.id.settings_page)
-        var previousItemId = R.id.nav_home
+        var previousItemId = savedItemId
+        var settingsFragmentLoaded = false
+
+        // 恢复选中的页面和状态
+        homeContent.visibility = if (savedItemId == R.id.nav_home) View.VISIBLE else View.GONE
+        programPage.visibility = if (savedItemId == R.id.nav_program) View.VISIBLE else View.GONE
+        settingsPage.visibility = if (savedItemId == R.id.nav_settings) View.VISIBLE else View.GONE
+        toolbar.title = when (savedItemId) {
+            R.id.nav_program -> getString(R.string.nav_program)
+            R.id.nav_settings -> getString(R.string.nav_settings)
+            else -> "Click"
+        }
+        bottomNavigation.selectedItemId = savedItemId
+
+        // 恢复执行模式状态
+        isSwipeMode = savedInstanceState?.getBoolean("isSwipeMode", false) ?: false
+        isGestureMode = savedInstanceState?.getBoolean("isGestureMode", false) ?: false
+        if (isSwipeMode) {
+            radioClick.isSelected = false
+            radioSwipe.isSelected = true
+            swipeParams.visibility = View.VISIBLE
+        }
+        if (isGestureMode) {
+            radioSwipeManual.isSelected = false
+            radioSwipeGesture.isSelected = true
+            manualSwipeParams.visibility = View.GONE
+            gestureSwipeSection.visibility = View.VISIBLE
+        }
 
         bottomNavigation.setOnItemSelectedListener { item ->
             val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
+            val newItem = when (item.itemId) {
+                R.id.nav_home -> homeContent
+                R.id.nav_program -> programPage
+                R.id.nav_settings -> settingsPage
+                else -> homeContent
+            }
+            val oldItem = when (previousItemId) {
+                R.id.nav_home -> homeContent
+                R.id.nav_program -> programPage
+                R.id.nav_settings -> settingsPage
+                else -> homeContent
+            }
 
-            // 切换页面
-            homeContent.visibility = if (item.itemId == R.id.nav_home) View.VISIBLE else View.GONE
-            programPage.visibility = if (item.itemId == R.id.nav_program) View.VISIBLE else View.GONE
-            settingsPage.visibility = if (item.itemId == R.id.nav_settings) View.VISIBLE else View.GONE
+            // 判断切换方向
+            val navItems = listOf(R.id.nav_home, R.id.nav_program, R.id.nav_settings)
+            val oldIndex = navItems.indexOf(previousItemId)
+            val newIndex = navItems.indexOf(item.itemId)
+            val goingForward = newIndex > oldIndex
+
+            // 切换页面动画
+            if (newItem != oldItem) {
+                val exitAnim = if (goingForward) R.anim.slide_out_left else R.anim.slide_out_right
+                val enterAnim = if (goingForward) R.anim.slide_in_right else R.anim.slide_in_left
+
+                // 退出动画
+                val exitAnimation = android.view.animation.AnimationUtils.loadAnimation(this, exitAnim)
+                oldItem.startAnimation(exitAnimation)
+                oldItem.visibility = View.GONE
+
+                // 进入动画
+                newItem.visibility = View.VISIBLE
+                val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
+                newItem.startAnimation(enterAnimation)
+
+                // 顶栏标题淡入淡出动画
+                toolbar.animate()
+                    .alpha(0f)
+                    .setDuration(126)
+                    .withEndAction {
+                        toolbar.title = when (item.itemId) {
+                            R.id.nav_home -> "Click"
+                            R.id.nav_program -> getString(R.string.nav_program)
+                            R.id.nav_settings -> getString(R.string.nav_settings)
+                            else -> "Click"
+                        }
+                        toolbar.animate()
+                            .alpha(1f)
+                            .setDuration(162)
+                            .start()
+                    }
+                    .start()
+            } else {
+                toolbar.title = when (item.itemId) {
+                    R.id.nav_home -> "Click"
+                    R.id.nav_program -> getString(R.string.nav_program)
+                    R.id.nav_settings -> getString(R.string.nav_settings)
+                    else -> "Click"
+                }
+            }
 
             // 主页图标状态切换
             val isHomeSelected = item.itemId == R.id.nav_home
@@ -235,6 +347,14 @@ class MainActivity : AppCompatActivity() {
             // 程序图标缩放动画
             if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
                 animateProgramIcon(bottomNavigation, 1)
+            }
+
+            // 加载设置页面Fragment（首次切换时）
+            if (item.itemId == R.id.nav_settings && !settingsFragmentLoaded) {
+                settingsFragmentLoaded = true
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.settings_page, SettingsFragment())
+                    .commit()
             }
 
             previousItemId = item.itemId
@@ -253,11 +373,11 @@ class MainActivity : AppCompatActivity() {
 
         btnRecordGesture.setOnClickListener {
             if (!hasOverlayPermission()) {
-                Toast.makeText(this, "需要悬浮窗权限才能录制手势", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             if (!isServiceEnabled()) {
-                Toast.makeText(this, "需要无障碍服务才能录制手势", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             saveConfig()
@@ -272,7 +392,7 @@ class MainActivity : AppCompatActivity() {
                 AppConfig.running = true
                 startFloatingService()
             }
-            Toast.makeText(this, "请在屏幕上滑动手指录制手势", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.toast_swipe_to_record, Toast.LENGTH_SHORT).show()
         }
 
         btnStartOverlay.setOnClickListener { handleStartButtonClick() }
@@ -299,10 +419,16 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+
+        // 应用自定义字体
+        FontManager.applyFont(window.decorView)
     }
 
     override fun onResume() {
         super.onResume()
+        // 应用字体（从设置页切换字体后）
+        FontManager.init(this)
+        FontManager.applyFont(window.decorView)
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
@@ -323,7 +449,7 @@ class MainActivity : AppCompatActivity() {
                 pendingPermissionStep = PermissionStep.NONE
                 updateStatus()
                 if (!hasOverlayPermission()) {
-                    Toast.makeText(applicationContext, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(applicationContext, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
                     openOverlaySettings()
                     return
                 }
@@ -344,6 +470,11 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("pending_step", pendingPermissionStep.name)
+        outState.putBoolean("isSwipeMode", isSwipeMode)
+        outState.putBoolean("isGestureMode", isGestureMode)
+        // 保存当前选中的底部导航项
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
+        outState.putInt("selected_nav_item", bottomNavigation.selectedItemId)
     }
 
     override fun onPause() {
@@ -355,9 +486,13 @@ class MainActivity : AppCompatActivity() {
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
 
+        val accessibilityStatus = getString(if (serviceEnabled) R.string.status_enabled else R.string.status_disabled)
+        val overlayStatus = getString(if (overlayGranted) R.string.status_enabled else R.string.status_disabled)
+
         statusText.text = buildString {
-            append("无障碍服务：${if (serviceEnabled) "✅ 已开启" else "❌ 未开启"}\n")
-            append("悬浮窗权限：${if (overlayGranted) "✅ 已开启" else "❌ 未开启"}")
+            append(getString(R.string.status_accessibility, accessibilityStatus))
+            append("\n")
+            append(getString(R.string.status_overlay, overlayStatus))
         }
 
         val ready = serviceEnabled && overlayGranted && isSwipeConfigValid()
@@ -369,10 +504,10 @@ class MainActivity : AppCompatActivity() {
 
         val gesture = AppConfig.recordedGesture
         if (gesture.points.size >= 2) {
-            lblRecordedStatus.text = "已录制手势：${gesture.points.size}个点，${gesture.totalDuration}ms"
+            lblRecordedStatus.text = getString(R.string.status_gesture_recorded, gesture.points.size, gesture.totalDuration)
             lblRecordedStatus.visibility = View.VISIBLE
         } else if (isSwipeMode && isGestureMode) {
-            lblRecordedStatus.text = "尚未录制手势"
+            lblRecordedStatus.text = getString(R.string.status_gesture_not_recorded)
             lblRecordedStatus.visibility = View.VISIBLE
         } else {
             lblRecordedStatus.visibility = View.GONE
@@ -416,7 +551,7 @@ class MainActivity : AppCompatActivity() {
 
         if (serviceEnabled && overlayGranted) {
             if (!isSwipeConfigValid()) {
-                val hint = if (!isGestureMode) "请填写手动参数" else "请先录制手势"
+                val hint = if (!isGestureMode) getString(R.string.toast_fill_manual_params) else getString(R.string.toast_record_gesture_first)
                 Toast.makeText(this, hint, Toast.LENGTH_LONG).show()
                 return
             }
@@ -465,7 +600,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!overlayGranted) {
-            Toast.makeText(this, "请开启悬浮窗权限", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
             openOverlaySettings()
         }
     }
@@ -496,21 +631,17 @@ class MainActivity : AppCompatActivity() {
     private fun showWarningDialog(onConfirmed: () -> Unit) {
         if (isWarningDialogShowing) return
         
-        val message = decodeWarning()
-        if (!message.contains("github")) {
-            throw RuntimeException("App integrity verification failed")
-        }
-        
         isWarningDialogShowing = true
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("安全警告")
-            .setMessage(message)
-            .setPositiveButton("确认") { _, _ -> onConfirmed() }
+            .setTitle(R.string.security_warning)
+            .setMessage(R.string.security_warning_message)
+            .setPositiveButton(R.string.confirm) { _, _ -> onConfirmed() }
             .setCancelable(false)
             .create()
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.setOnDismissListener { isWarningDialogShowing = false }
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun openOverlaySettings() {
@@ -531,12 +662,35 @@ class MainActivity : AppCompatActivity() {
             .start()
     }
 
+    private fun refreshIndicators() {
+        if (radioClick.width > 0) {
+            val modeParams = modeIndicator.layoutParams
+            modeParams.width = radioClick.width
+            modeIndicator.layoutParams = modeParams
+            modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
+            modeIndicator.visibility = View.VISIBLE
+        }
+
+        // 刷新滑动方式指示器
+        if (isSwipeMode && radioSwipeManual.width > 0) {
+            val swipeParams = swipeMethodIndicator.layoutParams
+            swipeParams.width = radioSwipeManual.width
+            swipeMethodIndicator.layoutParams = swipeParams
+            swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
+            swipeMethodIndicator.visibility = View.VISIBLE
+        }
+    }
+
     private fun expandView(view: View) {
-        if (view.visibility == View.VISIBLE && view.height > 0) return
+        // 只在完全展开（WRAP_CONTENT + VISIBLE）时跳过
+        if (view.visibility == View.VISIBLE && view.layoutParams.height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) return
+        
+        // 取消正在运行的 ValueAnimator（可能来自 collapseView）
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
         
         view.animate().cancel()
         
-        // 测量目标高度
         view.measure(
             View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -550,14 +704,15 @@ class MainActivity : AppCompatActivity() {
         params.height = 1
         view.layoutParams = params
         
-        // 使用 ViewPropertyAnimator 处理 alpha（硬件加速）
         view.animate()
             .alpha(1f)
             .setDuration(250)
             .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
             .start()
         
+        var cancelled = false
         val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
+        view.setTag(R.id.anim_cancel_tag, animator)
         animator.duration = 250
         animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -565,10 +720,16 @@ class MainActivity : AppCompatActivity() {
             view.layoutParams = params
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
-                view.alpha = 1f
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    view.layoutParams = params
+                    view.alpha = 1f
+                }
             }
         })
         animator.start()
@@ -576,6 +737,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun collapseView(view: View) {
         if (view.visibility == View.GONE) return
+        
+        // 取消正在运行的 ValueAnimator（可能来自 expandView）
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
         
         view.animate().cancel()
         
@@ -589,7 +754,9 @@ class MainActivity : AppCompatActivity() {
         
         val params = view.layoutParams
         
+        var cancelled = false
         val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
+        view.setTag(R.id.anim_cancel_tag, animator)
         animator.duration = 250
         animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
         animator.addUpdateListener { anim ->
@@ -598,11 +765,17 @@ class MainActivity : AppCompatActivity() {
             view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
         }
         animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                view.visibility = View.GONE
-                view.alpha = 1f
-                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                view.layoutParams = params
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    view.visibility = View.GONE
+                    view.alpha = 1f
+                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    view.layoutParams = params
+                }
             }
         })
         animator.start()
@@ -633,7 +806,7 @@ class MainActivity : AppCompatActivity() {
     private fun startFloatingService() {
         val intent = Intent(this, FloatingService::class.java)
         ContextCompat.startForegroundService(this, intent)
-        Toast.makeText(this, "悬浮球已启动", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, R.string.toast_floating_started, Toast.LENGTH_SHORT).show()
         updateStatus()
     }
 
@@ -641,25 +814,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFirstLaunchDialog() {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("使用说明")
-            .setMessage("\n" + decodeTutorialText())
-            .setPositiveButton("知道了") { d, _ -> d.dismiss() }
+            .setTitle(R.string.usage_instructions)
+            .setMessage(R.string.usage_instructions_message)
+            .setPositiveButton(R.string.ok) { d, _ -> d.dismiss() }
             .setCancelable(false)
             .create()
         // 平滑显示，避免闪烁
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("悬浮球使用说明")
-            .setMessage("\n" + decodeFloatTutorialText())
-            .setPositiveButton("知道了") { _, _ -> onStart() }
+            .setTitle(R.string.floating_ball_instructions)
+            .setMessage(R.string.floating_ball_instructions_message)
+            .setPositiveButton(R.string.ok) { _, _ -> onStart() }
             .setCancelable(false)
             .create()
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        FontManager.applyFontToDialog(dialog)
     }
 
     private fun decodeFloatTutorialText(): String {
@@ -726,6 +901,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return null
+    }
+
+    private fun applyLanguage() {
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val localeCode = prefs.getString("app_locale", "")
+        if (!localeCode.isNullOrEmpty()) {
+            // 用户手动选择了语言
+            val localeListCompat = androidx.core.os.LocaleListCompat.forLanguageTags(localeCode)
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeListCompat)
+        } else {
+            // 跟随系统 - 检查系统语言是否在支持范围内
+            val systemLocale = java.util.Locale.getDefault().language
+            val supportedLanguages = listOf("zh", "en", "ja", "ko")
+            if (systemLocale !in supportedLanguages) {
+                // 系统语言不在支持范围内，fallback到英文
+                val localeListCompat = androidx.core.os.LocaleListCompat.forLanguageTags("en")
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeListCompat)
+            }
+        }
     }
 
     private fun getStatusBarHeight(): Int {

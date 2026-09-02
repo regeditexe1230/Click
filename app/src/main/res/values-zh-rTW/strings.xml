@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+
+    <!-- 通知 -->
+    <string name="notification_channel_name">點擊服務</string>
+    <string name="notification_recording">錄製手勢中...</string>
+    <string name="notification_infinite">無限循環中</string>
+    <string name="notification_idle">點擊懸浮球執行操作</string>
+    <string name="notification_title">懸浮球運行中</string>
+
+    <!-- Toast訊息 -->
+    <string name="toast_drag_to_position">請先拖動懸浮球設到點擊位置</string>
+    <string name="toast_operation_paused">操作已暫停</string>
+    <string name="toast_enable_overlay">請開啟懸浮窗權限</string>
+    <string name="toast_overlay_enabled">懸浮窗權限已開啟</string>
+    <string name="toast_fill_manual_params">請填寫手動參數</string>
+    <string name="toast_record_gesture_first">請先錄製手勢</string>
+    <string name="toast_need_overlay_for_record">需要懸浮窗權限才能錄製手勢</string>
+    <string name="toast_need_accessibility_for_record">需要無障礙服務才能錄製手勢</string>
+    <string name="toast_swipe_to_record">請在螢幕上滑動手指錄製手勢</string>
+    <string name="toast_floating_started">懸浮球已啟動</string>
+
+    <!-- 狀態文字 -->
+    <string name="status_accessibility">無障礙服務：%s</string>
+    <string name="status_overlay">懸浮窗權限：%s</string>
+    <string name="status_enabled">✅ 已開啟</string>
+    <string name="status_disabled">❌ 未開啟</string>
+    <string name="status_gesture_recorded">已錄製手勢：%d個點，%dms</string>
+    <string name="status_gesture_not_recorded">尚未錄製手勢</string>
+
+    <!-- 對話框 -->
+    <string name="accessibility_service_description">螢幕點擊和滑動操作的模擬點擊輔助服務</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">權限狀態</string>
+    <string name="enable_accessibility_service">開啟無障礙服務</string>
+    <string name="enable_overlay_permission">開啟懸浮窗權限</string>
+
+    <string name="execution_mode">執行模式</string>
+    <string name="click">點擊</string>
+    <string name="swipe">滑動</string>
+
+    <string name="swipe_method">滑動方式</string>
+    <string name="manual_params">手動參數</string>
+    <string name="gesture_recording">手勢錄製</string>
+
+    <string name="start_point">起點</string>
+    <string name="end_point">終點</string>
+    <string name="duration">時長</string>
+    <string name="start_x">起點 X (橫向座標)</string>
+    <string name="start_y">起點 Y (縱向座標)</string>
+    <string name="end_x">終點 X (橫向座標)</string>
+    <string name="end_y">終點 Y (縱向座標)</string>
+    <string name="swipe_duration">滑動耗時(毫秒)</string>
+
+    <string name="record_gesture">錄製手勢 (在螢幕上滑動)</string>
+
+    <string name="execution_settings">執行設定</string>
+    <string name="pre_execution_delay">執行前延時(毫秒)</string>
+    <string name="delay_milliseconds">延時毫秒數</string>
+    <string name="repeat_count">重複次數</string>
+    <string name="count">次數</string>
+    <string name="infinite_loop">無限循環</string>
+
+    <string name="start_floating_ball">啟動懸浮球</string>
+    <string name="stop_floating_ball">停止懸浮球</string>
+
+    <string name="program_page">程式</string>
+    <string name="under_development">此頁面正在開發中...</string>
+
+    <string name="settings">設定</string>
+    <string name="text_section">文字</string>
+    <string name="language">語言</string>
+    <string name="change_app_language">變更應用語言</string>
+    <string name="follow_system">跟隨系統</string>
+    <string name="font">字型</string>
+    <string name="change_app_font">變更應用字型</string>
+    <string name="default_font">預設</string>
+
+    <string name="nav_home">主頁</string>
+    <string name="nav_program">程式</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="select_language">選擇語言</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">確認</string>
+    <string name="ok">知道了</string>
+    <string name="security_warning">安全警告</string>
+    <string name="security_warning_message">請確認此軟體是從github下載獲得，從其他地方下載此軟體可能會含有惡意程式碼，請謹慎授予無障礙服務權限</string>
+    <string name="usage_instructions">使用說明</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
+    <string name="floating_ball_instructions">懸浮球使用說明</string>
+    <string name="floating_ball_instructions_message">1.切到想執行操作的應用\n\n2.按住懸浮球拖動即可拖動懸浮球，可拖動到想執行操作的位置，拖動時懸浮球會半透明，以便定位\n\n3.拖動完畢後點擊一下懸浮球即可開始操作\n\n4.雙擊懸浮球可暫停操作\n\n注意：從一個應用切回本軟體時懸浮球會自動停止，恢復可以再點擊啟動懸浮球按鈕</string>
+
+    <string name="lang_follow_system">跟隨系統</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+
+    <!-- 字型 -->
+    <string name="select_font">選擇字型</string>
+    <string name="font_default">系統預設</string>
+    <string name="add_font">新增字型</string>
+    <string name="delete_font">刪除字型</string>
+    <string name="delete_font_confirm">確定要刪除字型「%s」嗎？</string>
+    <string name="delete">刪除</string>
+    <string name="error">錯誤</string>
+    <string name="font_read_error">無法讀取字型檔案</string>
+    <string name="font_invalid">無效的字型檔案</string>
+    <string name="font_no_language_support">該字型不支援目前語言（%s）的字元</string>
+    <string name="font_unsupported_format">不支援的檔案格式，僅支援 .ttf 和 .otf 字型檔案</string>
+    <string name="font_checking">正在檢查字型檔案…</string>
+    <string name="font_already_added">該字型已新增</string>
+</resources>

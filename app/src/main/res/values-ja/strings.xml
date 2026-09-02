@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">クリックサービス</string>
+    <string name="notification_recording">ジェスチャー録画中...</string>
+    <string name="notification_infinite">無限ループ中</string>
+    <string name="notification_idle">フローティングボールをタップして実行</string>
+    <string name="notification_title">フローティングボール実行中</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_drag_to_position">まずフローティングボールをクリック位置にドラッグしてください</string>
+    <string name="toast_operation_paused">操作が一時停止されました</string>
+    <string name="toast_enable_overlay">オーバーレイ権限を有効にしてください</string>
+    <string name="toast_overlay_enabled">オーバーレイ権限が有効になりました</string>
+    <string name="toast_fill_manual_params">手動パラメータを入力してください</string>
+    <string name="toast_record_gesture_first">まずジェスチャーを録画してください</string>
+    <string name="toast_need_overlay_for_record">ジェスチャー録画にはオーバーレイ権限が必要です</string>
+    <string name="toast_need_accessibility_for_record">ジェスチャー録画にはユーザー補助サービスが必要です</string>
+    <string name="toast_swipe_to_record">画面をスワイプしてジェスチャーを録画</string>
+    <string name="toast_floating_started">フローティングボールが開始されました</string>
+
+    <!-- Status Text -->
+    <string name="status_accessibility">ユーザー補助：%s</string>
+    <string name="status_overlay">オーバーレイ：%s</string>
+    <string name="status_enabled">✅ 有効</string>
+    <string name="status_disabled">❌ 無効</string>
+    <string name="status_gesture_recorded">ジェスチャー録画済み：%dポイント、%dms</string>
+    <string name="status_gesture_not_recorded">ジェスチャー未録画</string>
+
+    <!-- Dialogs -->
+    <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">権限状態</string>
+    <string name="enable_accessibility_service">ユーザー補助サービスを有効化</string>
+    <string name="enable_overlay_permission">オーバーレイ権限を有効化</string>
+
+    <string name="execution_mode">実行モード</string>
+    <string name="click">クリック</string>
+    <string name="swipe">スワイプ</string>
+
+    <string name="swipe_method">スワイプ方法</string>
+    <string name="manual_params">手動パラメータ</string>
+    <string name="gesture_recording">ジェスチャー録画</string>
+
+    <string name="start_point">開始点</string>
+    <string name="end_point">終了点</string>
+    <string name="duration">時間</string>
+    <string name="start_x">開始 X (横座標)</string>
+    <string name="start_y">開始 Y (縦座標)</string>
+    <string name="end_x">終了 X (横座標)</string>
+    <string name="end_y">終了 Y (縦座標)</string>
+    <string name="swipe_duration">スワイプ時間(ミリ秒)</string>
+
+    <string name="record_gesture">ジェスチャー録画 (画面をスワイプ)</string>
+
+    <string name="execution_settings">実行設定</string>
+    <string name="pre_execution_delay">実行前遅延(ミリ秒)</string>
+    <string name="delay_milliseconds">遅延ミリ秒</string>
+    <string name="repeat_count">繰り返し回数</string>
+    <string name="count">回数</string>
+    <string name="infinite_loop">無限ループ</string>
+
+    <string name="start_floating_ball">フローティング開始</string>
+    <string name="stop_floating_ball">フローティング停止</string>
+
+    <string name="program_page">プログラム</string>
+    <string name="under_development">このページは開発中です...</string>
+
+    <string name="settings">設定</string>
+    <string name="text_section">テキスト</string>
+    <string name="language">言語</string>
+    <string name="change_app_language">アプリの言語を変更</string>
+    <string name="follow_system">システムに従う</string>
+    <string name="font">フォント</string>
+    <string name="change_app_font">アプリのフォントを変更</string>
+    <string name="default_font">デフォルト</string>
+
+    <string name="nav_home">ホーム</string>
+    <string name="nav_program">プログラム</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="select_language">言語を選択</string>
+    <string name="cancel">キャンセル</string>
+    <string name="confirm">確認</string>
+    <string name="ok">OK</string>
+    <string name="security_warning">セキュリティ警告</string>
+    <string name="security_warning_message">このアプリがGitHubからダウンロードされたことを確認してください。他のソースからダウンロードしたアプリには悪意のあるコードが含まれている可能性があります。无障碍サービスの権限付与にはご注意ください。</string>
+    <string name="usage_instructions">使い方</string>
+    <string name="usage_instructions_message">初回使用：\n\n1. 上部の2つのボタンをタップして、无障碍サービスとオーバーレイ権限を有効にします（Androidのセキュリティにより、アプリ再起動時に无障碍権限の再認証が必要です）\n\n2. モードを選択：タップまたはスワイプ\n\n3. タップモード：遅延設定→繰り返し回数設定→フローティングボールを起動（権限不足時は設定画面が表示されます）\n\n4. スワイプモード：ジェスチャー録画（画面をスワイプ）または手動パラメータ（始点・終点の座標を入力）→遅延設定→繰り返し回数設定→フローティングボールを起動（権限不足時は設定画面が表示されます）</string>
+    <string name="floating_ball_instructions">フローティングボールの使い方</string>
+    <string name="floating_ball_instructions_message">1. 操作を実行したいアプリに切り替えます\n\n2. フローティングボールを長押ししてドラッグで移動できます。ドラッグ中は半透明になり、位置合わせがしやすくなります\n\n3. 位置を決めたら、フローティングボールをタップすると操作を開始します\n\n4. ダブルタップで一時停止します\n\n注意：他のアプリからこのアプリに切り戻ると、フローティングボールは自動的に停止します。再度起動ボタンをタップして再開してください。</string>
+
+    <string name="lang_follow_system">システムに従う</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+
+    <!-- フォント -->
+    <string name="select_font">フォントを選択</string>
+    <string name="font_default">システムデフォルト</string>
+    <string name="add_font">フォントを追加</string>
+    <string name="delete_font">フォントを削除</string>
+    <string name="delete_font_confirm">フォント「%s」を削除しますか？</string>
+    <string name="delete">削除</string>
+    <string name="error">エラー</string>
+    <string name="font_read_error">フォントファイルを読み取れません</string>
+    <string name="font_invalid">無効なフォントファイルです</string>
+    <string name="font_no_language_support">このフォントは%sの文字に対応していません</string>
+    <string name="font_unsupported_format">サポートされていないファイル形式です。.ttf および .otf フォントファイルのみ対応しています。</string>
+    <string name="font_checking">フォントファイルを確認中…</string>
+    <string name="font_already_added">このフォントは既に追加されています</string>
+</resources>

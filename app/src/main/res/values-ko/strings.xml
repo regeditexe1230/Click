@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Click</string>
+
+    <!-- 알림 -->
+    <string name="notification_channel_name">클릭 서비스</string>
+    <string name="notification_recording">제스처 녹화 중...</string>
+    <string name="notification_infinite">무한 반복 중</string>
+    <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
+    <string name="notification_title">플로팅 볼 실행 중</string>
+
+    <!-- 토스트 메시지 -->
+    <string name="toast_drag_to_position">먼저 플로팅 볼을 클릭 위치로 드래그하세요</string>
+    <string name="toast_operation_paused">작업이 일시정지되었습니다</string>
+    <string name="toast_enable_overlay">오버레이 권한을 활성화하세요</string>
+    <string name="toast_overlay_enabled">오버레이 권한이 활성화되었습니다</string>
+    <string name="toast_fill_manual_params">수동 매개변수를 입력하세요</string>
+    <string name="toast_record_gesture_first">먼저 제스처를 녹화하세요</string>
+    <string name="toast_need_overlay_for_record">제스처 녹화에는 오버레이 권한이 필요합니다</string>
+    <string name="toast_need_accessibility_for_record">제스처 녹화에는 접근성 서비스가 필요합니다</string>
+    <string name="toast_swipe_to_record">화면을 스와이프하여 제스처 녹화</string>
+    <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>
+
+    <!-- 상태 텍스트 -->
+    <string name="status_accessibility">접근성: %s</string>
+    <string name="status_overlay">오버레이: %s</string>
+    <string name="status_enabled">✅ 활성</string>
+    <string name="status_disabled">❌ 비활성</string>
+    <string name="status_gesture_recorded">제스처 녹화됨: %d포인트, %dms</string>
+    <string name="status_gesture_not_recorded">제스처 미녹화</string>
+
+    <!-- 대화상자 -->
+    <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
+    <string name="app_developer">yjc</string>
+    <string name="app_website">https://github.com/regeditexe1230/Click</string>
+
+    <string name="permission_status">권한 상태</string>
+    <string name="enable_accessibility_service">접근성 서비스 활성화</string>
+    <string name="enable_overlay_permission">오버레이 권한 활성화</string>
+
+    <string name="execution_mode">실행 모드</string>
+    <string name="click">클릭</string>
+    <string name="swipe">스와이프</string>
+
+    <string name="swipe_method">스와이프 방법</string>
+    <string name="manual_params">수동 매개변수</string>
+    <string name="gesture_recording">제스처 녹화</string>
+
+    <string name="start_point">시작점</string>
+    <string name="end_point">종료점</string>
+    <string name="duration">시간</string>
+    <string name="start_x">시작 X (가로 좌표)</string>
+    <string name="start_y">시작 Y (세로 좌표)</string>
+    <string name="end_x">종료 X (가로 좌표)</string>
+    <string name="end_y">종료 Y (세로 좌표)</string>
+    <string name="swipe_duration">스와이프 시간(밀리초)</string>
+
+    <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
+
+    <string name="execution_settings">실행 설정</string>
+    <string name="pre_execution_delay">실행 전 지연(밀리초)</string>
+    <string name="delay_milliseconds">지연 밀리초</string>
+    <string name="repeat_count">반복 횟수</string>
+    <string name="count">횟수</string>
+    <string name="infinite_loop">무한 반복</string>
+
+    <string name="start_floating_ball">플로팅 시작</string>
+    <string name="stop_floating_ball">플로팅 중지</string>
+
+    <string name="program_page">프로그램</string>
+    <string name="under_development">이 페이지는 개발 중입니다...</string>
+
+    <string name="settings">설정</string>
+    <string name="text_section">텍스트</string>
+    <string name="language">언어</string>
+    <string name="change_app_language">앱 언어 변경</string>
+    <string name="follow_system">시스템 따르기</string>
+    <string name="font">글꼴</string>
+    <string name="change_app_font">앱 글꼴 변경</string>
+    <string name="default_font">기본</string>
+
+    <string name="nav_home">홈</string>
+    <string name="nav_program">프로그램</string>
+    <string name="nav_settings">설정</string>
+
+    <string name="select_language">언어 선택</string>
+    <string name="cancel">취소</string>
+    <string name="confirm">확인</string>
+    <string name="ok">확인</string>
+    <string name="security_warning">보안 경고</string>
+    <string name="security_warning_message">이 앱이 GitHub에서 다운로드된 것인지 확인하세요. 다른 곳에서 다운로드한 앱에는 악성 코드가 포함되어 있을 수 있습니다. 접근성 권한 부여에 주의하세요.</string>
+    <string name="usage_instructions">사용 방법</string>
+    <string name="usage_instructions_message">첫 사용:\n\n1. 상단의 두 버튼을 눌러 접근성 서비스와 오버레이 권한을 활성화하세요 (Android 보안 정책상 앱 재시작 시 접근성 권한을 다시 인증해야 합니다)\n\n2. 모드 선택: 클릭 또는 스와이프\n\n3. 클릭 모드: 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)\n\n4. 스와이프 모드: 제스처 녹화 (화면 스와이프) 또는 수동 매개변수 (시작/종료 좌표 입력) → 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)</string>
+    <string name="floating_ball_instructions">플로팅 볼 사용법</string>
+    <string name="floating_ball_instructions_message">1. 작업을 실행할 앱으로 전환하세요\n\n2. 플로팅 볼을 길게 눌러 드래그하면 이동할 수 있습니다. 드래그 중에는 반투명되어 위치 지정이 쉽습니다\n\n3. 위치를 정한 후 플로팅 볼을 한 번 탭하면 작업을 시작합니다\n\n4. 더블 탭으로 일시정지합니다\n\n참고: 다른 앱에서 이 앱으로 전환하면 플로팅 볼이 자동으로 중지됩니다. 다시 시작 버튼을 탭하여 재개하세요.</string>
+
+    <string name="lang_follow_system">시스템 따르기</string>
+    <string name="lang_simplified_chinese">简体中文</string>
+    <string name="lang_traditional_chinese">繁體中文</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+
+    <!-- 글꼴 -->
+    <string name="select_font">글꼴 선택</string>
+    <string name="font_default">시스템 기본값</string>
+    <string name="add_font">글꼴 추가</string>
+    <string name="delete_font">글꼴 삭제</string>
+    <string name="delete_font_confirm">글꼴 \"%s\"을(를) 삭제하시겠습니까?</string>
+    <string name="delete">삭제</string>
+    <string name="error">오류</string>
+    <string name="font_read_error">글꼴 파일을 읽을 수 없습니다</string>
+    <string name="font_invalid">잘못된 글꼴 파일입니다</string>
+    <string name="font_no_language_support">이 글꼴은 %s 문자를 지원하지 않습니다</string>
+    <string name="font_unsupported_format">지원되지 않는 파일 형식입니다. .ttf 및 .otf 글꼴 파일만 지원됩니다.</string>
+    <string name="font_checking">글꼴 파일 확인 중…</string>
+    <string name="font_already_added">이 글꼴은 이미 추가되었습니다</string>
+</resources>
