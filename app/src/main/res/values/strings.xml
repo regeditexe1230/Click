@@ -79,12 +79,22 @@
     <!-- 设置页面 -->
     <string name="settings">设置</string>
     <string name="text_section">文字</string>
+    <string name="personalization_section">个性化</string>
     <string name="language">语言</string>
     <string name="change_app_language">更改应用语言</string>
     <string name="follow_system">跟随系统</string>
     <string name="font">字体</string>
     <string name="change_app_font">更改应用字体</string>
     <string name="default_font">默认</string>
+    <string name="color_scheme">配色方案</string>
+    <string name="color_scheme_desc">深色模式、浅色模式或跟随系统</string>
+    <string name="light_theme">浅色主题</string>
+    <string name="dark_theme">深色主题</string>
+    <string name="color">颜色</string>
+    <string name="color_desc">更改应用主题颜色</string>
+    <string name="app_background">应用背景</string>
+    <string name="app_background_desc">自定义应用背景</string>
+    <string name="default_value">默认</string>
 
     <!-- 导航栏 -->
     <string name="nav_home">主页</string>

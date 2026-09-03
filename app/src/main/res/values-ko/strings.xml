@@ -78,6 +78,16 @@
     <string name="font">글꼴</string>
     <string name="change_app_font">앱 글꼴 변경</string>
     <string name="default_font">기본</string>
+    <string name="personalization_section">개인 설정</string>
+    <string name="color_scheme">색 구성표</string>
+    <string name="color_scheme_desc">다크 모드, 라이트 모드 또는 시스템 따르기</string>
+    <string name="light_theme">라이트 테마</string>
+    <string name="dark_theme">다크 테마</string>
+    <string name="color">색상</string>
+    <string name="color_desc">앱 테마 색상 변경</string>
+    <string name="app_background">앱 배경</string>
+    <string name="app_background_desc">앱 배경 사용자 지정</string>
+    <string name="default_value">기본값</string>
 
     <string name="nav_home">홈</string>
     <string name="nav_program">프로그램</string>

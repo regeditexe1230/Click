@@ -78,6 +78,16 @@
     <string name="font">字型</string>
     <string name="change_app_font">變更應用字型</string>
     <string name="default_font">預設</string>
+    <string name="personalization_section">個人化</string>
+    <string name="color_scheme">色彩配置</string>
+    <string name="color_scheme_desc">深色模式、淺色模式或跟隨系統</string>
+    <string name="light_theme">淺色主題</string>
+    <string name="dark_theme">深色主題</string>
+    <string name="color">顏色</string>
+    <string name="color_desc">更改應用主題顏色</string>
+    <string name="app_background">應用背景</string>
+    <string name="app_background_desc">自訂應用背景</string>
+    <string name="default_value">預設</string>
 
     <string name="nav_home">主頁</string>
     <string name="nav_program">程式</string>

@@ -78,6 +78,16 @@
     <string name="font">フォント</string>
     <string name="change_app_font">アプリのフォントを変更</string>
     <string name="default_font">デフォルト</string>
+    <string name="personalization_section">パーソナライゼーション</string>
+    <string name="color_scheme">カラースキーム</string>
+    <string name="color_scheme_desc">ダークモード、ライトモード、またはシステムに従う</string>
+    <string name="light_theme">ライトテーマ</string>
+    <string name="dark_theme">ダークテーマ</string>
+    <string name="color">カラー</string>
+    <string name="color_desc">アプリのテーマカラーを変更</string>
+    <string name="app_background">アプリ背景</string>
+    <string name="app_background_desc">アプリの背景をカスタマイズ</string>
+    <string name="default_value">デフォルト</string>
 
     <string name="nav_home">ホーム</string>
     <string name="nav_program">プログラム</string>
