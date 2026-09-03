@@ -66,6 +66,14 @@ class MainActivity : AppCompatActivity() {
         // 应用语言设置
         applyLanguage()
 
+        // 应用主题设置
+        val themePref = getSharedPreferences("settings", Context.MODE_PRIVATE).getString("app_theme", "follow_system")
+        when (themePref) {
+            "light" -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
+            "dark" -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
+            else -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }
+
         // 初始化字体管理
         FontManager.init(this)
 

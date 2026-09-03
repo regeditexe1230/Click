@@ -87,6 +87,16 @@
     <string name="font">Font</string>
     <string name="change_app_font">Change app font</string>
     <string name="default_font">Default</string>
+    <string name="personalization_section">Personalization</string>
+    <string name="color_scheme">Color Scheme</string>
+    <string name="color_scheme_desc">Dark mode, light mode, or follow system</string>
+    <string name="light_theme">Light Theme</string>
+    <string name="dark_theme">Dark Theme</string>
+    <string name="color">Color</string>
+    <string name="color_desc">Change app theme color</string>
+    <string name="app_background">App Background</string>
+    <string name="app_background_desc">Customize app background</string>
+    <string name="default_value">Default</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

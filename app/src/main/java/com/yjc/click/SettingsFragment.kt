@@ -20,6 +20,7 @@ class SettingsFragment : Fragment() {
 
     private lateinit var languageValue: TextView
     private lateinit var fontValue: TextView
+    private var colorSchemeExpanded = false
 
     private val fontPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -50,6 +51,68 @@ class SettingsFragment : Fragment() {
             showFontDialog()
         }
 
+        // 配色方案：点击展开/收回
+        colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
+        val colorSchemeOptions = view.findViewById<View>(R.id.color_scheme_options)
+        val radioLight = view.findViewById<android.widget.RadioButton>(R.id.radio_light_theme)
+        val radioDark = view.findViewById<android.widget.RadioButton>(R.id.radio_dark_theme)
+        val radioFollow = view.findViewById<android.widget.RadioButton>(R.id.radio_follow_system_theme)
+        val colorSchemeValue = view.findViewById<TextView>(R.id.settings_color_scheme_value)
+
+        // 恢复展开状态
+        if (colorSchemeExpanded) {
+            colorSchemeOptions.visibility = View.VISIBLE
+            colorSchemeOptions.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        // 加载当前主题设置
+        val themePrefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val currentTheme = themePrefs.getString("app_theme", "follow_system") ?: "follow_system"
+
+        fun updateRadioState(theme: String) {
+            radioLight.isChecked = theme == "light"
+            radioDark.isChecked = theme == "dark"
+            radioFollow.isChecked = theme == "follow_system"
+            colorSchemeValue.text = when (theme) {
+                "light" -> getString(R.string.light_theme)
+                "dark" -> getString(R.string.dark_theme)
+                else -> getString(R.string.follow_system)
+            }
+        }
+        updateRadioState(currentTheme)
+
+        fun applyTheme(theme: String) {
+            themePrefs.edit().putString("app_theme", theme).apply()
+            updateRadioState(theme)
+            when (theme) {
+                "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            }
+        }
+
+        radioLight.setOnClickListener { applyTheme("light") }
+        radioDark.setOnClickListener { applyTheme("dark") }
+        radioFollow.setOnClickListener { applyTheme("follow_system") }
+
+        // 点击缩略图区域也能切换主题
+        view.findViewById<View>(R.id.option_light_theme)?.setOnClickListener { applyTheme("light") }
+        view.findViewById<View>(R.id.option_dark_theme)?.setOnClickListener { applyTheme("dark") }
+        view.findViewById<View>(R.id.option_follow_system_theme)?.setOnClickListener { applyTheme("follow_system") }
+
+        view.findViewById<View>(R.id.settings_color_scheme_header)?.setOnClickListener {
+            if (colorSchemeExpanded) {
+                collapseSection(colorSchemeOptions)
+            } else {
+                expandSection(colorSchemeOptions)
+            }
+            colorSchemeExpanded = !colorSchemeExpanded
+        }
+
+        // 个性化设置项（暂无功能）
+        view.findViewById<View>(R.id.settings_color)?.setOnClickListener { }
+        view.findViewById<View>(R.id.settings_background)?.setOnClickListener { }
+
         updateLanguageDisplay()
         updateFontDisplay()
     }
@@ -60,6 +123,90 @@ class SettingsFragment : Fragment() {
         view?.let { FontManager.applyFont(it) }
         updateLanguageDisplay()
         updateFontDisplay()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
+    }
+
+    // ==================== 展开/收起动画 ====================
+
+    private fun expandSection(view: View) {
+        if (view.visibility == View.VISIBLE && view.layoutParams.height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) return
+
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
+
+        view.visibility = View.VISIBLE
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val targetHeight = view.measuredHeight
+        val params = view.layoutParams
+        params.height = 1
+        view.layoutParams = params
+
+        var cancelled = false
+        val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
+        view.setTag(R.id.anim_cancel_tag, animator)
+        animator.duration = 400
+        animator.interpolator = android.view.animation.OvershootInterpolator(0.6f)
+        animator.addUpdateListener { anim ->
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    view.layoutParams = params
+                }
+            }
+        })
+        animator.start()
+    }
+
+    private fun collapseSection(view: View) {
+        if (view.visibility == View.GONE) return
+
+        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
+        prevAnimator?.cancel()
+
+        val currentHeight = view.height
+        if (currentHeight <= 0) {
+            view.visibility = View.GONE
+            return
+        }
+
+        var cancelled = false
+        val params = view.layoutParams
+        val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
+        view.setTag(R.id.anim_cancel_tag, animator)
+        animator.duration = 300
+        animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
+        animator.addUpdateListener { anim ->
+            params.height = anim.animatedValue as Int
+            view.layoutParams = params
+        }
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                cancelled = true
+            }
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                view.setTag(R.id.anim_cancel_tag, null)
+                if (!cancelled) {
+                    view.visibility = View.GONE
+                    view.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                }
+            }
+        })
+        animator.start()
     }
 
     // ==================== 语言 ====================
