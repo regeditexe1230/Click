@@ -130,14 +130,21 @@ class SettingsFragment : Fragment() {
         // 应用背景：点击展开/收回
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
         val backgroundOptions = view.findViewById<View>(R.id.background_options)
+        val backgroundHeader = view.findViewById<View>(R.id.settings_background_header)
         if (backgroundExpanded) {
             backgroundOptions.visibility = View.VISIBLE
             backgroundOptions.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            backgroundHeader?.setBackgroundResource(R.drawable.settings_item_middle)
+            backgroundOptions.setBackgroundResource(R.drawable.settings_item_bottom)
         }
-        view.findViewById<View>(R.id.settings_background_header)?.setOnClickListener {
+        backgroundHeader?.setOnClickListener {
             if (backgroundExpanded) {
-                collapseSection(backgroundOptions)
+                collapseSection(backgroundOptions) {
+                    backgroundHeader.setBackgroundResource(R.drawable.settings_item_bottom)
+                }
             } else {
+                backgroundHeader.setBackgroundResource(R.drawable.settings_item_middle)
+                backgroundOptions.setBackgroundResource(R.drawable.settings_item_bottom)
                 expandSection(backgroundOptions)
             }
             backgroundExpanded = !backgroundExpanded
@@ -204,7 +211,7 @@ class SettingsFragment : Fragment() {
         animator.start()
     }
 
-    private fun collapseSection(view: View) {
+    private fun collapseSection(view: View, onEnd: (() -> Unit)? = null) {
         if (view.visibility == View.GONE) return
 
         val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
@@ -235,6 +242,7 @@ class SettingsFragment : Fragment() {
                 if (!cancelled) {
                     view.visibility = View.GONE
                     view.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    onEnd?.invoke()
                 }
             }
         })
