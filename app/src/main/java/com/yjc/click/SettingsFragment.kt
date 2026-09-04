@@ -21,6 +21,8 @@ class SettingsFragment : Fragment() {
     private lateinit var languageValue: TextView
     private lateinit var fontValue: TextView
     private var colorSchemeExpanded = false
+    private var colorExpanded = false
+    private var backgroundExpanded = false
 
     private val fontPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -109,9 +111,37 @@ class SettingsFragment : Fragment() {
             colorSchemeExpanded = !colorSchemeExpanded
         }
 
-        // 个性化设置项（暂无功能）
-        view.findViewById<View>(R.id.settings_color)?.setOnClickListener { }
-        view.findViewById<View>(R.id.settings_background)?.setOnClickListener { }
+        // 颜色：点击展开/收回
+        colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
+        val colorOptions = view.findViewById<View>(R.id.color_options)
+        if (colorExpanded) {
+            colorOptions.visibility = View.VISIBLE
+            colorOptions.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        view.findViewById<View>(R.id.settings_color_header)?.setOnClickListener {
+            if (colorExpanded) {
+                collapseSection(colorOptions)
+            } else {
+                expandSection(colorOptions)
+            }
+            colorExpanded = !colorExpanded
+        }
+
+        // 应用背景：点击展开/收回
+        backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
+        val backgroundOptions = view.findViewById<View>(R.id.background_options)
+        if (backgroundExpanded) {
+            backgroundOptions.visibility = View.VISIBLE
+            backgroundOptions.layoutParams.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        view.findViewById<View>(R.id.settings_background_header)?.setOnClickListener {
+            if (backgroundExpanded) {
+                collapseSection(backgroundOptions)
+            } else {
+                expandSection(backgroundOptions)
+            }
+            backgroundExpanded = !backgroundExpanded
+        }
 
         updateLanguageDisplay()
         updateFontDisplay()
@@ -128,6 +158,8 @@ class SettingsFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
+        outState.putBoolean("color_expanded", colorExpanded)
+        outState.putBoolean("background_expanded", backgroundExpanded)
     }
 
     // ==================== 展开/收起动画 ====================
