@@ -94,6 +94,8 @@
     <string name="dark_theme">Dark Theme</string>
     <string name="color">Color</string>
     <string name="color_desc">Change app theme color</string>
+    <string name="dynamic_color">Dynamic Colors</string>
+    <string name="dynamic_color_desc">Apply colors from system wallpaper</string>
     <string name="app_background">App Background</string>
     <string name="app_background_desc">Customize app background</string>
     <string name="default_value">Default</string>
