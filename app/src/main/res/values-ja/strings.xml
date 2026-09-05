@@ -85,6 +85,8 @@
     <string name="dark_theme">ダークテーマ</string>
     <string name="color">カラー</string>
     <string name="color_desc">アプリのテーマカラーを変更</string>
+    <string name="dynamic_color">ダイナミックカラー</string>
+    <string name="dynamic_color_desc">システム壁紙からカラーを適用</string>
     <string name="app_background">アプリ背景</string>
     <string name="app_background_desc">アプリの背景をカスタマイズ</string>
     <string name="default_value">デフォルト</string>

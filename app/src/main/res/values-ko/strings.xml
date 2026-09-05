@@ -85,6 +85,8 @@
     <string name="dark_theme">다크 테마</string>
     <string name="color">색상</string>
     <string name="color_desc">앱 테마 색상 변경</string>
+    <string name="dynamic_color">다이나믹 컬러</string>
+    <string name="dynamic_color_desc">시스템 배경화면에서 색상 적용</string>
     <string name="app_background">앱 배경</string>
     <string name="app_background_desc">앱 배경 사용자 지정</string>
     <string name="default_value">기본값</string>

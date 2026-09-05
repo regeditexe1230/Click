@@ -92,6 +92,8 @@
     <string name="dark_theme">深色主题</string>
     <string name="color">颜色</string>
     <string name="color_desc">更改应用主题颜色</string>
+    <string name="dynamic_color">动态取色</string>
+    <string name="dynamic_color_desc">从系统壁纸应用动态配色</string>
     <string name="app_background">应用背景</string>
     <string name="app_background_desc">自定义应用背景</string>
     <string name="default_value">默认</string>

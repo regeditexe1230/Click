@@ -85,6 +85,8 @@
     <string name="dark_theme">深色主題</string>
     <string name="color">顏色</string>
     <string name="color_desc">更改應用主題顏色</string>
+    <string name="dynamic_color">動態取色</string>
+    <string name="dynamic_color_desc">從系統主題應用動態配色</string>
     <string name="app_background">應用背景</string>
     <string name="app_background_desc">自訂應用背景</string>
     <string name="default_value">預設</string>
