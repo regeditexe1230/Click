@@ -56,6 +56,16 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <!-- 让 AppCompat 在 API 32 及以下也持久化 setApplicationLocales 的语言选择 -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
     </application>
 
 </manifest>

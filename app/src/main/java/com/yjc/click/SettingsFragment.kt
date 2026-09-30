@@ -288,8 +288,14 @@ class SettingsFragment : Fragment() {
     }
 
     private fun applyLanguage(localeCode: String) {
+        val context = requireContext()
         // 切换语言时重置字体为系统默认
-        FontManager.setSelectedFont(requireContext(), null)
+        FontManager.setSelectedFont(context, null)
+        // 持久化语言选择：MainActivity 启动时读取该值恢复语言（空串表示跟随系统）
+        context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .edit()
+            .putString("app_locale", localeCode)
+            .apply()
         val localeListCompat = if (localeCode.isEmpty()) {
             LocaleListCompat.getEmptyLocaleList()
         } else {
