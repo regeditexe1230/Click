@@ -6,6 +6,7 @@
     <string name="notification_channel_name">Click Service</string>
     <string name="notification_recording">Recording gesture...</string>
     <string name="notification_infinite">Infinite looping</string>
+    <string name="notification_running">Running</string>
     <string name="notification_idle">Tap floating ball to execute</string>
     <string name="notification_title">Floating ball running</string>
 

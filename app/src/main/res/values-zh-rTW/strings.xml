@@ -6,6 +6,7 @@
     <string name="notification_channel_name">點擊服務</string>
     <string name="notification_recording">錄製手勢中...</string>
     <string name="notification_infinite">無限循環中</string>
+    <string name="notification_running">執行中</string>
     <string name="notification_idle">點擊懸浮球執行操作</string>
     <string name="notification_title">懸浮球運行中</string>
 

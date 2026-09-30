@@ -6,6 +6,7 @@
     <string name="notification_channel_name">クリックサービス</string>
     <string name="notification_recording">ジェスチャー録画中...</string>
     <string name="notification_infinite">無限ループ中</string>
+    <string name="notification_running">実行中</string>
     <string name="notification_idle">フローティングボールをタップして実行</string>
     <string name="notification_title">フローティングボール実行中</string>
 
