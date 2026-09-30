@@ -61,6 +61,8 @@
 
     <!-- 手势录制 -->
     <string name="record_gesture">录制手势 (在屏幕上滑动)</string>
+    <string name="recording_overlay_hint">请在屏幕上滑动手指录制手势\n完成后松手即可</string>
+    <string name="floating_ball_content_description">悬浮球</string>
 
     <!-- 执行设置 -->
     <string name="execution_settings">执行设置</string>

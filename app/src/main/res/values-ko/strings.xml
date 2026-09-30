@@ -58,6 +58,8 @@
     <string name="swipe_duration">스와이프 시간(밀리초)</string>
 
     <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
+    <string name="recording_overlay_hint">화면을 손가락으로 쓸어 제스처를 녹화하세요\n손을 떼면 완료됩니다</string>
+    <string name="floating_ball_content_description">플로팅 볼</string>
 
     <string name="execution_settings">실행 설정</string>
     <string name="pre_execution_delay">실행 전 지연(밀리초)</string>

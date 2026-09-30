@@ -8,7 +8,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="请在屏幕上滑动手指录制手势\n完成后松手即可"
+        android:text="@string/recording_overlay_hint"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:gravity="center" />
