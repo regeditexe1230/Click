@@ -18,6 +18,11 @@ import java.io.File
 
 class SettingsFragment : Fragment() {
 
+    companion object {
+        /** 应用支持的语言，与 MainActivity.applyLanguage() 的兜底规则保持一致 */
+        private val SUPPORTED_LANGUAGES = listOf("zh", "en", "ja", "ko")
+    }
+
     private lateinit var languageValue: TextView
     private lateinit var fontValue: TextView
     private var colorSchemeExpanded = false
@@ -621,15 +626,23 @@ class SettingsFragment : Fragment() {
         return uri.lastPathSegment
     }
 
+    /**
+     * 当前【实际生效】的语言标签（zh/en/ja/ko）。
+     *
+     * 系统语言不在支持范围内时，MainActivity.applyLanguage() 会把界面兜底成英文；
+     * 这里必须采用同一规则，否则会拿系统语言（如 fr）去查字体的语言覆盖，
+     * 而 FontParser 只会返回 en/zh/ja/ko，于是任何字体都被判定为"不支持当前语言"而无法添加。
+     */
     private fun getCurrentLanguageTag(): String {
         val currentLocale = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-        return when {
+        val language = when {
             currentLocale.startsWith("zh") -> "zh"
             currentLocale.startsWith("ja") -> "ja"
             currentLocale.startsWith("ko") -> "ko"
             currentLocale.startsWith("en") -> "en"
             else -> java.util.Locale.getDefault().language
         }
+        return if (language in SUPPORTED_LANGUAGES) language else "en"
     }
 
     private fun getCurrentLanguageName(): String {
