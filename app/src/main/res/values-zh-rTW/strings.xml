@@ -58,6 +58,8 @@
     <string name="swipe_duration">滑動耗時(毫秒)</string>
 
     <string name="record_gesture">錄製手勢 (在螢幕上滑動)</string>
+    <string name="recording_overlay_hint">請在螢幕上滑動手指錄製手勢\n完成後鬆手即可</string>
+    <string name="floating_ball_content_description">懸浮球</string>
 
     <string name="execution_settings">執行設定</string>
     <string name="pre_execution_delay">執行前延時(毫秒)</string>

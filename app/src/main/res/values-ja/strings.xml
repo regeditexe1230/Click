@@ -58,6 +58,8 @@
     <string name="swipe_duration">スワイプ時間(ミリ秒)</string>
 
     <string name="record_gesture">ジェスチャー録画 (画面をスワイプ)</string>
+    <string name="recording_overlay_hint">画面を指でスワイプしてジェスチャーを記録\n指を離すと完了します</string>
+    <string name="floating_ball_content_description">フローティングボール</string>
 
     <string name="execution_settings">実行設定</string>
     <string name="pre_execution_delay">実行前遅延(ミリ秒)</string>

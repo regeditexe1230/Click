@@ -63,6 +63,8 @@
 
     <!-- Gesture Recording -->
     <string name="record_gesture">Record Gesture (Swipe on screen)</string>
+    <string name="recording_overlay_hint">Swipe on the screen with your finger to record a gesture\nRelease to finish</string>
+    <string name="floating_ball_content_description">Floating ball</string>
 
     <!-- Execution Settings -->
     <string name="execution_settings">Execution Settings</string>
