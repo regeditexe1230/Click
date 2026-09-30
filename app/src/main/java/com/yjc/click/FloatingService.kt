@@ -59,7 +59,7 @@ class FloatingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notification = createNotification()
-        startForeground(1, notification)
+        startForeground(NOTIFICATION_ID, notification)
 
         if (AppConfig.recordRequested && recordingOverlay == null) {
             AppConfig.recordRequested = false
@@ -88,7 +88,8 @@ class FloatingService : Service() {
     private fun createNotification(): Notification {
         val text = when {
             AppConfig.recordRequested -> getString(R.string.notification_recording)
-            AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            AppConfig.running && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            AppConfig.running -> getString(R.string.notification_running)
             else -> getString(R.string.notification_idle)
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -97,6 +98,12 @@ class FloatingService : Service() {
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
+
+    /** 立即刷新前台通知，使其反映当前运行状态 */
+    private fun updateNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, createNotification())
     }
 
     private fun showFloatingView() {
@@ -387,6 +394,7 @@ class FloatingService : Service() {
         val tapY = lastTapY
 
         AppConfig.running = true
+        updateNotification()
 
         job = scope.launch {
             try {
@@ -446,7 +454,7 @@ class FloatingService : Service() {
             count++
             if (config.isInfinite) delay(500)
         }
-        if (config.isInfinite) stopSelf()
+        finishOperation(config)
     }
 
     private suspend fun executeSwipe(service: ClickAccessibilityService, config: AppConfig) {
@@ -468,7 +476,7 @@ class FloatingService : Service() {
             count++
             if (config.isInfinite) delay(500)
         }
-        if (config.isInfinite) stopSelf()
+        finishOperation(config)
     }
 
     private fun replayGesture(service: ClickAccessibilityService, gesture: RecordedGesture) {
@@ -482,6 +490,19 @@ class FloatingService : Service() {
             path.lineTo(x, y)
         }
         service.dispatchGesturePath(path, gesture.totalDuration)
+    }
+
+    /**
+     * 循环结束后的收尾。有限次数跑完必须复位运行状态并刷新通知，
+     * 否则界面会一直认为还在运行（启动按钮保持禁用、通知停在旧状态）。
+     */
+    private fun finishOperation(config: AppConfig) {
+        AppConfig.running = false
+        if (config.isInfinite) {
+            stopSelf()
+        } else {
+            updateNotification()
+        }
     }
 
     private fun shouldContinue(config: AppConfig, count: Int): Boolean {
@@ -505,5 +526,6 @@ class FloatingService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "floating_service_channel"
+        private const val NOTIFICATION_ID = 1
     }
 }

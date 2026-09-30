@@ -6,6 +6,7 @@
     <string name="notification_channel_name">클릭 서비스</string>
     <string name="notification_recording">제스처 녹화 중...</string>
     <string name="notification_infinite">무한 반복 중</string>
+    <string name="notification_running">실행 중</string>
     <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
     <string name="notification_title">플로팅 볼 실행 중</string>
 
