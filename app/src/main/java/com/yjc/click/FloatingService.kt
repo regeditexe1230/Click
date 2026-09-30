@@ -3,6 +3,7 @@ package com.yjc.click
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -58,6 +59,14 @@ class FloatingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 通知栏「停止」按钮：直接结束服务，无需切回 App
+        if (intent?.action == ACTION_STOP) {
+            AppConfig.running = false
+            job?.cancel()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         val notification = createNotification()
         startForeground(NOTIFICATION_ID, notification)
 
@@ -97,7 +106,30 @@ class FloatingService : Service() {
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(openAppIntent())
+            .addAction(0, getString(R.string.notification_action_stop), stopServiceIntent())
             .build()
+    }
+
+    /** 点击通知回到 App */
+    private fun openAppIntent(): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        return PendingIntent.getActivity(
+            this, REQUEST_OPEN_APP, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
+    /** 通知栏「停止」按钮 */
+    private fun stopServiceIntent(): PendingIntent {
+        val intent = Intent(this, FloatingService::class.java).setAction(ACTION_STOP)
+        return PendingIntent.getService(
+            this, REQUEST_STOP_SERVICE, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
     }
 
     /** 立即刷新前台通知，使其反映当前运行状态 */
@@ -527,5 +559,8 @@ class FloatingService : Service() {
     companion object {
         private const val CHANNEL_ID = "floating_service_channel"
         private const val NOTIFICATION_ID = 1
+        private const val REQUEST_OPEN_APP = 0
+        private const val REQUEST_STOP_SERVICE = 1
+        private const val ACTION_STOP = "com.yjc.click.action.STOP"
     }
 }
