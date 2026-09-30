@@ -9,6 +9,7 @@
     <string name="notification_running">実行中</string>
     <string name="notification_idle">フローティングボールをタップして実行</string>
     <string name="notification_title">フローティングボール実行中</string>
+    <string name="notification_action_stop">停止</string>
 
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">まずフローティングボールをクリック位置にドラッグしてください</string>

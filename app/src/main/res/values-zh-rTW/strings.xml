@@ -9,6 +9,7 @@
     <string name="notification_running">執行中</string>
     <string name="notification_idle">點擊懸浮球執行操作</string>
     <string name="notification_title">懸浮球運行中</string>
+    <string name="notification_action_stop">停止</string>
 
     <!-- Toast訊息 -->
     <string name="toast_drag_to_position">請先拖動懸浮球設到點擊位置</string>

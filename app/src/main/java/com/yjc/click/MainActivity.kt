@@ -2,6 +2,7 @@ package com.yjc.click
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -35,6 +37,12 @@ class MainActivity : AppCompatActivity() {
     private var isSwipeMode = false
     private var isGestureMode = false
     private var isWarningDialogShowing = false
+    private var notificationPermissionAsked = false
+
+    /** Android 13+ 通知权限申请（拒绝不影响服务运行，只是前台通知不可见） */
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     private lateinit var radioClick: TextView
     private lateinit var radioSwipe: TextView
@@ -438,6 +446,9 @@ class MainActivity : AppCompatActivity() {
                     }, 100)
                 }
             })
+        } else {
+            // 非首次启动：单独申请通知权限，避免与首次使用说明弹窗叠加
+            window.decorView.post { ensureNotificationPermission() }
         }
 
         // 应用自定义字体
@@ -824,6 +835,20 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，否则通知不会显示。
+     * 每个进程只申请一次，避免反复打扰。
+     */
+    private fun ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (notificationPermissionAsked) return
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED
+        ) return
+        notificationPermissionAsked = true
+        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     private fun isServiceEnabled(): Boolean {
         val enabledServices = Settings.Secure.getString(
             contentResolver,
@@ -851,7 +876,10 @@ class MainActivity : AppCompatActivity() {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.usage_instructions)
             .setMessage(R.string.usage_instructions_message)
-            .setPositiveButton(R.string.ok) { d, _ -> d.dismiss() }
+            .setPositiveButton(R.string.ok) { d, _ ->
+                d.dismiss()
+                ensureNotificationPermission()
+            }
             .setCancelable(false)
             .create()
         // 平滑显示，避免闪烁

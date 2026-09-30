@@ -9,6 +9,7 @@
     <string name="notification_running">Running</string>
     <string name="notification_idle">Tap floating ball to execute</string>
     <string name="notification_title">Floating ball running</string>
+    <string name="notification_action_stop">Stop</string>
 
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">Please drag the floating ball to the click position first</string>

@@ -9,6 +9,7 @@
     <string name="notification_running">실행 중</string>
     <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
     <string name="notification_title">플로팅 볼 실행 중</string>
+    <string name="notification_action_stop">중지</string>
 
     <!-- 토스트 메시지 -->
     <string name="toast_drag_to_position">먼저 플로팅 볼을 클릭 위치로 드래그하세요</string>
