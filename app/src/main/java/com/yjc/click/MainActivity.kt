@@ -158,6 +158,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 恢复上次保存的配置（仅在全新启动时；旋转/重建交给系统与 savedInstanceState）
+        if (savedInstanceState == null) {
+            val snapshot = ConfigStore.load(this)
+            isSwipeMode = snapshot.isSwipeMode
+            isGestureMode = snapshot.isGestureMode
+            inputSwipeX1.setText(snapshot.swipeX1)
+            inputSwipeY1.setText(snapshot.swipeY1)
+            inputSwipeX2.setText(snapshot.swipeX2)
+            inputSwipeY2.setText(snapshot.swipeY2)
+            inputSwipeDuration.setText(snapshot.swipeDuration)
+            inputDelay.setText(snapshot.delay)
+            inputRepeat.setText(snapshot.repeat)
+            checkInfinite.isChecked = snapshot.infinite
+            inputRepeat.isEnabled = !snapshot.infinite
+            // 同步一次内存中的运行时配置，避免启动后未改动控件时界面与参数不一致
+            saveConfig()
+        }
+
         // 初始状态
         radioClick.isSelected = !isSwipeMode
         radioSwipe.isSelected = isSwipeMode
@@ -258,9 +276,11 @@ class MainActivity : AppCompatActivity() {
         }
         bottomNavigation.selectedItemId = savedItemId
 
-        // 恢复执行模式状态
-        isSwipeMode = savedInstanceState?.getBoolean("isSwipeMode", false) ?: false
-        isGestureMode = savedInstanceState?.getBoolean("isGestureMode", false) ?: false
+        // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
+        savedInstanceState?.let {
+            isSwipeMode = it.getBoolean("isSwipeMode", isSwipeMode)
+            isGestureMode = it.getBoolean("isGestureMode", isGestureMode)
+        }
         if (isSwipeMode) {
             radioClick.isSelected = false
             radioSwipe.isSelected = true
@@ -540,6 +560,21 @@ class MainActivity : AppCompatActivity() {
             swipeDuration = inputSwipeDuration.text.toString().toLongOrNull() ?: 0L,
             delayMs = inputDelay.text.toString().toLongOrNull() ?: 0L,
             repeatCount = if (checkInfinite.isChecked) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
+        )
+        ConfigStore.save(
+            this,
+            ConfigStore.Snapshot(
+                isSwipeMode = isSwipeMode,
+                isGestureMode = isGestureMode,
+                swipeX1 = inputSwipeX1.text?.toString() ?: "",
+                swipeY1 = inputSwipeY1.text?.toString() ?: "",
+                swipeX2 = inputSwipeX2.text?.toString() ?: "",
+                swipeY2 = inputSwipeY2.text?.toString() ?: "",
+                swipeDuration = inputSwipeDuration.text?.toString() ?: "",
+                delay = inputDelay.text?.toString() ?: "0",
+                repeat = inputRepeat.text?.toString() ?: "1",
+                infinite = checkInfinite.isChecked
+            )
         )
     }
 
