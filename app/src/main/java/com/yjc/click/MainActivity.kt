@@ -101,6 +101,14 @@ class MainActivity : AppCompatActivity() {
             windowInsets
         }
 
+        // edge-to-edge 下窗口不会为键盘缩放，需自行抬升布局，否则底部输入框与按钮被键盘盖住
+        val rootView = findViewById<View>(R.id.root)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            val imeBottom = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+            view.setPadding(0, 0, 0, imeBottom)
+            windowInsets
+        }
+
         // 底栏启动动画：从底部滑入（仅首次启动）
         if (savedInstanceState == null) {
             bottomNav.post {
