@@ -74,6 +74,11 @@ object AppTheme {
     }
 
     private fun startDynamicColorReveal(activity: Activity, enabled: Boolean) {
+        if (RevealOverlay.isPlaying) {
+            // 上一次揭示还在播：挂起，等它播完再重来（不打断旧动画）
+            pendingAction = { startDynamicColorReveal(activity, enabled) }
+            return
+        }
         val window = activity.window
         val view = window?.decorView
         if (window == null || view == null || view.width <= 0 || view.height <= 0) {
@@ -90,6 +95,7 @@ object AppTheme {
                     bitmap,
                     Offset(rnd.nextInt(view.width).toFloat(), rnd.nextInt(view.height).toFloat()),
                     onReady = { useDynamicColor = enabled },
+                    onFinished = { drainPending() },
                 )
             } else {
                 useDynamicColor = enabled
@@ -153,9 +159,21 @@ object AppTheme {
 
     /**
      * 应用主题偏好：先抓旧画面 → 持久化 → 让 View 侧（各类对话框）跟随 → 播放圆形揭示。
+     *
+     * 如果上一次揭示还在播，这里**不打断它**：把"再走一遍"挂起来，等旧动画自己播完再重新
+     * 抓图 + 翻状态 + 播新动画。之前是直接把上一次的覆盖层 cancel 掉，结果旧圆定格成一张
+     * 静态图（新动画从随机点扩出去、周围新旧同色，肉眼看就是"动画停了"）。
+     *
      * @param origin 揭示圆心（屏幕像素坐标，一般是手指点击的位置）
      */
     fun apply(activity: Activity, theme: String, systemDark: Boolean, origin: Offset?) {
+        // 偏好先落盘：即使动画还没播完，这次选择也不会丢
+        activity.getSharedPreferences("settings", Activity.MODE_PRIVATE)
+            .edit().putString("app_theme", theme).apply()
+        if (RevealOverlay.isPlaying) {
+            pendingAction = { apply(activity, theme, systemDark, origin) }
+            return
+        }
         val target = resolveDark(theme, systemDark)
         val window = activity.window
         val view = window?.decorView
@@ -180,6 +198,16 @@ object AppTheme {
         )
     }
 
+    /** 挂起的"再来一次"（上一次揭示还没播完时的新请求），只保留最后一次选择 */
+    private var pendingAction: (() -> Unit)? = null
+
+    /** 上一次揭示播完了，把挂起的请求放掉 */
+    private fun drainPending() {
+        val action = pendingAction ?: return
+        pendingAction = null
+        action()
+    }
+
     private fun commit(
         activity: Activity,
         theme: String,
@@ -187,8 +215,6 @@ object AppTheme {
         snapshot: Bitmap?,
         origin: Offset?,
     ) {
-        activity.getSharedPreferences("settings", Activity.MODE_PRIVATE)
-            .edit().putString("app_theme", theme).apply()
         // View 侧跟随（Activity 声明了 configChanges="uiMode"，不会重建，动画不会被打断）
         AppCompatDelegate.setDefaultNightMode(
             when (theme) {
@@ -212,7 +238,10 @@ object AppTheme {
             } else {
                 Offset(snapshot.width / 2f, snapshot.height / 2f)
             }
-            RevealOverlay.play(activity, snapshot, center)
+            RevealOverlay.play(activity, snapshot, center, onFinished = { drainPending() })
+        } else {
+            // 没有动画可播，挂起的请求直接接着走
+            drainPending()
         }
     }
 }
@@ -253,18 +282,28 @@ private class RevealOverlay(
     }
 
     companion object {
-        /** 正在播的揭示（连点两次时把上一次掐掉，避免两层覆盖层叠在一起） */
-        private var runningAnimator: Animator? = null
+        /**
+         * 是否有揭示正在播。调用方靠它决定"挂起"还是"直接播"——
+         * 播放中绝不会再叠一层（叠了就会把上一个动画冻成静态图）。
+         */
+        var isPlaying = false
+            private set
 
         fun play(
             activity: Activity,
             snapshot: Bitmap,
             center: Offset,
             onReady: (() -> Unit)? = null,
+            onFinished: (() -> Unit)? = null,
         ) {
-            runningAnimator?.cancel()
-            runningAnimator = null
-            val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+            val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: run {
+                // 没有可挂的地方（窗口已销毁）：状态照旧要落，动画跳过
+                snapshot.recycle()
+                onReady?.invoke()
+                onFinished?.invoke()
+                return
+            }
+            isPlaying = true
             val overlay = RevealOverlay(activity, snapshot, center)
             root.addView(
                 overlay,
@@ -283,20 +322,20 @@ private class RevealOverlay(
             )
             overlay.post {
                 onReady?.invoke()
-                val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+                ValueAnimator.ofFloat(0f, 1f).apply {
                     duration = 400L
                     interpolator = android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f)
                     addUpdateListener { overlay.radius = overlay.maxRadius * (it.animatedValue as Float) }
                     addListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator) {
-                            if (runningAnimator === animation) runningAnimator = null
                             (overlay.parent as? ViewGroup)?.removeView(overlay)
                             snapshot.recycle()
+                            isPlaying = false
+                            onFinished?.invoke()
                         }
                     })
                     start()
                 }
-                runningAnimator = animator
             }
         }
     }
