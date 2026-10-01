@@ -97,8 +97,8 @@ class FloatingService : Service() {
     private fun createNotification(): Notification {
         val text = when {
             AppConfig.recordRequested -> getString(R.string.notification_recording)
-            AppConfig.running && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
-            AppConfig.running -> getString(R.string.notification_running)
+            AppConfig.operationActive && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            AppConfig.operationActive -> getString(R.string.notification_running)
             else -> getString(R.string.notification_idle)
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -196,7 +196,9 @@ class FloatingService : Service() {
                             operationPaused = false
                             if (job?.isActive == true) {
                                 AppConfig.running = false
+                                AppConfig.operationActive = false
                                 job?.cancel()
+                                updateNotification()
                             }
                         }
                     }
@@ -392,8 +394,10 @@ class FloatingService : Service() {
                 android.util.Log.d("FloatingService", "executeAction: double-tap while running, pausing")
                 lastTapTime = 0
                 AppConfig.running = false
+                AppConfig.operationActive = false
                 operationPaused = true
                 job?.cancel()
+                updateNotification()
                 Toast.makeText(this, R.string.toast_operation_paused, Toast.LENGTH_SHORT).show()
             } else {
                 android.util.Log.d("FloatingService", "executeAction: first tap while running")
@@ -426,6 +430,7 @@ class FloatingService : Service() {
         val tapY = lastTapY
 
         AppConfig.running = true
+        AppConfig.operationActive = true
         updateNotification()
 
         job = scope.launch {
@@ -441,6 +446,10 @@ class FloatingService : Service() {
                 }
                 if (service == null) {
                     android.util.Log.w("FloatingService", "startOperation: accessibility service timed out")
+                    // 无法执行时也要复位状态，否则通知与界面会一直停留在"执行中"
+                    AppConfig.running = false
+                    AppConfig.operationActive = false
+                    updateNotification()
                     return@launch
                 }
                 android.util.Log.d("FloatingService", "startOperation: starting operation mode=${config.mode}")
@@ -530,6 +539,7 @@ class FloatingService : Service() {
      */
     private fun finishOperation(config: AppConfig) {
         AppConfig.running = false
+        AppConfig.operationActive = false
         if (config.isInfinite) {
             stopSelf()
         } else {
@@ -545,6 +555,7 @@ class FloatingService : Service() {
         job?.cancel()
         scope.cancel()
         AppConfig.running = false
+        AppConfig.operationActive = false
         recordingOverlay?.let {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
