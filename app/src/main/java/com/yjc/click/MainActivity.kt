@@ -65,9 +65,6 @@ class MainActivity : AppCompatActivity() {
     /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
     private var selectedTab by mutableStateOf(MainTab.HOME)
 
-    /** 语言等配置变化时自增，强制 Compose 重新读取字符串资源（Activity 不重建时不会自动刷新） */
-    private var configRevision by mutableStateOf(0)
-
     /** 首次启动时底栏从底部滑入（旧实现在 onCreate 里对 BottomNavigationView 做 translationY 动画） */
     private var playBottomBarEntrance by mutableStateOf(false)
 
@@ -105,8 +102,6 @@ class MainActivity : AppCompatActivity() {
         // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
         setContent {
             // 订阅字体变化：设置页里换字体时，已经组合好的顶栏/底栏/首页也要跟着换
-            // 语言等配置变化时重新读取字符串资源
-            configRevision
             // 主题状态一变就重新下发系统栏样式（含全面屏手势条那条的背景/图标明暗）。
             // 放在这里而不是切换处：AppTheme.apply 是异步的（先 PixelCopy 抓图再切），
             // 在调用点读 AppTheme.isDark 会拿到旧值。
@@ -259,7 +254,6 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
-        configRevision++
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
             .getString("app_theme", "follow_system") ?: "follow_system"
         if (pref == "follow_system") {
