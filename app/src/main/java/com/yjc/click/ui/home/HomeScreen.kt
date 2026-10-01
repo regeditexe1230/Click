@@ -133,8 +133,6 @@ fun HomeScreen(
                 text = statusText,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-                // 两行文本块：旧版字体留白整块只加一次，需比单行更小的行高比例才对得上（实测 112px）
-                lineHeightRatio = 1.4222f,
                 modifier = Modifier.fillMaxWidth().testTag("statusText"),
             )
         }
@@ -190,17 +188,12 @@ fun HomeScreen(
                 14.sp,
                 MaterialTheme.colorScheme.onSurface,
             )
-            OutlinedTextField(
+            PlatformField(
                 value = delay,
                 onValueChange = onDelayChange,
-                label = { Text(stringResource(R.string.delay_milliseconds)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-                    
-                    .testTag("inputDelay"),
+                hintRes = R.string.delay_milliseconds,
+                tag = "inputDelay",
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
 
             Box(
@@ -222,14 +215,13 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
+                PlatformField(
                     value = repeat,
                     onValueChange = onRepeatChange,
+                    hintRes = R.string.count,
+                    tag = "inputRepeat",
                     enabled = !infinite,
-                    label = { Text(stringResource(R.string.count)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f).testTag("inputRepeat"),
+                    modifier = Modifier.weight(1f),
                 )
                 Switch(
                     checked = infinite,
@@ -240,7 +232,9 @@ fun HomeScreen(
                     text = stringResource(R.string.infinite_loop),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
+                    // 旧版用的是 MaterialSwitch 自带文字：轨道(137px)与文字之间间隔 44px，
+                    // 这里必须补足同样间距，否则输入框权重会多占 23px、把轨道推右。
+                    modifier = Modifier.padding(start = 16.76.dp),
                 )
             }
         }
@@ -457,17 +451,12 @@ private fun ColumnScope.SwipeParamsSection(
                     )
                 }
                 ParamLabel(R.string.duration, topMargin = 8.dp)
-                OutlinedTextField(
+                PlatformField(
                     value = swipeDuration,
                     onValueChange = onSwipeDurationChange,
-                    label = { Text(stringResource(R.string.swipe_duration)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        
-                        .testTag("inputSwipeDuration"),
+                    hintRes = R.string.swipe_duration,
+                    tag = "inputSwipeDuration",
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 )
             }
         }
@@ -511,6 +500,44 @@ private fun ParamLabel(resId: Int, topMargin: Dp = 0.dp) {
     )
 }
 
+/**
+ * 旧版 Widget.Material3.TextInputLayout.OutlinedBox 布局高度 = 边框盒(147px) + 顶部提示区(14px) = 161px；
+ * Compose 的 OutlinedTextField 在边框上方留了 8dp(21px)，比旧版多 7px，会把后续元素整体顶下去。
+ * 这里从顶部裁掉多出的 7px，边框位置随之回到旧版的 +14px 处（旧版边框顶 = 实测 1204）。
+ */
+private val FieldLabelTrim = 2.6667.dp
+
+/** 裁掉布局顶部的多余留白：内容上移，占用高度同步减少（Compose 的 padding 不接受负值） */
+private fun Modifier.trimTopSpace(trim: Dp): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val cut = trim.roundToPx()
+    layout(placeable.width, (placeable.height - cut).coerceAtLeast(0)) {
+        placeable.place(0, -cut)
+    }
+}
+
+/** 与旧版 TextInputLayout（OutlinedBox 样式）等价的输入框 */
+@Composable
+private fun PlatformField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    hintRes: Int,
+    tag: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Number,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        enabled = enabled,
+        label = { Text(stringResource(hintRes)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        modifier = modifier.trimTopSpace(FieldLabelTrim).testTag(tag),
+    )
+}
+
 @Composable
 private fun NumberField(
     value: String,
@@ -518,14 +545,11 @@ private fun NumberField(
     hintRes: Int,
     tag: String,
     modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(stringResource(hintRes)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        // 高度对齐旧版 Widget.Material3.TextInputLayout.OutlinedBox（56dp，实测 147px）
-        modifier = modifier.testTag(tag),
-    )
-}
+) = PlatformField(
+    value = value,
+    onValueChange = onValueChange,
+    hintRes = hintRes,
+    tag = tag,
+    modifier = modifier,
+    keyboardType = KeyboardType.Decimal,
+)
