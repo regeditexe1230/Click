@@ -502,17 +502,22 @@ class FloatingService : Service() {
         var count = 0
         while (shouldContinue(config, count) && !AppConfig.preventExecution) {
             if (config.delayMs > 0) delay(config.delayMs)
-            if (config.swipeMethod == SwipeMethod.GESTURE) {
+            val completed = if (config.swipeMethod == SwipeMethod.GESTURE) {
                 val gesture = AppConfig.recordedGesture
                 if (gesture.points.size >= 2) {
                     replayGesture(service, gesture)
+                } else {
+                    false
                 }
             } else {
-                service.swipe(
+                service.swipeAndAwait(
                     config.swipeX1, config.swipeY1,
                     config.swipeX2, config.swipeY2,
                     config.swipeDuration
                 )
+            }
+            if (!completed) {
+                android.util.Log.w("FloatingService", "executeSwipe: gesture not completed (cancelled or rejected)")
             }
             count++
             if (config.isInfinite) delay(500)
@@ -520,7 +525,8 @@ class FloatingService : Service() {
         finishOperation(config)
     }
 
-    private fun replayGesture(service: ClickAccessibilityService, gesture: RecordedGesture) {
+    /** 回放录制的手势，并等待手势真正结束（返回是否正常完成） */
+    private suspend fun replayGesture(service: ClickAccessibilityService, gesture: RecordedGesture): Boolean {
         val path = Path()
         val firstX = maxOf(gesture.points.first().first, 0f)
         val firstY = maxOf(gesture.points.first().second, 0f)
@@ -530,7 +536,7 @@ class FloatingService : Service() {
             val y = maxOf(gesture.points[i].second, 0f)
             path.lineTo(x, y)
         }
-        service.dispatchGesturePath(path, gesture.totalDuration)
+        return service.dispatchGesturePathAndAwait(path, gesture.totalDuration)
     }
 
     /**
