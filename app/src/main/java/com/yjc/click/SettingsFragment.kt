@@ -98,9 +98,7 @@ class SettingsFragment : Fragment() {
             .getString("app_theme", "follow_system") ?: "follow_system"
 
         // 动态取色开关的初始状态必须来自偏好，否则重进设置页会看到"开关是关的、配色却是动态的"
-        dynamicColorChecked = requireContext()
-            .getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getBoolean("dynamic_color", false)
+        dynamicColorChecked = dynamicColorPref()
 
         updateLanguageDisplay()
         updateFontDisplay()
@@ -128,11 +126,16 @@ class SettingsFragment : Fragment() {
         // 自定义字体改为通过 ClickTheme 下发 FontFamily：原来遍历 View 树设 typeface 的做法
         // 对 Compose 文本完全无效（设置页弹窗仍是 View，故 applyFontToDialog 继续保留）
         syncFontFamily()
-        // 动态取色的真值在 AppTheme（MainActivity 启动时从偏好读入），回到设置页时同步一次
-        dynamicColorChecked = AppTheme.useDynamicColor
+        // 开关显示的是"用户设置"（偏好），不是 AppTheme 的当前渲染值：
+        // 切换动态取色是延迟生效的（等开关动画播完再开始配色过渡），读 AppTheme 会拿到旧值
+        dynamicColorChecked = dynamicColorPref()
         updateLanguageDisplay()
         updateFontDisplay()
     }
+
+    private fun dynamicColorPref(): Boolean = requireContext()
+        .getSharedPreferences("settings", Context.MODE_PRIVATE)
+        .getBoolean("dynamic_color", false)
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
