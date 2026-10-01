@@ -199,7 +199,7 @@ private class RevealOverlay(
             )
             overlay.post {
                 ValueAnimator.ofFloat(0f, 1f).apply {
-                    duration = if (overlay.verticalFade) 520L else 400L
+                    duration = 400L
                     interpolator = android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f)
                     addUpdateListener { overlay.radius = overlay.maxRadius * (it.animatedValue as Float) }
                     addListener(object : AnimatorListenerAdapter() {
