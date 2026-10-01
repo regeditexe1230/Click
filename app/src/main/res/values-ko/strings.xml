@@ -6,8 +6,10 @@
     <string name="notification_channel_name">클릭 서비스</string>
     <string name="notification_recording">제스처 녹화 중...</string>
     <string name="notification_infinite">무한 반복 중</string>
+    <string name="notification_running">실행 중</string>
     <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
     <string name="notification_title">플로팅 볼 실행 중</string>
+    <string name="notification_action_stop">중지</string>
 
     <!-- 토스트 메시지 -->
     <string name="toast_drag_to_position">먼저 플로팅 볼을 클릭 위치로 드래그하세요</string>
@@ -56,6 +58,8 @@
     <string name="swipe_duration">스와이프 시간(밀리초)</string>
 
     <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
+    <string name="recording_overlay_hint">화면을 손가락으로 쓸어 제스처를 녹화하세요\n손을 떼면 완료됩니다</string>
+    <string name="floating_ball_content_description">플로팅 볼</string>
 
     <string name="execution_settings">실행 설정</string>
     <string name="pre_execution_delay">실행 전 지연(밀리초)</string>
