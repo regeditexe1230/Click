@@ -107,7 +107,10 @@ class MainActivity : AppCompatActivity() {
             // 主题状态一变就重新下发系统栏样式（含全面屏手势条那条的背景/图标明暗）。
             // 放在这里而不是切换处：AppTheme.apply 是异步的（先 PixelCopy 抓图再切），
             // 在调用点读 AppTheme.isDark 会拿到旧值。
-            LaunchedEffect(AppTheme.isDark) { applySystemBarStyle(AppTheme.isDark) }
+            // 动态取色开关也会换掉系统栏（手势条）的底色，所以一起订阅。
+            LaunchedEffect(AppTheme.isDark, AppTheme.useDynamicColor) {
+                applySystemBarStyle(AppTheme.isDark)
+            }
             val fontRevision = FontManager.fontRevision
             val family = androidx.compose.runtime.remember(fontRevision) {
                 FontManager.currentTypeface?.let { FontFamily(it) }
