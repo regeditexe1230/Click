@@ -68,29 +68,64 @@ object FontParser {
         "zh" to listOf(0x4E00L..0x9FFFL, 0x3400L..0x4DBFL)
     )
 
+    /** cmap 子表记录：按覆盖范围排序时需要 format 与平台信息 */
+    private data class CmapSubtable(
+        val offset: Long,
+        val format: Int,
+        val platformID: Int,
+        val encodingID: Int
+    )
+
     private fun readCmapForLanguages(raf: RandomAccessFile, cmapOffset: Long): List<String> {
         raf.seek(cmapOffset)
         raf.skipBytes(2)
         val numSubtables = raf.readUnsignedShort()
 
-        var bestOffset = -1L
+        // 先收集所有可解析的子表（只认 format 4 与 format 12）
+        val subtables = mutableListOf<CmapSubtable>()
         for (i in 0 until numSubtables) {
             val platformID = raf.readUnsignedShort()
             val encodingID = raf.readUnsignedShort()
-            val subtableOffset = cmapOffset + raf.readUnsignedInt()
-            if (platformID == 0) { bestOffset = subtableOffset; break }
-            if (platformID == 3 && (encodingID == 1 || encodingID == 10)) bestOffset = subtableOffset
+            val offset = cmapOffset + raf.readUnsignedInt()
+            val format = try {
+                val resumeAt = raf.filePointer
+                raf.seek(offset)
+                val f = raf.readUnsignedShort()
+                raf.seek(resumeAt)
+                f
+            } catch (e: Exception) {
+                continue
+            }
+            if (format == 4 || format == 12) {
+                subtables.add(CmapSubtable(offset, format, platformID, encodingID))
+            }
         }
-        if (bestOffset < 0) return emptyList()
+        if (subtables.isEmpty()) return emptyList()
 
-        raf.seek(bestOffset)
-        val format = raf.readUnsignedShort()
-
-        return when (format) {
-            4 -> readFormat4Languages(raf, bestOffset)
-            12 -> readFormat12Languages(raf, bestOffset)
-            else -> emptyList()
+        // 按覆盖范围从优到劣排序：UCS-4 全量 > Unicode BMP > Windows BMP > 其它
+        val ranked = subtables.sortedBy { sub ->
+            when {
+                sub.format == 12 && sub.platformID == 3 && sub.encodingID == 10 -> 0
+                sub.format == 12 && sub.platformID == 0 -> 1
+                sub.format == 12 -> 2
+                sub.platformID == 3 && sub.encodingID == 1 -> 3
+                sub.platformID == 0 -> 4
+                else -> 5
+            }
         }
+
+        // 逐个尝试，某个子表判不出语言时继续试下一个。
+        // 此前是"遇到 platformID==0 立即 break"，若该子表是无映射的 format 0，
+        // 就会直接判定不支持任何语言，白白丢掉后面的 format 12 全量 Unicode 子表。
+        for (sub in ranked) {
+            val langs = when (sub.format) {
+                4 -> readFormat4Languages(raf, sub.offset)
+                12 -> readFormat12Languages(raf, sub.offset)
+                else -> emptyList()
+            }
+            if (langs.isNotEmpty()) return langs
+        }
+        return emptyList()
     }
 
     private fun readFormat4Languages(raf: RandomAccessFile, start: Long): List<String> {
