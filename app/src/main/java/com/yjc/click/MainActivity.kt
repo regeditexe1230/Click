@@ -229,11 +229,15 @@ class MainActivity : AppCompatActivity() {
                 radioSwipe.isSelected = true
                 animateIndicator(modeIndicator, radioSwipe.x - radioClick.x)
                 expandView(swipeParams)
-                // 初始化滑动方式指示器宽度
+                // 初始化滑动方式指示器宽度与位置
                 swipeMethodIndicator.post {
                     val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
                     params.width = radioSwipeManual.width - 8
                     swipeMethodIndicator.layoutParams = params
+                    // 位置必须与已保存的滑动方式一致：否则从"点击模式 + 手势子模式"切进来时，
+                    // 指示器会停在默认位置（手动参数）上，与真实模式不符
+                    swipeMethodIndicator.x =
+                        if (isGestureMode) radioSwipeGesture.x - radioSwipeManual.x else 0f
                 }
                 saveConfig()
                 if (!isSwipeConfigValid()) {
