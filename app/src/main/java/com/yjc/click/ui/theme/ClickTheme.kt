@@ -7,9 +7,13 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Density
 
 /**
  * Compose 侧的主题，取值与 res/values/colors.xml、res/values-night/colors.xml 一一对应，
@@ -72,24 +76,10 @@ fun ClickTheme(
 ) {
     // 排版全部使用常规字重：旧实现用 Typeface.DEFAULT 覆盖了所有 TextView 的字体，
     // 连 XML 里 textStyle="bold" 的标题实际渲染也是常规字重，这里保持一致。
-    val typography = Typography().let { base ->
-        base.copy(
-            displayLarge = base.displayLarge.regularWeight(),
-            displayMedium = base.displayMedium.regularWeight(),
-            displaySmall = base.displaySmall.regularWeight(),
-            headlineLarge = base.headlineLarge.regularWeight(),
-            headlineMedium = base.headlineMedium.regularWeight(),
-            headlineSmall = base.headlineSmall.regularWeight(),
-            titleLarge = base.titleLarge.regularWeight(),
-            titleMedium = base.titleMedium.regularWeight(),
-            titleSmall = base.titleSmall.regularWeight(),
-            bodyLarge = base.bodyLarge.regularWeight(),
-            bodyMedium = base.bodyMedium.regularWeight(),
-            bodySmall = base.bodySmall.regularWeight(),
-            labelLarge = base.labelLarge.regularWeight(),
-            labelMedium = base.labelMedium.regularWeight(),
-            labelSmall = base.labelSmall.regularWeight(),
-        )
+    // 字号同时按旧版规则取整成整数像素（见 Platform.kt 的 platformFontSize）。
+    val density = LocalDensity.current
+    val typography = remember(density) {
+        Typography().regularWeights().platformSizes(density)
     }
     CompositionLocalProvider(LocalClickFontFamily provides fontFamily) {
         MaterialTheme(
@@ -100,5 +90,45 @@ fun ClickTheme(
     }
 }
 
-private fun androidx.compose.ui.text.TextStyle.regularWeight() =
+private fun TextStyle.regularWeight() =
     copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Normal)
+
+private fun Typography.regularWeights(): Typography = copy(
+    displayLarge = displayLarge.regularWeight(),
+    displayMedium = displayMedium.regularWeight(),
+    displaySmall = displaySmall.regularWeight(),
+    headlineLarge = headlineLarge.regularWeight(),
+    headlineMedium = headlineMedium.regularWeight(),
+    headlineSmall = headlineSmall.regularWeight(),
+    titleLarge = titleLarge.regularWeight(),
+    titleMedium = titleMedium.regularWeight(),
+    titleSmall = titleSmall.regularWeight(),
+    bodyLarge = bodyLarge.regularWeight(),
+    bodyMedium = bodyMedium.regularWeight(),
+    bodySmall = bodySmall.regularWeight(),
+    labelLarge = labelLarge.regularWeight(),
+    labelMedium = labelMedium.regularWeight(),
+    labelSmall = labelSmall.regularWeight(),
+)
+
+/** 把 M3 默认排版的每个字号都按旧版 getDimensionPixelSize() 规则取整成整数像素 */
+private fun Typography.platformSizes(density: Density): Typography = copy(
+    displayLarge = displayLarge.platformSize(density),
+    displayMedium = displayMedium.platformSize(density),
+    displaySmall = displaySmall.platformSize(density),
+    headlineLarge = headlineLarge.platformSize(density),
+    headlineMedium = headlineMedium.platformSize(density),
+    headlineSmall = headlineSmall.platformSize(density),
+    titleLarge = titleLarge.platformSize(density),
+    titleMedium = titleMedium.platformSize(density),
+    titleSmall = titleSmall.platformSize(density),
+    bodyLarge = bodyLarge.platformSize(density),
+    bodyMedium = bodyMedium.platformSize(density),
+    bodySmall = bodySmall.platformSize(density),
+    labelLarge = labelLarge.platformSize(density),
+    labelMedium = labelMedium.platformSize(density),
+    labelSmall = labelSmall.platformSize(density),
+)
+
+private fun TextStyle.platformSize(density: Density): TextStyle =
+    if (fontSize.isSp) copy(fontSize = density.platformFontSize(fontSize)) else this
