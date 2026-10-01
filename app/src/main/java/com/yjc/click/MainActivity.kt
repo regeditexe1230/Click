@@ -101,11 +101,20 @@ class MainActivity : AppCompatActivity() {
             windowInsets
         }
 
-        // edge-to-edge 下窗口不会为键盘缩放，需自行抬升布局，否则底部输入框与按钮被键盘盖住
+        // edge-to-edge 下窗口不会为系统栏/键盘缩放，需自行处理 inset：
+        // - 左右：系统栏与挖孔。横屏三键导航时导航栏在侧边，不补 inset 会把内容压在导航栏下面
+        // - 底部：键盘，否则底部的延时/次数输入框与启动按钮被键盘盖住
         val rootView = findViewById<View>(R.id.root)
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            val bars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val cutout = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout())
             val imeBottom = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
-            view.setPadding(0, 0, 0, imeBottom)
+            view.setPadding(
+                maxOf(bars.left, cutout.left),
+                0,
+                maxOf(bars.right, cutout.right),
+                imeBottom
+            )
             windowInsets
         }
 
