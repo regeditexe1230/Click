@@ -109,6 +109,8 @@ class SettingsFragment : Fragment() {
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
         AppTheme.apply(requireActivity(), newTheme, systemDark, origin)
         theme = newTheme
+        // 主题换了要重新下发系统栏样式，否则全面屏手势小白条那一条的背景/图标不会跟着变
+        (activity as? MainActivity)?.refreshSystemBarStyle()
     }
 
     override fun onResume() {
