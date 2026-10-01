@@ -44,6 +44,26 @@ object AppTheme {
 
     private const val DURATION_MS = 400L
 
+    /**
+     * 字体/语言这类"内容切换"：先抓当前画面，执行切换动作，再自上而下淡入新内容。
+     * 这样切换过程中不会整块闪一下，也不需要重建 Activity。
+     */
+    fun fadeSwitch(activity: Activity, action: () -> Unit) {
+        val window = activity.window
+        val view = window?.decorView
+        if (window == null || view == null || view.width <= 0 || view.height <= 0) {
+            action()
+            return
+        }
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        PixelCopy.request(window, bitmap, { result ->
+            action()
+            if (result == PixelCopy.SUCCESS) {
+                RevealOverlay.play(activity, bitmap, Offset.Zero, verticalFade = true)
+            }
+        }, Handler(Looper.getMainLooper()))
+    }
+
     /** 解析主题偏好字符串 → 是否深色 */
     fun resolveDark(theme: String, systemDark: Boolean): Boolean = when (theme) {
         "dark" -> true
@@ -125,6 +145,7 @@ private class RevealOverlay(
     context: Context,
     private val snapshot: Bitmap,
     private val center: Offset,
+    private val verticalFade: Boolean = false,
 ) : View(context) {
 
     var radius = 0f
@@ -153,9 +174,14 @@ private class RevealOverlay(
     }
 
     companion object {
-        fun play(activity: Activity, snapshot: Bitmap, center: Offset) {
+        fun play(
+            activity: Activity,
+            snapshot: Bitmap,
+            center: Offset,
+            verticalFade: Boolean = false,
+        ) {
             val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-            val overlay = RevealOverlay(activity, snapshot, center)
+            val overlay = RevealOverlay(activity, snapshot, center, verticalFade)
             root.addView(
                 overlay,
                 ViewGroup.LayoutParams(
