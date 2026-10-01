@@ -18,22 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
-/**
- * 平台字体 (ascent + descent) / em，用于推算旧版 TextView 的行盒高度。
- * 取值来自旧版实测（12sp→48px、14sp→54px、15sp→56px，配合下方 4dp 行距）。
- */
-private const val FONT_LINE_RATIO = 1.1718f
-
-/**
- * 旧版单行盒高实测标定表（取整后的 px 字号 → 盒高 px）。
- *
- * 平台侧 TextView 的盒高并不严格随字号线性：实测 12sp(32px)→48、13sp(34px)→50、
- * 14sp(37px)→54、15sp(39px)→56、16sp(42px)→62，其中 42px 比线性外推高 2px，
- * 因此已实测的字号直接取标定值，表外字号退回下面的线性模型。
- */
-private val CALIBRATED_LINE_BOX_PX = mapOf(32 to 48, 34 to 50, 37 to 54, 39 to 56, 42 to 62)
-
-/** 旧版主题给每个 TextView 附加的 lineSpacingExtra（4dp，实测 10.5px @ density 2.625） */
+/** 旧版主题给每个 TextView 附加的 lineSpacingExtra（4dp） */
 private val LINE_SPACING_EXTRA = 4.dp
 
 /**
@@ -46,27 +31,64 @@ val PlatformDefaultFontFamily: FontFamily = FontFamily(android.graphics.Typeface
 
 /**
  * 按旧版 `getDimensionPixelSize()` 的规则把字号取整成整数像素（见 [LocalIntegerFontAdvance]）。
- * 14sp→37px、12sp→32px。
  */
 fun Density.platformFontSize(fontSize: TextUnit): TextUnit =
     fontSize.toPx().roundToInt().toSp()
 
+/** 当前生效的字型：自定义字体优先，否则平台默认字体（与旧版 FontManager 铺下去的一致） */
 /**
- * 旧版单行行盒高度（px 整数）：优先取实测标定值，否则按 字体度量(ascent+descent) + lineSpacingExtra 推算。
+ * 旧版单行盒高实测标定表（取整后的 px 字号 → 盒高 px）。
+ *
+ * 在模拟器上用旧版真实渲染逐字号量得：12sp(32px)→48、13sp(34px)→50、14sp(37px)→54、
+ * 15sp(39px)→56、16sp(42px)→62。运行时探测在个别字体环境下会比旧版少几个像素，
+ * 因此已标定的字号以标定值为准（见 [platformLineBoxPx]）。
  */
-fun Density.platformLineBoxPx(fontSize: TextUnit): Int {
-    val px = fontSize.toPx().roundToInt()
-    return CALIBRATED_LINE_BOX_PX[px]
-        ?: (FONT_LINE_RATIO * px + LINE_SPACING_EXTRA.toPx()).roundToInt()
+private val CALIBRATED_LINE_BOX_PX = mapOf(32 to 48, 34 to 50, 37 to 54, 39 to 56, 42 to 62)
+private fun currentPlatformTypeface(): android.graphics.Typeface =
+    com.yjc.click.FontManager.currentTypeface ?: android.graphics.Typeface.DEFAULT
+
+/**
+ * 旧版 TextView 的**单行行盒高度（px）**。
+ *
+ * 两个来源取较大者：
+ * 1. [CALIBRATED_LINE_BOX_PX]：在模拟器上用**旧版真实渲染**逐字号量出来的值（最可靠）；
+ * 2. 运行时探测：现造一个真正的 [android.widget.TextView]（旧版用的就是它）按当前设备的
+ *    font_scale / 密度 / 系统字体量一次——用于标定表覆盖不到的字号或别的设备
+ *    （例如手机 OEM 字体行高比例与模拟器 Roboto 不同）。
+ */
+@Composable
+fun platformLineBoxPx(fontSize: TextUnit): Int {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val px = with(density) { fontSize.toPx().roundToInt() }.coerceAtLeast(1)
+    val typeface = currentPlatformTypeface()
+    val measured = androidx.compose.runtime.remember(px, typeface) {
+        val probe = android.widget.TextView(context)
+        probe.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, px.toFloat())
+        probe.typeface = typeface
+        probe.includeFontPadding = true
+        probe.text = "测"
+        probe.measure(
+            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+        )
+        probe.measuredHeight
+    }
+    // 标定值是在模拟器（fontScale = 1.0）上量出来的：只有当前设备字体缩放同为 1.0 时才用它，
+    // 否则（例如手机 font_scale = 0.81、OEM 字体行高比例不同）一律用运行时真机探测值。
+    val calibrated = if (density.fontScale == 1f) CALIBRATED_LINE_BOX_PX[px] else null
+    return calibrated ?: measured
 }
 
 /**
- * 旧版单行行盒高度：优先取实测标定值，否则按 字体度量(ascent+descent) + lineSpacingExtra 线性推算，
- * 均取整（多行按每行累加）。Compose 对设置的 lineHeight 向上取整，
- * 因此减去一个极小量，确保落回旧版的整数值。
+ * 旧版单行行盒高度：见 [platformLineBoxPx]（多行按每行累加）。
+ * Compose 对设置的 lineHeight 向上取整，因此减去一个极小量，确保落回旧版的整数值。
  */
-fun Density.platformLineHeight(fontSize: TextUnit): TextUnit =
-    (platformLineBoxPx(fontSize) - 0.01f).toSp()
+@Composable
+fun platformLineHeight(fontSize: TextUnit): TextUnit {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    return with(density) { (platformLineBoxPx(fontSize) - 0.01f).toSp() }
+}
 
 /**
  * 把文本块的布局高度对齐成 旧版行盒 × 行数。
@@ -102,7 +124,7 @@ fun ClickText(
 ) {
     val customFamily = LocalClickFontFamily.current
     val density = LocalDensity.current
-    val lineBoxPx = with(density) { density.platformLineBoxPx(fontSize) }
+    val lineBoxPx = platformLineBoxPx(fontSize)
     // 旧版首页（Activity 树，字体被 FontManager 换成 Typeface.DEFAULT）全角字前进量是整数像素：
     // 14sp 实测 37px；而设置页 Fragment 树走主题默认字体，实测 36.75px。
     // 见 LocalIntegerFontAdvance 的说明。
@@ -116,7 +138,7 @@ fun ClickText(
         modifier = modifier.platformBlockHeight(lineBoxPx),
         color = color,
         fontSize = renderSize,
-        lineHeight = with(density) { density.platformLineHeight(fontSize) },
+        lineHeight = platformLineHeight(fontSize),
         letterSpacing = 0.sp,
         fontWeight = FontWeight.Normal,
         fontFamily = customFamily ?: PlatformDefaultFontFamily,
