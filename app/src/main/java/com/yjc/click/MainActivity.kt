@@ -244,6 +244,21 @@ class MainActivity : AppCompatActivity() {
         FontManager.applyFont(window.decorView)
     }
 
+    /**
+     * configChanges="uiMode" 让 Activity 不重建，但"跟随系统"时需要跟着系统深浅更新渲染状态。
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val pref = getSharedPreferences("settings", MODE_PRIVATE)
+            .getString("app_theme", "follow_system") ?: "follow_system"
+        if (pref == "follow_system") {
+            val sysDark = (android.content.res.Resources.getSystem().configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            AppTheme.isDark = sysDark
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // 应用字体：Compose 首页通过 ClickTheme 下发 FontFamily，

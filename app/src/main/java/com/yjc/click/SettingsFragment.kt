@@ -102,7 +102,9 @@ class SettingsFragment : Fragment() {
      */
     private fun applyTheme(newTheme: String, origin: androidx.compose.ui.geometry.Offset? = null) {
         val ctx = requireContext()
-        val systemDark = (ctx.resources.configuration.uiMode and
+        // 注意：必须读系统真实配置，不能用 ctx.resources —— 它已被 AppCompatDelegate 的
+        // 强制日夜模式覆盖过（之前选过深色就一直是 NIGHT_YES），会导致"跟随系统"失效。
+        val systemDark = (android.content.res.Resources.getSystem().configuration.uiMode and
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
         AppTheme.apply(requireActivity(), newTheme, systemDark, origin)
