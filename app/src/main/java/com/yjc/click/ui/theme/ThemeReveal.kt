@@ -105,6 +105,24 @@ object AppTheme {
     }
 
     /**
+     * 从偏好把当前配色状态读进来。
+     *
+     * Activity 和服务都要调：悬浮球可能在 Activity 没启动（或已被回收）时就开始跑，
+     * 那时若不读偏好，[useDynamicColor] 会是默认的 false、球会被画成固定紫色。
+     * 深浅色必须读 [android.content.res.Resources.getSystem]（真实系统配置），
+     * 不能用已经 AppCompat 覆盖过的 resources.configuration。
+     */
+    fun loadFrom(context: Context) {
+        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        useDynamicColor = prefs.getBoolean("dynamic_color", false)
+        val theme = prefs.getString("app_theme", "follow_system") ?: "follow_system"
+        val systemDark = (android.content.res.Resources.getSystem().configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        isDark = resolveDark(theme, systemDark)
+    }
+
+    /**
      * View 侧界面（各类对话框、悬浮窗）用的 context。
      *
      * 这些界面是 XML/View 实现，颜色来自 Theme.Click 里写死的 md_theme_* 固定色板；

@@ -87,16 +87,8 @@ class MainActivity : AppCompatActivity() {
         val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
         selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
         playBottomBarEntrance = savedInstanceState == null
-        run {
-            val pref = getSharedPreferences("settings", MODE_PRIVATE)
-                .getString("app_theme", "follow_system") ?: "follow_system"
-            val sysDark = (resources.configuration.uiMode and
-                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES
-            AppTheme.isDark = AppTheme.resolveDark(pref, sysDark)
-            AppTheme.useDynamicColor = getSharedPreferences("settings", MODE_PRIVATE)
-                .getBoolean("dynamic_color", false)
-        }
+        // 主题/深浅色状态从偏好读入（同一份逻辑服务侧也在用）
+        AppTheme.loadFrom(this)
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
