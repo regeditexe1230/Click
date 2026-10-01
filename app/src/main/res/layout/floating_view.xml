@@ -9,6 +9,6 @@
         android:layout_height="match_parent"
         android:src="@drawable/ic_floating_icon"
         android:scaleType="centerCrop"
-        android:contentDescription="悬浮球" />
+        android:contentDescription="@string/floating_ball_content_description" />
 
 </FrameLayout>

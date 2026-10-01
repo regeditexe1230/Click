@@ -3,6 +3,7 @@ package com.yjc.click
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -58,8 +59,16 @@ class FloatingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // 通知栏「停止」按钮：直接结束服务，无需切回 App
+        if (intent?.action == ACTION_STOP) {
+            AppConfig.running = false
+            job?.cancel()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         val notification = createNotification()
-        startForeground(1, notification)
+        startForeground(NOTIFICATION_ID, notification)
 
         if (AppConfig.recordRequested && recordingOverlay == null) {
             AppConfig.recordRequested = false
@@ -88,7 +97,8 @@ class FloatingService : Service() {
     private fun createNotification(): Notification {
         val text = when {
             AppConfig.recordRequested -> getString(R.string.notification_recording)
-            AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            AppConfig.operationActive && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
+            AppConfig.operationActive -> getString(R.string.notification_running)
             else -> getString(R.string.notification_idle)
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -96,13 +106,42 @@ class FloatingService : Service() {
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(openAppIntent())
+            .addAction(0, getString(R.string.notification_action_stop), stopServiceIntent())
             .build()
+    }
+
+    /** 点击通知回到 App */
+    private fun openAppIntent(): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        return PendingIntent.getActivity(
+            this, REQUEST_OPEN_APP, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
+    /** 通知栏「停止」按钮 */
+    private fun stopServiceIntent(): PendingIntent {
+        val intent = Intent(this, FloatingService::class.java).setAction(ACTION_STOP)
+        return PendingIntent.getService(
+            this, REQUEST_STOP_SERVICE, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
+    /** 立即刷新前台通知，使其反映当前运行状态 */
+    private fun updateNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(NOTIFICATION_ID, createNotification())
     }
 
     private fun showFloatingView() {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingView = inflater.inflate(R.layout.floating_view, null) as FrameLayout
-        val ballSize = (60 * resources.displayMetrics.density).toInt()
+        val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
 
         params = WindowManager.LayoutParams(
             ballSize,
@@ -157,7 +196,9 @@ class FloatingService : Service() {
                             operationPaused = false
                             if (job?.isActive == true) {
                                 AppConfig.running = false
+                                AppConfig.operationActive = false
                                 job?.cancel()
+                                updateNotification()
                             }
                         }
                     }
@@ -165,6 +206,7 @@ class FloatingService : Service() {
                     if (isDragging) {
                         params.x = initialX + dx
                         params.y = initialY + dy
+                        clampBallToScreen()
                         windowManager.updateViewLayout(floatingView, params)
                         val actual = floatingView.layoutParams as WindowManager.LayoutParams
                         android.util.Log.d("FloatingService", "DRAG params.x=${params.x} params.y=${params.y} actual.x=${actual.x} actual.y=${actual.y}")
@@ -212,7 +254,7 @@ class FloatingService : Service() {
 
     private fun showTargetMarker(x: Float, y: Float) {
         hideTargetMarker()
-        val markerSize = (60 * resources.displayMetrics.density).toInt()
+        val markerSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val marker = inflater.inflate(R.layout.floating_view, null) as FrameLayout
         marker.alpha = 0.35f
@@ -245,6 +287,19 @@ class FloatingService : Service() {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
         targetMarker = null
+    }
+
+    /**
+     * 把悬浮球限制在屏幕范围内。
+     *
+     * 滑动模式抬手时不会回弹（只有点击模式会 snapBallToDefault），若允许拖出屏幕，
+     * 悬浮球会彻底消失且再也无法拖动或点击，只能去通知栏/App 里停止服务重开。
+     */
+    private fun clampBallToScreen() {
+        val metrics = resources.displayMetrics
+        val size = if (floatingView.width > 0) floatingView.width else (BALL_SIZE_DP * metrics.density).toInt()
+        params.x = params.x.coerceIn(0, (metrics.widthPixels - size).coerceAtLeast(0))
+        params.y = params.y.coerceIn(0, (metrics.heightPixels - size).coerceAtLeast(0))
     }
 
     private fun snapBallToDefault() {
@@ -353,8 +408,10 @@ class FloatingService : Service() {
                 android.util.Log.d("FloatingService", "executeAction: double-tap while running, pausing")
                 lastTapTime = 0
                 AppConfig.running = false
+                AppConfig.operationActive = false
                 operationPaused = true
                 job?.cancel()
+                updateNotification()
                 Toast.makeText(this, R.string.toast_operation_paused, Toast.LENGTH_SHORT).show()
             } else {
                 android.util.Log.d("FloatingService", "executeAction: first tap while running")
@@ -387,6 +444,8 @@ class FloatingService : Service() {
         val tapY = lastTapY
 
         AppConfig.running = true
+        AppConfig.operationActive = true
+        updateNotification()
 
         job = scope.launch {
             try {
@@ -401,6 +460,10 @@ class FloatingService : Service() {
                 }
                 if (service == null) {
                     android.util.Log.w("FloatingService", "startOperation: accessibility service timed out")
+                    // 无法执行时也要复位状态，否则通知与界面会一直停留在"执行中"
+                    AppConfig.running = false
+                    AppConfig.operationActive = false
+                    updateNotification()
                     return@launch
                 }
                 android.util.Log.d("FloatingService", "startOperation: starting operation mode=${config.mode}")
@@ -446,32 +509,38 @@ class FloatingService : Service() {
             count++
             if (config.isInfinite) delay(500)
         }
-        if (config.isInfinite) stopSelf()
+        finishOperation(config)
     }
 
     private suspend fun executeSwipe(service: ClickAccessibilityService, config: AppConfig) {
         var count = 0
         while (shouldContinue(config, count) && !AppConfig.preventExecution) {
             if (config.delayMs > 0) delay(config.delayMs)
-            if (config.swipeMethod == SwipeMethod.GESTURE) {
+            val completed = if (config.swipeMethod == SwipeMethod.GESTURE) {
                 val gesture = AppConfig.recordedGesture
                 if (gesture.points.size >= 2) {
                     replayGesture(service, gesture)
+                } else {
+                    false
                 }
             } else {
-                service.swipe(
+                service.swipeAndAwait(
                     config.swipeX1, config.swipeY1,
                     config.swipeX2, config.swipeY2,
                     config.swipeDuration
                 )
             }
+            if (!completed) {
+                android.util.Log.w("FloatingService", "executeSwipe: gesture not completed (cancelled or rejected)")
+            }
             count++
             if (config.isInfinite) delay(500)
         }
-        if (config.isInfinite) stopSelf()
+        finishOperation(config)
     }
 
-    private fun replayGesture(service: ClickAccessibilityService, gesture: RecordedGesture) {
+    /** 回放录制的手势，并等待手势真正结束（返回是否正常完成） */
+    private suspend fun replayGesture(service: ClickAccessibilityService, gesture: RecordedGesture): Boolean {
         val path = Path()
         val firstX = maxOf(gesture.points.first().first, 0f)
         val firstY = maxOf(gesture.points.first().second, 0f)
@@ -481,7 +550,21 @@ class FloatingService : Service() {
             val y = maxOf(gesture.points[i].second, 0f)
             path.lineTo(x, y)
         }
-        service.dispatchGesturePath(path, gesture.totalDuration)
+        return service.dispatchGesturePathAndAwait(path, gesture.totalDuration)
+    }
+
+    /**
+     * 循环结束后的收尾。有限次数跑完必须复位运行状态并刷新通知，
+     * 否则界面会一直认为还在运行（启动按钮保持禁用、通知停在旧状态）。
+     */
+    private fun finishOperation(config: AppConfig) {
+        AppConfig.running = false
+        AppConfig.operationActive = false
+        if (config.isInfinite) {
+            stopSelf()
+        } else {
+            updateNotification()
+        }
     }
 
     private fun shouldContinue(config: AppConfig, count: Int): Boolean {
@@ -492,6 +575,7 @@ class FloatingService : Service() {
         job?.cancel()
         scope.cancel()
         AppConfig.running = false
+        AppConfig.operationActive = false
         recordingOverlay?.let {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
@@ -505,5 +589,10 @@ class FloatingService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "floating_service_channel"
+        private const val NOTIFICATION_ID = 1
+        private const val REQUEST_OPEN_APP = 0
+        private const val REQUEST_STOP_SERVICE = 1
+        private const val ACTION_STOP = "com.yjc.click.action.STOP"
+        private const val BALL_SIZE_DP = 60
     }
 }

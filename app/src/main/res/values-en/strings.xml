@@ -6,8 +6,10 @@
     <string name="notification_channel_name">Click Service</string>
     <string name="notification_recording">Recording gesture...</string>
     <string name="notification_infinite">Infinite looping</string>
+    <string name="notification_running">Running</string>
     <string name="notification_idle">Tap floating ball to execute</string>
     <string name="notification_title">Floating ball running</string>
+    <string name="notification_action_stop">Stop</string>
 
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">Please drag the floating ball to the click position first</string>
@@ -61,6 +63,8 @@
 
     <!-- Gesture Recording -->
     <string name="record_gesture">Record Gesture (Swipe on screen)</string>
+    <string name="recording_overlay_hint">Swipe on the screen with your finger to record a gesture\nRelease to finish</string>
+    <string name="floating_ball_content_description">Floating ball</string>
 
     <!-- Execution Settings -->
     <string name="execution_settings">Execution Settings</string>

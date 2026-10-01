@@ -2,6 +2,7 @@ package com.yjc.click
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -35,6 +37,12 @@ class MainActivity : AppCompatActivity() {
     private var isSwipeMode = false
     private var isGestureMode = false
     private var isWarningDialogShowing = false
+    private var notificationPermissionAsked = false
+
+    /** Android 13+ 通知权限申请（拒绝不影响服务运行，只是前台通知不可见） */
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     private lateinit var radioClick: TextView
     private lateinit var radioSwipe: TextView
@@ -90,6 +98,23 @@ class MainActivity : AppCompatActivity() {
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, windowInsets ->
             val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             view.setPadding(0, 0, 0, insets.bottom)
+            windowInsets
+        }
+
+        // edge-to-edge 下窗口不会为系统栏/键盘缩放，需自行处理 inset：
+        // - 左右：系统栏与挖孔。横屏三键导航时导航栏在侧边，不补 inset 会把内容压在导航栏下面
+        // - 底部：键盘，否则底部的延时/次数输入框与启动按钮被键盘盖住
+        val rootView = findViewById<View>(R.id.root)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            val bars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val cutout = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout())
+            val imeBottom = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+            view.setPadding(
+                maxOf(bars.left, cutout.left),
+                0,
+                maxOf(bars.right, cutout.right),
+                imeBottom
+            )
             windowInsets
         }
 
@@ -158,6 +183,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 恢复上次保存的配置（仅在全新启动时；旋转/重建交给系统与 savedInstanceState）
+        if (savedInstanceState == null) {
+            val snapshot = ConfigStore.load(this)
+            isSwipeMode = snapshot.isSwipeMode
+            isGestureMode = snapshot.isGestureMode
+            inputSwipeX1.setText(snapshot.swipeX1)
+            inputSwipeY1.setText(snapshot.swipeY1)
+            inputSwipeX2.setText(snapshot.swipeX2)
+            inputSwipeY2.setText(snapshot.swipeY2)
+            inputSwipeDuration.setText(snapshot.swipeDuration)
+            inputDelay.setText(snapshot.delay)
+            inputRepeat.setText(snapshot.repeat)
+            checkInfinite.isChecked = snapshot.infinite
+            inputRepeat.isEnabled = !snapshot.infinite
+            // 同步一次内存中的运行时配置，避免启动后未改动控件时界面与参数不一致
+            saveConfig()
+        }
+
         // 初始状态
         radioClick.isSelected = !isSwipeMode
         radioSwipe.isSelected = isSwipeMode
@@ -195,11 +238,15 @@ class MainActivity : AppCompatActivity() {
                 radioSwipe.isSelected = true
                 animateIndicator(modeIndicator, radioSwipe.x - radioClick.x)
                 expandView(swipeParams)
-                // 初始化滑动方式指示器宽度
+                // 初始化滑动方式指示器宽度与位置
                 swipeMethodIndicator.post {
                     val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
                     params.width = radioSwipeManual.width - 8
                     swipeMethodIndicator.layoutParams = params
+                    // 位置必须与已保存的滑动方式一致：否则从"点击模式 + 手势子模式"切进来时，
+                    // 指示器会停在默认位置（手动参数）上，与真实模式不符
+                    swipeMethodIndicator.x =
+                        if (isGestureMode) radioSwipeGesture.x - radioSwipeManual.x else 0f
                 }
                 saveConfig()
                 if (!isSwipeConfigValid()) {
@@ -258,9 +305,11 @@ class MainActivity : AppCompatActivity() {
         }
         bottomNavigation.selectedItemId = savedItemId
 
-        // 恢复执行模式状态
-        isSwipeMode = savedInstanceState?.getBoolean("isSwipeMode", false) ?: false
-        isGestureMode = savedInstanceState?.getBoolean("isGestureMode", false) ?: false
+        // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
+        savedInstanceState?.let {
+            isSwipeMode = it.getBoolean("isSwipeMode", isSwipeMode)
+            isGestureMode = it.getBoolean("isGestureMode", isGestureMode)
+        }
         if (isSwipeMode) {
             radioClick.isSelected = false
             radioSwipe.isSelected = true
@@ -418,6 +467,9 @@ class MainActivity : AppCompatActivity() {
                     }, 100)
                 }
             })
+        } else {
+            // 非首次启动：单独申请通知权限，避免与首次使用说明弹窗叠加
+            window.decorView.post { ensureNotificationPermission() }
         }
 
         // 应用自定义字体
@@ -521,7 +573,9 @@ class MainActivity : AppCompatActivity() {
             inputSwipeY1.text?.isNotEmpty() == true &&
             inputSwipeX2.text?.isNotEmpty() == true &&
             inputSwipeY2.text?.isNotEmpty() == true &&
-            inputSwipeDuration.text?.isNotEmpty() == true
+            // 时长必须为正数：填 0 会让 StrokeDescription 抛 IllegalArgumentException，
+            // 滑动会在协程里静默失败（用户端表现为"点了没反应"）
+            (inputSwipeDuration.text?.toString()?.toLongOrNull() ?: 0L) > 0L
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
@@ -540,6 +594,21 @@ class MainActivity : AppCompatActivity() {
             swipeDuration = inputSwipeDuration.text.toString().toLongOrNull() ?: 0L,
             delayMs = inputDelay.text.toString().toLongOrNull() ?: 0L,
             repeatCount = if (checkInfinite.isChecked) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
+        )
+        ConfigStore.save(
+            this,
+            ConfigStore.Snapshot(
+                isSwipeMode = isSwipeMode,
+                isGestureMode = isGestureMode,
+                swipeX1 = inputSwipeX1.text?.toString() ?: "",
+                swipeY1 = inputSwipeY1.text?.toString() ?: "",
+                swipeX2 = inputSwipeX2.text?.toString() ?: "",
+                swipeY2 = inputSwipeY2.text?.toString() ?: "",
+                swipeDuration = inputSwipeDuration.text?.toString() ?: "",
+                delay = inputDelay.text?.toString() ?: "0",
+                repeat = inputRepeat.text?.toString() ?: "1",
+                infinite = checkInfinite.isChecked
+            )
         )
     }
 
@@ -789,6 +858,20 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，否则通知不会显示。
+     * 每个进程只申请一次，避免反复打扰。
+     */
+    private fun ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (notificationPermissionAsked) return
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED
+        ) return
+        notificationPermissionAsked = true
+        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     private fun isServiceEnabled(): Boolean {
         val enabledServices = Settings.Secure.getString(
             contentResolver,
@@ -816,7 +899,10 @@ class MainActivity : AppCompatActivity() {
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.usage_instructions)
             .setMessage(R.string.usage_instructions_message)
-            .setPositiveButton(R.string.ok) { d, _ -> d.dismiss() }
+            .setPositiveButton(R.string.ok) { d, _ ->
+                d.dismiss()
+                ensureNotificationPermission()
+            }
             .setCancelable(false)
             .create()
         // 平滑显示，避免闪烁

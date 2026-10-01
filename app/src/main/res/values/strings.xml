@@ -6,8 +6,10 @@
     <string name="notification_channel_name">点击服务</string>
     <string name="notification_recording">录制手势中...</string>
     <string name="notification_infinite">无限循环中</string>
+    <string name="notification_running">执行中</string>
     <string name="notification_idle">点击悬浮球执行操作</string>
     <string name="notification_title">悬浮球运行中</string>
+    <string name="notification_action_stop">停止</string>
 
     <!-- Toast消息 -->
     <string name="toast_drag_to_position">请先拖动悬浮球设到点击位置</string>
@@ -59,6 +61,8 @@
 
     <!-- 手势录制 -->
     <string name="record_gesture">录制手势 (在屏幕上滑动)</string>
+    <string name="recording_overlay_hint">请在屏幕上滑动手指录制手势\n完成后松手即可</string>
+    <string name="floating_ball_content_description">悬浮球</string>
 
     <!-- 执行设置 -->
     <string name="execution_settings">执行设置</string>

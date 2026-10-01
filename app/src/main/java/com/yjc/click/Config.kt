@@ -32,6 +32,14 @@ data class AppConfig(
         @Volatile
         var running = false
 
+        /**
+         * 是否正在执行点击/滑动循环。
+         * 与 [running] 区分：running 表示"悬浮球会话已启动"（球已部署，可能只是在等用户点击），
+         * operationActive 才表示循环真的在跑，用于向用户展示准确的通知状态。
+         */
+        @Volatile
+        var operationActive = false
+
         @Volatile
         var recordRequested = false
 
