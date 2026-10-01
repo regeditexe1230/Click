@@ -52,8 +52,11 @@ class ClickAccessibilityService : AccessibilityService() {
             Log.e(TAG, "Path bounds negative, skipping: $bounds")
             return
         }
+        // GestureDescription 要求时长严格为正，否则抛 IllegalArgumentException
+        // （滑动时长填 0、或录制手势耗时不足 1ms 时都会命中）
+        val safeDuration = duration.coerceAtLeast(1L)
         val builder = GestureDescription.Builder()
-        builder.addStroke(GestureDescription.StrokeDescription(path, 0, duration))
+        builder.addStroke(GestureDescription.StrokeDescription(path, 0, safeDuration))
         dispatchGesture(builder.build(), null, null)
     }
 

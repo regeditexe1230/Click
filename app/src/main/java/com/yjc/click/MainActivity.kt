@@ -564,7 +564,9 @@ class MainActivity : AppCompatActivity() {
             inputSwipeY1.text?.isNotEmpty() == true &&
             inputSwipeX2.text?.isNotEmpty() == true &&
             inputSwipeY2.text?.isNotEmpty() == true &&
-            inputSwipeDuration.text?.isNotEmpty() == true
+            // 时长必须为正数：填 0 会让 StrokeDescription 抛 IllegalArgumentException，
+            // 滑动会在协程里静默失败（用户端表现为"点了没反应"）
+            (inputSwipeDuration.text?.toString()?.toLongOrNull() ?: 0L) > 0L
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
