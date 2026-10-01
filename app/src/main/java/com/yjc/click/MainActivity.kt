@@ -94,6 +94,8 @@ class MainActivity : AppCompatActivity() {
                     android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                     android.content.res.Configuration.UI_MODE_NIGHT_YES
             AppTheme.isDark = AppTheme.resolveDark(pref, sysDark)
+            AppTheme.useDynamicColor = getSharedPreferences("settings", MODE_PRIVATE)
+                .getBoolean("dynamic_color", false)
         }
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
@@ -110,7 +112,12 @@ class MainActivity : AppCompatActivity() {
             val family = androidx.compose.runtime.remember(fontRevision) {
                 FontManager.currentTypeface?.let { FontFamily(it) }
             }
-            ClickTheme(fontFamily = family, integerFontAdvance = true, darkTheme = AppTheme.isDark) {
+            ClickTheme(
+                fontFamily = family,
+                integerFontAdvance = true,
+                darkTheme = AppTheme.isDark,
+                dynamicColor = AppTheme.useDynamicColor,
+            ) {
                 // 配色切换时的"圆形揭示"过渡（圆心 = 点击位置）
                 ThemeReveal {
                 MainScaffold(
