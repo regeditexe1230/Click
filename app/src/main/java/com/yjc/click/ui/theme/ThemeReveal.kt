@@ -101,7 +101,18 @@ object AppTheme {
         val changed = target != isDark
         isDark = target
         if (snapshot != null && changed) {
-            RevealOverlay.play(activity, snapshot, origin ?: Offset.Zero)
+            // 圆心 = 屏幕上的随机一点（每次切换都随机）
+            val root = activity.findViewById<ViewGroup>(android.R.id.content)
+            val rnd = java.util.Random()
+            val center = if (root != null && root.width > 0 && root.height > 0) {
+                Offset(
+                    rnd.nextInt(root.width).toFloat(),
+                    rnd.nextInt(root.height).toFloat(),
+                )
+            } else {
+                Offset(snapshot.width / 2f, snapshot.height / 2f)
+            }
+            RevealOverlay.play(activity, snapshot, center)
         }
     }
 }
