@@ -21,6 +21,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.yjc.click.ui.settings.SettingsScreen
+import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickTheme
 import java.io.File
 
@@ -69,7 +70,7 @@ class SettingsFragment : Fragment() {
                         dynamicColorChecked = dynamicColorChecked,
                         onLanguageClick = { showLanguageDialog() },
                         onFontClick = { showFontDialog() },
-                        onThemeSelected = { applyTheme(it) },
+                        onThemeSelected = { newTheme, origin -> applyTheme(newTheme, origin) },
                         onColorSchemeHeaderClick = { colorSchemeExpanded = !colorSchemeExpanded },
                         onColorHeaderClick = { colorExpanded = !colorExpanded },
                         onBackgroundHeaderClick = { backgroundExpanded = !backgroundExpanded },
@@ -95,16 +96,17 @@ class SettingsFragment : Fragment() {
         updateFontDisplay()
     }
 
-    /** 与旧实现一致：写入偏好后立即切换 AppCompat 夜间模式 */
-    private fun applyTheme(newTheme: String) {
-        requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .edit().putString("app_theme", newTheme).apply()
+    /**
+     * 写入偏好并切换主题；由 [AppTheme.apply] 负责截取旧画面并播放"圆形揭示"过渡
+     * （圆心 = 手指点击的位置，见 SettingsScreen 的 ThemeOption）。
+     */
+    private fun applyTheme(newTheme: String, origin: androidx.compose.ui.geometry.Offset? = null) {
+        val ctx = requireContext()
+        val systemDark = (ctx.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        AppTheme.apply(requireActivity(), newTheme, systemDark, origin)
         theme = newTheme
-        when (newTheme) {
-            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        }
     }
 
     override fun onResume() {
