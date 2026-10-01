@@ -141,6 +141,7 @@ class FloatingService : Service() {
     private fun showFloatingView() {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingView = inflater.inflate(R.layout.floating_view, null) as FrameLayout
+        applyFloatingIcon(floatingView)
         val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
 
         params = WindowManager.LayoutParams(
@@ -252,11 +253,29 @@ class FloatingService : Service() {
         }
     }
 
+    /**
+     * 悬浮球圆底配色：固定配色用旧版的 @color/purple_500（ic_floating_icon），
+     * 开了动态取色则换成走 ?attr/colorPrimary 的那份，并用套了 Material You overlay 的
+     * context 解析（服务自己的 theme 还是固定色板，直接 setImageResource 会解析成紫色）。
+     */
+    private fun applyFloatingIcon(root: FrameLayout) {
+        val icon = root.findViewById<android.widget.ImageView>(R.id.floatingIcon) ?: return
+        val res = if (com.yjc.click.ui.theme.AppTheme.useDynamicColor) {
+            R.drawable.ic_floating_icon_dynamic
+        } else {
+            R.drawable.ic_floating_icon
+        }
+        val ctx = com.yjc.click.ui.theme.AppTheme.viewContext(this)
+        androidx.appcompat.content.res.AppCompatResources.getDrawable(ctx, res)
+            ?.let { icon.setImageDrawable(it) }
+    }
+
     private fun showTargetMarker(x: Float, y: Float) {
         hideTargetMarker()
         val markerSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val marker = inflater.inflate(R.layout.floating_view, null) as FrameLayout
+        applyFloatingIcon(marker)
         marker.alpha = 0.35f
 
         val markerParams = WindowManager.LayoutParams(

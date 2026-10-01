@@ -568,7 +568,7 @@ class MainActivity : AppCompatActivity() {
         if (isWarningDialogShowing) return
         
         isWarningDialogShowing = true
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.security_warning)
             .setMessage(R.string.security_warning_message)
             .setPositiveButton(R.string.confirm) { _, _ -> onConfirmed() }
@@ -628,7 +628,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun showFirstLaunchDialog() {
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.usage_instructions)
             .setMessage(R.string.usage_instructions_message)
             .setPositiveButton(R.string.ok) { d, _ ->
@@ -644,7 +644,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.floating_ball_instructions)
             .setMessage(R.string.floating_ball_instructions_message)
             .setPositiveButton(R.string.ok) { _, _ -> onStart() }
