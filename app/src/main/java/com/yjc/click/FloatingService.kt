@@ -254,20 +254,41 @@ class FloatingService : Service() {
     }
 
     /**
-     * 悬浮球圆底配色：固定配色用旧版的 @color/purple_500（ic_floating_icon），
-     * 开了动态取色则换成走 ?attr/colorPrimary 的那份，并用套了 Material You overlay 的
-     * context 解析（服务自己的 theme 还是固定色板，直接 setImageResource 会解析成紫色）。
+     * 悬浮球圆底配色。
+     *
+     * - 固定配色：用旧版的 ic_floating_icon（@color/purple_500），与重构前逐像素一致；
+     * - 动态取色：圆底换成 Compose 侧同一份 colorScheme.primary（dynamicLight/DarkColorScheme
+     *   的 primary），加号仍是白色。
+     *
+     * 注意别用"向量里写 ?attr/colorPrimary"那种做法：Service 的 theme 是固定色板，
+     * 属性解析不出来会把圆底画成透明（踩过）。这里改成运行时给圆底上色。
      */
     private fun applyFloatingIcon(root: FrameLayout) {
         val icon = root.findViewById<android.widget.ImageView>(R.id.floatingIcon) ?: return
-        val res = if (com.yjc.click.ui.theme.AppTheme.useDynamicColor) {
-            R.drawable.ic_floating_icon_dynamic
-        } else {
-            R.drawable.ic_floating_icon
+        if (!com.yjc.click.ui.theme.AppTheme.useDynamicColor) {
+            icon.setImageResource(R.drawable.ic_floating_icon)
+            return
         }
-        val ctx = com.yjc.click.ui.theme.AppTheme.viewContext(this)
-        androidx.appcompat.content.res.AppCompatResources.getDrawable(ctx, res)
-            ?.let { icon.setImageDrawable(it) }
+        val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
+        val oval = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(com.yjc.click.ui.theme.AppTheme.dynamicPrimaryArgb(this@FloatingService))
+            setSize(ballSize, ballSize)
+        }
+        // 旧向量里圆是 r=28 / 60 视口，四周各留 2dp，这里保持一致
+        val inset = (2 * resources.displayMetrics.density).toInt()
+        val layers = mutableListOf<android.graphics.drawable.Drawable>(
+            android.graphics.drawable.InsetDrawable(oval, inset),
+        )
+        // 加号用 onPrimary：深色动态配色的 primary 是浅色，白加号会看不清
+        androidx.appcompat.content.res.AppCompatResources
+            .getDrawable(this, R.drawable.ic_floating_plus)
+            ?.mutate()
+            ?.apply {
+                setTint(com.yjc.click.ui.theme.AppTheme.dynamicOnPrimaryArgb(this@FloatingService))
+                layers += this
+            }
+        icon.setImageDrawable(android.graphics.drawable.LayerDrawable(layers.toTypedArray()))
     }
 
     private fun showTargetMarker(x: Float, y: Float) {
