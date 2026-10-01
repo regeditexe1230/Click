@@ -104,6 +104,21 @@ object AppTheme {
     }
 
     /**
+     * View 侧界面（各类对话框、悬浮窗）用的 context。
+     *
+     * 这些界面是 XML/View 实现，颜色来自 Theme.Click 里写死的 md_theme_* 固定色板；
+     * 开了动态取色后不能只换 Compose 那一半，否则同一个弹窗还是紫色。
+     * Material Components 的 DynamicColors 会套一层 Material You 的 theme overlay，
+     * 取的是同一组系统动态色令牌，所以和 Compose 侧的 dynamicLight/DarkColorScheme 一致。
+     */
+    fun viewContext(context: Context): Context =
+        if (useDynamicColor) {
+            com.google.android.material.color.DynamicColors.wrapContextIfAvailable(context)
+        } else {
+            context
+        }
+
+    /**
      * 应用主题偏好：先抓旧画面 → 持久化 → 让 View 侧（各类对话框）跟随 → 播放圆形揭示。
      * @param origin 揭示圆心（屏幕像素坐标，一般是手指点击的位置）
      */

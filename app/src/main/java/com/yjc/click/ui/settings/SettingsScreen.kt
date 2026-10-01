@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
-import com.yjc.click.ui.theme.SectionBackground
+import com.yjc.click.ui.theme.LocalSectionBackground
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 
@@ -254,7 +254,7 @@ private fun SettingsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(SectionBackground)
+            .background(LocalSectionBackground.current)
             .clickable(onClick = onClick)
             .testTag(testTag)
             .padding(horizontal = 22.dp, vertical = 14.dp),
@@ -293,7 +293,7 @@ private fun FlatOptions(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(SectionBackground)
+            .background(LocalSectionBackground.current)
             .padding(start = horizontalPadding, end = horizontalPadding, bottom = 14.dp),
         content = content,
     )
