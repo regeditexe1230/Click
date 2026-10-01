@@ -157,7 +157,7 @@ class SettingsFragment : Fragment() {
             .setTitle(R.string.select_language)
             .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
                 val selectedLocale = localeCodes[which]
-                AppTheme.fadeSwitch(requireActivity()) { applyLanguage(selectedLocale); updateLanguageDisplay() }
+                applyLanguage(selectedLocale)
                 updateLanguageDisplay()
                 dialog.dismiss()
             }
@@ -254,7 +254,7 @@ class SettingsFragment : Fragment() {
                         return@setSingleChoiceItems
                     }
                     val font = customFonts.find { it.filePath == path }
-                    AppTheme.fadeSwitch(requireActivity()) { FontManager.setSelectedFont(ctx, font); syncFontFamily() }
+                    FontManager.setSelectedFont(ctx, font)
                     syncFontFamily()
                     updateFontDisplay()
                 }
