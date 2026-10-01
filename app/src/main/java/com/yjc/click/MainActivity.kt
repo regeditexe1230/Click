@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -101,6 +102,10 @@ class MainActivity : AppCompatActivity() {
         // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
         setContent {
             // 订阅字体变化：设置页里换字体时，已经组合好的顶栏/底栏/首页也要跟着换
+            // 主题状态一变就重新下发系统栏样式（含全面屏手势条那条的背景/图标明暗）。
+            // 放在这里而不是切换处：AppTheme.apply 是异步的（先 PixelCopy 抓图再切），
+            // 在调用点读 AppTheme.isDark 会拿到旧值。
+            LaunchedEffect(AppTheme.isDark) { applySystemBarStyle(AppTheme.isDark) }
             val fontRevision = FontManager.fontRevision
             val family = androidx.compose.runtime.remember(fontRevision) {
                 FontManager.currentTypeface?.let { FontFamily(it) }
