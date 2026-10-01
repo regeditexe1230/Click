@@ -255,10 +255,32 @@ class MainActivity : AppCompatActivity() {
             val sysDark = (android.content.res.Resources.getSystem().configuration.uiMode and
                     android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                     android.content.res.Configuration.UI_MODE_NIGHT_YES
-            AppTheme.isDark = sysDark
+            // 走和手动切换同一条路：抓旧画面 + 圆形揭示 + 重新下发系统栏样式
+            AppTheme.apply(this, "follow_system", sysDark, null)
+            applySystemBarStyle(AppTheme.isDark)
         }
     }
 
+    /**
+     * 按当前深浅重新下发系统栏样式。
+     * enableEdgeToEdge() 只在 onCreate 调用一次，里面的"图标明暗"是按启动时的主题算的，
+     * 主题切换后必须再调一次，否则全面屏手势小白条那一条的背景/图标不会跟着变。
+     */
+    /** 供设置页在切换主题后调用 */
+    fun refreshSystemBarStyle() = applySystemBarStyle(AppTheme.isDark)
+
+    private fun applySystemBarStyle(dark: Boolean) {
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ) { dark },
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ) { dark },
+        )
+    }
     override fun onResume() {
         super.onResume()
         // 应用字体：Compose 首页通过 ClickTheme 下发 FontFamily，
