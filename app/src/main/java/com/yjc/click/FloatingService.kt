@@ -51,6 +51,7 @@ class FloatingService : Service() {
     private var clickTargetX = 0f
     private var clickTargetY = 0f
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var dynamicColorWatcher: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -142,6 +143,7 @@ class FloatingService : Service() {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingView = inflater.inflate(R.layout.floating_view, null) as FrameLayout
         applyFloatingIcon(floatingView)
+        watchDynamicColor()
         val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
 
         params = WindowManager.LayoutParams(
@@ -289,6 +291,24 @@ class FloatingService : Service() {
                 layers += this
             }
         icon.setImageDrawable(android.graphics.drawable.LayerDrawable(layers.toTypedArray()))
+    }
+
+    /**
+     * 悬浮球常驻期间用户可能切去设置里开关动态取色（这是常见用法），
+     * 服务不会重建，所以这里订阅 AppTheme 的状态，一变就给球和落点标记重新上色。
+     */
+    private fun watchDynamicColor() {
+        if (dynamicColorWatcher != null) return
+        dynamicColorWatcher = scope.launch {
+            androidx.compose.runtime.snapshotFlow {
+                com.yjc.click.ui.theme.AppTheme.useDynamicColor
+            }.collect {
+                if (floatingViewReady && floatingView.isAttachedToWindow) {
+                    applyFloatingIcon(floatingView)
+                }
+                (targetMarker as? FrameLayout)?.let { applyFloatingIcon(it) }
+            }
+        }
     }
 
     private fun showTargetMarker(x: Float, y: Float) {
