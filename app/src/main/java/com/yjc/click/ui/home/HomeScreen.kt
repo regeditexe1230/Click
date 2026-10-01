@@ -199,7 +199,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
-                    .height(56.dp)
+                    
                     .testTag("inputDelay"),
             )
 
@@ -229,7 +229,7 @@ fun HomeScreen(
                     label = { Text(stringResource(R.string.count)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f).height(56.dp).testTag("inputRepeat"),
+                    modifier = Modifier.weight(1f).testTag("inputRepeat"),
                 )
                 Switch(
                     checked = infinite,
@@ -466,7 +466,7 @@ private fun ColumnScope.SwipeParamsSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 4.dp)
-                        .height(56.dp)
+                        
                         .testTag("inputSwipeDuration"),
                 )
             }
@@ -526,6 +526,6 @@ private fun NumberField(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         // 高度对齐旧版 Widget.Material3.TextInputLayout.OutlinedBox（56dp，实测 147px）
-        modifier = modifier.height(56.dp).testTag(tag),
+        modifier = modifier.testTag(tag),
     )
 }
