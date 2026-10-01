@@ -59,14 +59,17 @@ object AppTheme {
         }
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         PixelCopy.request(window, bitmap, { result ->
-            useDynamicColor = enabled
             if (result == PixelCopy.SUCCESS) {
                 val rnd = java.util.Random()
+                // 状态切换交给 onReady：等覆盖层挂上去再改，否则会先渲染一帧新配色（闪一下）
                 RevealOverlay.play(
                     activity,
                     bitmap,
                     Offset(rnd.nextInt(view.width).toFloat(), rnd.nextInt(view.height).toFloat()),
+                    onReady = { useDynamicColor = enabled },
                 )
+            } else {
+                useDynamicColor = enabled
             }
         }, Handler(Looper.getMainLooper()))
     }
@@ -180,7 +183,12 @@ private class RevealOverlay(
     }
 
     companion object {
-        fun play(activity: Activity, snapshot: Bitmap, center: Offset) {
+        fun play(
+            activity: Activity,
+            snapshot: Bitmap,
+            center: Offset,
+            onReady: (() -> Unit)? = null,
+        ) {
             val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
             val overlay = RevealOverlay(activity, snapshot, center)
             root.addView(
@@ -199,6 +207,7 @@ private class RevealOverlay(
                 (center - Offset(w, h)).getDistance(),
             )
             overlay.post {
+                onReady?.invoke()
                 ValueAnimator.ofFloat(0f, 1f).apply {
                     duration = 400L
                     interpolator = android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f)
