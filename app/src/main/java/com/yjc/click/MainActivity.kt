@@ -9,17 +9,18 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.ContextCompat
 import com.yjc.click.ui.home.HomeScreen
+import com.yjc.click.ui.shell.MainScaffold
+import com.yjc.click.ui.shell.MainTab
 import com.yjc.click.ui.theme.ClickTheme
 
 class MainActivity : AppCompatActivity() {
@@ -58,7 +59,14 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { }
 
-    private lateinit var homeScreen: ComposeView
+    /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
+    private var selectedTab by mutableStateOf(MainTab.HOME)
+
+    /** 首次启动时底栏从底部滑入（旧实现在 onCreate 里对 BottomNavigationView 做 translationY 动画） */
+    private var playBottomBarEntrance by mutableStateOf(false)
+
+    /** 设置页 Fragment 是否已按需加载（旧实现首次切到设置页才加载） */
+    private var settingsFragmentLoaded by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,64 +80,30 @@ class MainActivity : AppCompatActivity() {
         // 启用edge-to-edge模式
         enableEdgeToEdge()
 
-        setContentView(R.layout.activity_main)
-
         // 恢复选中的底部导航项
-        val savedItemId = savedInstanceState?.getInt("selected_nav_item", R.id.nav_home) ?: R.id.nav_home
+        val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
+        selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
+        playBottomBarEntrance = savedInstanceState == null
 
-        // 顶栏适配状态栏
-        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, windowInsets ->
-            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, insets.top, 0, 0)
-            windowInsets
-        }
-
-        // 底部导航栏延伸到系统导航栏区域
-        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, windowInsets ->
-            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, 0, 0, insets.bottom)
-            windowInsets
-        }
-
-        // edge-to-edge 下窗口不会为系统栏/键盘缩放，需自行处理 inset：
-        // - 左右：系统栏与挖孔。横屏三键导航时导航栏在侧边，不补 inset 会把内容压在导航栏下面
-        // - 底部：键盘，否则底部的延时/次数输入框与启动按钮被键盘盖住
-        val rootView = findViewById<View>(R.id.root)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
-            val bars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            val cutout = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout())
-            val imeBottom = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
-            view.setPadding(
-                maxOf(bars.left, cutout.left),
-                0,
-                maxOf(bars.right, cutout.right),
-                imeBottom
-            )
-            windowInsets
-        }
-
-        // 底栏启动动画：从底部滑入（仅首次启动）
-        if (savedInstanceState == null) {
-            bottomNav.post {
-                bottomNav.translationY = bottomNav.height.toFloat()
-                bottomNav.animate()
-                    .translationY(0f)
-                    .setDuration(300)
-                    .setStartDelay(100)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
-                    .start()
-            }
-        }
-
-        // 首页迁移到 Compose：业务逻辑（配置持久化、权限状态、启动/停止/录制）保持不变，
-        // 只是把"findViewById 后直接改 View"换成 Compose 状态 + 回调
-        homeScreen = findViewById(R.id.home_content)
-        homeScreen.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        homeScreen.setContent {
+        // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
+        // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
+        // inset 处理：顶栏补状态栏、底栏补导航栏（旧实现是给 toolbar / bottomNav 分别设 padding），
+        // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
+        setContent {
             ClickTheme(fontFamily = fontFamily, integerFontAdvance = true) {
-                HomeScreen(
+                MainScaffold(
+                    selectedTab = selectedTab,
+                    onSelectTab = { tab -> selectedTab = tab },
+                    title = when (selectedTab) {
+                        MainTab.HOME -> "Click"
+                        MainTab.PROGRAM -> getString(R.string.nav_program)
+                        MainTab.SETTINGS -> getString(R.string.nav_settings)
+                    },
+                    playEntrance = playBottomBarEntrance,
+                    settingsContent = { },
+                    programContent = { },
+                    homeContent = {
+                    HomeScreen(
                     statusText = statusTextValue,
                     isSwipeMode = isSwipeMode,
                     isGestureMode = isGestureMode,
@@ -190,6 +164,8 @@ class MainActivity : AppCompatActivity() {
                         updateStatus()
                     },
                     onRecord = { startGestureRecording() },
+                    )
+                    },
                 )
             }
         }
@@ -219,118 +195,12 @@ class MainActivity : AppCompatActivity() {
             saveConfig()
         }
 
-        // 底部导航栏
-        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        val homeContent = findViewById<View>(R.id.home_content)
-        val programPage = findViewById<View>(R.id.program_page)
-        val settingsPage = findViewById<View>(R.id.settings_page)
-        var previousItemId = savedItemId
-        var settingsFragmentLoaded = false
-
-        // 恢复选中的页面和状态
-        homeContent.visibility = if (savedItemId == R.id.nav_home) View.VISIBLE else View.GONE
-        programPage.visibility = if (savedItemId == R.id.nav_program) View.VISIBLE else View.GONE
-        settingsPage.visibility = if (savedItemId == R.id.nav_settings) View.VISIBLE else View.GONE
-        toolbar.title = when (savedItemId) {
-            R.id.nav_program -> getString(R.string.nav_program)
-            R.id.nav_settings -> getString(R.string.nav_settings)
-            else -> "Click"
-        }
-        bottomNavigation.selectedItemId = savedItemId
-
         // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
         savedInstanceState?.let {
             isSwipeMode = it.getBoolean("isSwipeMode", isSwipeMode)
             isGestureMode = it.getBoolean("isGestureMode", isGestureMode)
         }
 
-        bottomNavigation.setOnItemSelectedListener { item ->
-            val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
-            val newItem = when (item.itemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
-            val oldItem = when (previousItemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
-
-            // 判断切换方向
-            val navItems = listOf(R.id.nav_home, R.id.nav_program, R.id.nav_settings)
-            val oldIndex = navItems.indexOf(previousItemId)
-            val newIndex = navItems.indexOf(item.itemId)
-            val goingForward = newIndex > oldIndex
-
-            // 切换页面动画
-            if (newItem != oldItem) {
-                val exitAnim = if (goingForward) R.anim.slide_out_left else R.anim.slide_out_right
-                val enterAnim = if (goingForward) R.anim.slide_in_right else R.anim.slide_in_left
-
-                // 退出动画
-                val exitAnimation = android.view.animation.AnimationUtils.loadAnimation(this, exitAnim)
-                oldItem.startAnimation(exitAnimation)
-                oldItem.visibility = View.GONE
-
-                // 进入动画
-                newItem.visibility = View.VISIBLE
-                val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
-                newItem.startAnimation(enterAnimation)
-
-                // 顶栏标题淡入淡出动画
-                toolbar.animate()
-                    .alpha(0f)
-                    .setDuration(126)
-                    .withEndAction {
-                        toolbar.title = when (item.itemId) {
-                            R.id.nav_home -> "Click"
-                            R.id.nav_program -> getString(R.string.nav_program)
-                            R.id.nav_settings -> getString(R.string.nav_settings)
-                            else -> "Click"
-                        }
-                        toolbar.animate()
-                            .alpha(1f)
-                            .setDuration(162)
-                            .start()
-                    }
-                    .start()
-            } else {
-                toolbar.title = when (item.itemId) {
-                    R.id.nav_home -> "Click"
-                    R.id.nav_program -> getString(R.string.nav_program)
-                    R.id.nav_settings -> getString(R.string.nav_settings)
-                    else -> "Click"
-                }
-            }
-
-            // 主页图标状态切换
-            val isHomeSelected = item.itemId == R.id.nav_home
-            homeItem?.icon?.state = if (isHomeSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
-
-            // 设置图标状态切换
-            val settingsItem = bottomNavigation.menu.findItem(R.id.nav_settings)
-            val isSettingsSelected = item.itemId == R.id.nav_settings
-            settingsItem?.icon?.state = if (isSettingsSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
-
-            // 程序图标缩放动画
-            if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
-                animateProgramIcon(bottomNavigation, 1)
-            }
-
-            // 加载设置页面Fragment（首次切换时）
-            if (item.itemId == R.id.nav_settings && !settingsFragmentLoaded) {
-                settingsFragmentLoaded = true
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.settings_page, SettingsFragment())
-                    .commit()
-            }
-
-            previousItemId = item.itemId
-            true
-        }
 
         // 主页图标初始为填充状态（默认就是ic_home）
 
@@ -407,8 +277,7 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean("isSwipeMode", isSwipeMode)
         outState.putBoolean("isGestureMode", isGestureMode)
         // 保存当前选中的底部导航项
-        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        outState.putInt("selected_nav_item", bottomNavigation.selectedItemId)
+        outState.putInt("selected_nav_item", selectedTab.ordinal)
     }
 
     override fun onPause() {
@@ -738,48 +607,6 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
-    }
-
-    private fun animateProgramIcon(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView, index: Int) {
-        val menuView = bottomNav.getChildAt(0) as? android.view.ViewGroup ?: return
-        if (index >= menuView.childCount) return
-        val itemView = menuView.getChildAt(index) as? android.view.ViewGroup ?: return
-        val iconView = findImageView(itemView) ?: return
-
-        iconView.pivotX = iconView.width / 2f
-        iconView.pivotY = iconView.height / 2f
-
-        // 缩放动画
-        iconView.animate()
-            .scaleX(0.7f)
-            .scaleY(0.7f)
-            .setDuration(100)
-            .withEndAction {
-                iconView.animate()
-                    .scaleX(1.1f)
-                    .scaleY(1.1f)
-                    .setDuration(100)
-                    .withEndAction {
-                        iconView.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(100)
-                            .start()
-                    }
-                    .start()
-            }
-            .start()
-    }
-
-    private fun findImageView(view: android.view.View): android.widget.ImageView? {
-        if (view is android.widget.ImageView) return view
-        if (view is android.view.ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val result = findImageView(view.getChildAt(i))
-                if (result != null) return result
-            }
-        }
-        return null
     }
 
     private fun applyLanguage() {
