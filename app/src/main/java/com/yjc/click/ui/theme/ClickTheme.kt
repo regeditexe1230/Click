@@ -87,10 +87,14 @@ fun ClickTheme(
 ) {
     // 排版全部使用常规字重：旧实现用 Typeface.DEFAULT 覆盖了所有 TextView 的字体，
     // 连 XML 里 textStyle="bold" 的标题实际渲染也是常规字重，这里保持一致。
-    // 字型同样对齐旧版被 FontManager 覆盖后的平台默认字型（见 PlatformDefaultFontFamily）。
+    // 字型：旧版 FontManager 会把自定义字体（或默认字体）铺到**所有** TextView 上，
+    // 包括顶栏标题、底栏标签、按钮文字，因此 M3 排版也要跟着换，否则换字体会只换一部分。
     val density = LocalDensity.current
-    val typography = remember(density, integerFontAdvance) {
-        Typography().regularWeights().platformFamily().platformMetrics(density, integerFontAdvance)
+    val typography = remember(density, integerFontAdvance, fontFamily) {
+        Typography()
+            .regularWeights()
+            .platformFamily(fontFamily ?: PlatformDefaultFontFamily)
+            .platformMetrics(density, integerFontAdvance)
     }
     CompositionLocalProvider(
         LocalClickFontFamily provides fontFamily,
@@ -125,27 +129,27 @@ private fun Typography.regularWeights(): Typography = copy(
     labelSmall = labelSmall.regularWeight(),
 )
 
-/** 把 M3 默认排版统一换成旧版被 FontManager 覆盖后的平台默认字型 */
-private fun Typography.platformFamily(): Typography = copy(
-    displayLarge = displayLarge.platformFamily(),
-    displayMedium = displayMedium.platformFamily(),
-    displaySmall = displaySmall.platformFamily(),
-    headlineLarge = headlineLarge.platformFamily(),
-    headlineMedium = headlineMedium.platformFamily(),
-    headlineSmall = headlineSmall.platformFamily(),
-    titleLarge = titleLarge.platformFamily(),
-    titleMedium = titleMedium.platformFamily(),
-    titleSmall = titleSmall.platformFamily(),
-    bodyLarge = bodyLarge.platformFamily(),
-    bodyMedium = bodyMedium.platformFamily(),
-    bodySmall = bodySmall.platformFamily(),
-    labelLarge = labelLarge.platformFamily(),
-    labelMedium = labelMedium.platformFamily(),
-    labelSmall = labelSmall.platformFamily(),
+/** 把 M3 默认排版统一换成旧版 FontManager 实际铺下去的字型（自定义字体或平台默认字体） */
+private fun Typography.platformFamily(family: FontFamily): Typography = copy(
+    displayLarge = displayLarge.platformFamily(family),
+    displayMedium = displayMedium.platformFamily(family),
+    displaySmall = displaySmall.platformFamily(family),
+    headlineLarge = headlineLarge.platformFamily(family),
+    headlineMedium = headlineMedium.platformFamily(family),
+    headlineSmall = headlineSmall.platformFamily(family),
+    titleLarge = titleLarge.platformFamily(family),
+    titleMedium = titleMedium.platformFamily(family),
+    titleSmall = titleSmall.platformFamily(family),
+    bodyLarge = bodyLarge.platformFamily(family),
+    bodyMedium = bodyMedium.platformFamily(family),
+    bodySmall = bodySmall.platformFamily(family),
+    labelLarge = labelLarge.platformFamily(family),
+    labelMedium = labelMedium.platformFamily(family),
+    labelSmall = labelSmall.platformFamily(family),
 )
 
-private fun TextStyle.platformFamily(): TextStyle =
-    copy(fontFamily = PlatformDefaultFontFamily)
+private fun TextStyle.platformFamily(family: FontFamily): TextStyle =
+    copy(fontFamily = family)
 
 /**
  * 把 M3 默认排版换成旧版实测的度量：

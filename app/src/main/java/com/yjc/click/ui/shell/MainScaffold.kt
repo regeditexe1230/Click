@@ -1,5 +1,6 @@
 package com.yjc.click.ui.shell
 
+import android.content.res.ColorStateList
 import android.widget.ImageView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -50,9 +51,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -80,6 +87,7 @@ enum class MainTab { HOME, PROGRAM, SETTINGS }
  * - 选中图标沿用旧 drawable（animated-selector），形变动画由系统 drawable 播放
  * - 程序图标 1 → 0.7 → 1.1 → 1（每段 100ms）
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScaffold(
     selectedTab: MainTab,
@@ -133,6 +141,9 @@ fun MainScaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(surface)
+            // 让外壳里的 testTag（nav_home/nav_program/nav_settings）像旧版 View id 一样
+            // 暴露成 accessibility resource-id，供 uiautomator/自动化脚本定位
+            .semantics { testTagsAsResourceId = true }
             // edge-to-edge：左右补系统栏/挖孔（旧实现给 root 设 padding），底部补键盘
             .windowInsetsPadding(WindowInsets.safeDrawing.only(
                 androidx.compose.foundation.layout.WindowInsetsSides.Horizontal))
@@ -205,7 +216,12 @@ private fun SettingsHost(visible: Boolean, modifier: Modifier = Modifier) {
                 view.post {
                     val fm = (view.context as? androidx.fragment.app.FragmentActivity)
                         ?.supportFragmentManager ?: return@post
-                    if (fm.findFragmentById(R.id.settings_page) == null) {
+                    val existing = fm.findFragmentById(R.id.settings_page)
+                    // 旧布局里 FragmentContainerView 在 setContentView 时就存在，旋转/切语言重建后
+                    // FragmentManager 能直接把恢复的 Fragment 视图放回去；Compose 的容器要等首帧才创建，
+                    // 恢复时找不到容器 → 视图没建出来（设置页整页空白）。
+                    // 因此只要恢复出来的 Fragment 没有挂到当前容器上，就重建一次。
+                    if (existing == null || existing.view?.parent !== view) {
                         fm.beginTransaction()
                             .replace(R.id.settings_page, com.yjc.click.SettingsFragment())
                             .commit()
@@ -252,10 +268,14 @@ private fun BottomBar(
     surface: Color,
     translationY: Int,
 ) {
+    // 旧版 BottomNavigationView 是带 3dp tonalElevation 的 Material 组件：
+    // 实测底栏底色 = 表面色叠加 8% primary（浅色 [241,233,247]、深色 [35,32,43]），
+    // 与页面背景（[254,247,255] / [20,18,24]）明显不同，这里按同一公式合成。
+    val barColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(surface)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(surface)
+            .background(barColor)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .height(80.dp)
             .offsetY(translationY),
@@ -266,14 +286,14 @@ private fun BottomBar(
             label = stringResource(R.string.nav_home),
             iconRes = R.drawable.animated_home_icon,
             selected = selectedTab == MainTab.HOME,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag("nav_home"),
             onClick = { onSelectTab(MainTab.HOME) },
         )
         BottomBarItem(
             label = stringResource(R.string.nav_program),
             iconRes = R.drawable.ic_program,
             selected = selectedTab == MainTab.PROGRAM,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag("nav_program"),
             popScale = selectedTab == MainTab.PROGRAM,
             onClick = { onSelectTab(MainTab.PROGRAM) },
         )
@@ -281,7 +301,7 @@ private fun BottomBar(
             label = stringResource(R.string.nav_settings),
             iconRes = R.drawable.animated_settings_icon,
             selected = selectedTab == MainTab.SETTINGS,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag("nav_settings"),
             onClick = { onSelectTab(MainTab.SETTINGS) },
         )
     }
@@ -323,6 +343,16 @@ private fun BottomBarItem(
         label = "navIconScale",
     )
     val interactionSource = remember { MutableInteractionSource() }
+    // 旧版 itemIconTint / itemTextColor 的 SelectedStateList：
+    // 图标选中 → colorOnSecondaryContainer、未选 → colorOnSurfaceVariant；
+    // 文字选中 → colorOnSurface、未选 → colorOnSurfaceVariant（实测取值一致）
+    val iconTint = ColorStateList(
+        arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
+        intArrayOf(
+            MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+            MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
+        ),
+    )
 
     Column(
         modifier = modifier
@@ -351,7 +381,10 @@ private fun BottomBarItem(
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }
                 },
-                update = { view -> view.isSelected = selected },
+                update = { view ->
+                    view.isSelected = selected
+                    view.imageTintList = iconTint
+                },
                 modifier = Modifier.size(24.dp).scale(if (popScale) iconScale else 1f),
             )
         }
@@ -361,7 +394,11 @@ private fun BottomBarItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         )
     }
 }

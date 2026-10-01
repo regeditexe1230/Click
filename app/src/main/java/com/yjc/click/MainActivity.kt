@@ -90,7 +90,12 @@ class MainActivity : AppCompatActivity() {
         // inset 处理：顶栏补状态栏、底栏补导航栏（旧实现是给 toolbar / bottomNav 分别设 padding），
         // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
         setContent {
-            ClickTheme(fontFamily = fontFamily, integerFontAdvance = true) {
+            // 订阅字体变化：设置页里换字体时，已经组合好的顶栏/底栏/首页也要跟着换
+            val fontRevision = FontManager.fontRevision
+            val family = androidx.compose.runtime.remember(fontRevision) {
+                FontManager.currentTypeface?.let { FontFamily(it) }
+            }
+            ClickTheme(fontFamily = family, integerFontAdvance = true) {
                 MainScaffold(
                     selectedTab = selectedTab,
                     onSelectTab = { tab -> selectedTab = tab },
