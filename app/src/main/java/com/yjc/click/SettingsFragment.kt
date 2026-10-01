@@ -59,7 +59,7 @@ class SettingsFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                ClickTheme(fontFamily = fontFamily) {
+                ClickTheme(fontFamily = fontFamily, darkTheme = AppTheme.isDark) {
                     SettingsScreen(
                         languageValue = languageValue,
                         fontValue = fontValue,
