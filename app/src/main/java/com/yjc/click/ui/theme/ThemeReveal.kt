@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * 配色切换的"圆形揭示"过渡。
@@ -101,6 +102,53 @@ object AppTheme {
         "dark" -> true
         "light" -> false
         else -> systemDark
+    }
+
+    /**
+     * 从偏好把当前配色状态读进来。
+     *
+     * Activity 和服务都要调：悬浮球可能在 Activity 没启动（或已被回收）时就开始跑，
+     * 那时若不读偏好，[useDynamicColor] 会是默认的 false、球会被画成固定紫色。
+     * 深浅色必须读 [android.content.res.Resources.getSystem]（真实系统配置），
+     * 不能用已经 AppCompat 覆盖过的 resources.configuration。
+     */
+    fun loadFrom(context: Context) {
+        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        useDynamicColor = prefs.getBoolean("dynamic_color", false)
+        val theme = prefs.getString("app_theme", "follow_system") ?: "follow_system"
+        val systemDark = (android.content.res.Resources.getSystem().configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        isDark = resolveDark(theme, systemDark)
+    }
+
+    /**
+     * View 侧界面（各类对话框、悬浮窗）用的 context。
+     *
+     * 这些界面是 XML/View 实现，颜色来自 Theme.Click 里写死的 md_theme_* 固定色板；
+     * 开了动态取色后不能只换 Compose 那一半，否则同一个弹窗还是紫色。
+     * Material Components 的 DynamicColors 会套一层 Material You 的 theme overlay，
+     * 取的是同一组系统动态色令牌，所以和 Compose 侧的 dynamicLight/DarkColorScheme 一致。
+     */
+    fun viewContext(context: Context): Context =
+        if (useDynamicColor) {
+            com.google.android.material.color.DynamicColors.wrapContextIfAvailable(context)
+        } else {
+            context
+        }
+
+    /**
+     * 动态取色下 Compose 用的 primary / onPrimary（与 ClickTheme 里的 dynamicLight/DarkColorScheme
+     * 同一来源），供 View 侧（悬浮球这类非 Compose 界面）取色，保证和页面主色完全一致。
+     */
+    fun dynamicPrimaryArgb(context: Context): Int = dynamicScheme(context).primary.toArgb()
+
+    fun dynamicOnPrimaryArgb(context: Context): Int = dynamicScheme(context).onPrimary.toArgb()
+
+    private fun dynamicScheme(context: Context) = if (isDark) {
+        androidx.compose.material3.dynamicDarkColorScheme(context)
+    } else {
+        androidx.compose.material3.dynamicLightColorScheme(context)
     }
 
     /**

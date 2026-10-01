@@ -61,6 +61,15 @@ private val ClickDarkColors = darkColorScheme(
 val SectionBackground = Color(0x206750A4)
 
 /**
+ * 设置项行 / 首页方框的填充色。
+ *
+ * 旧版固定 #206750A4（12.5% 的紫色 primary，values 与 values-night 同值），所以固定配色下
+ * 必须原样保留；但开了动态取色后，同一页的背景/文字/按钮都换成了壁纸派生的配色，
+ * 这些框如果还是那个写死的淡紫色就会"改了一半"。这里按同样的 12.5% primary 公式下发。
+ */
+val LocalSectionBackground = staticCompositionLocalOf { SectionBackground }
+
+/**
  * 自定义字体（设置页"字体"选中的 ttf/otf）。
  *
  * 旧实现是遍历 View 树给每个 TextView 设 typeface，这对 Compose 文本完全无效，
@@ -98,12 +107,17 @@ fun ClickTheme(
             .platformFamily(fontFamily ?: PlatformDefaultFontFamily)
         if (integerFontAdvance) base.integerPixelSizes(density) else base
     }
+    val colorScheme = clickColorScheme(darkTheme, dynamicColor)
+    // 框/行的填充色：固定配色保持旧版常量；动态取色时跟随壁纸派生的 primary（同样 12.5%）
+    val sectionBackground =
+        if (dynamicColor) colorScheme.primary.copy(alpha = 0.125f) else SectionBackground
     CompositionLocalProvider(
         LocalClickFontFamily provides fontFamily,
         LocalIntegerFontAdvance provides integerFontAdvance,
+        LocalSectionBackground provides sectionBackground,
     ) {
         MaterialTheme(
-            colorScheme = clickColorScheme(darkTheme, dynamicColor),
+            colorScheme = colorScheme,
             typography = typography,
             content = content,
         )

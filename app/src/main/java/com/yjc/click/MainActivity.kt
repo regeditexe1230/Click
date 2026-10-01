@@ -87,16 +87,8 @@ class MainActivity : AppCompatActivity() {
         val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
         selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
         playBottomBarEntrance = savedInstanceState == null
-        run {
-            val pref = getSharedPreferences("settings", MODE_PRIVATE)
-                .getString("app_theme", "follow_system") ?: "follow_system"
-            val sysDark = (resources.configuration.uiMode and
-                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES
-            AppTheme.isDark = AppTheme.resolveDark(pref, sysDark)
-            AppTheme.useDynamicColor = getSharedPreferences("settings", MODE_PRIVATE)
-                .getBoolean("dynamic_color", false)
-        }
+        // 主题/深浅色状态从偏好读入（同一份逻辑服务侧也在用）
+        AppTheme.loadFrom(this)
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
@@ -568,7 +560,7 @@ class MainActivity : AppCompatActivity() {
         if (isWarningDialogShowing) return
         
         isWarningDialogShowing = true
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.security_warning)
             .setMessage(R.string.security_warning_message)
             .setPositiveButton(R.string.confirm) { _, _ -> onConfirmed() }
@@ -628,7 +620,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun showFirstLaunchDialog() {
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.usage_instructions)
             .setMessage(R.string.usage_instructions_message)
             .setPositiveButton(R.string.ok) { d, _ ->
@@ -644,7 +636,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFloatTutorialDialog(onStart: () -> Unit) {
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.floating_ball_instructions)
             .setMessage(R.string.floating_ball_instructions_message)
             .setPositiveButton(R.string.ok) { _, _ -> onStart() }

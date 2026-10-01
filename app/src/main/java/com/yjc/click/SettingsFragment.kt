@@ -168,7 +168,7 @@ class SettingsFragment : Fragment() {
             else -> 0
         }
 
-        val dialog = MaterialAlertDialogBuilder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
             .setTitle(R.string.select_language)
             .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
                 val selectedLocale = localeCodes[which]
@@ -240,7 +240,7 @@ class SettingsFragment : Fragment() {
 
         val currentIndex = paths.indexOf(selectedPath).coerceAtLeast(0)
 
-        val dialog = MaterialAlertDialogBuilder(ctx)
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
             .setTitle(R.string.select_font)
             .setSingleChoiceItems(names.toTypedArray(), currentIndex) { dialog, which ->
                 val path = paths[which]
@@ -259,7 +259,7 @@ class SettingsFragment : Fragment() {
                     val supportsCurrent = cachedLangs?.contains(langTag) ?: true // 无缓存默认允许
                     if (!supportsCurrent) {
                         val langName = getCurrentLanguageName()
-                        val d = MaterialAlertDialogBuilder(ctx)
+                        val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                             .setTitle(R.string.error)
                             .setMessage(getString(R.string.font_no_language_support, langName))
                             .setPositiveButton(R.string.ok, null)
@@ -330,7 +330,7 @@ class SettingsFragment : Fragment() {
             val dp48 = (48 * resources.displayMetrics.density).toInt()
             setPadding(dp48, dp48, dp48, dp48)
         }
-        val loadingDialog = MaterialAlertDialogBuilder(ctx)
+        val loadingDialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
             .setTitle(R.string.font_checking)
             .setView(progressBar)
             .setCancelable(false)
@@ -345,7 +345,7 @@ class SettingsFragment : Fragment() {
             if (ext !in listOf("ttf", "otf")) {
                 activity?.runOnUiThread {
                     loadingDialog.dismiss()
-                    val d = MaterialAlertDialogBuilder(ctx)
+                    val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                         .setTitle(R.string.error)
                         .setMessage(getString(R.string.font_unsupported_format))
                         .setPositiveButton(R.string.ok, null)
@@ -367,7 +367,7 @@ class SettingsFragment : Fragment() {
             } catch (e: Exception) {
                 activity?.runOnUiThread {
                     loadingDialog.dismiss()
-                    val d = MaterialAlertDialogBuilder(ctx)
+                    val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                         .setTitle(R.string.error)
                         .setMessage(getString(R.string.font_read_error))
                         .setPositiveButton(R.string.ok, null)
@@ -384,7 +384,7 @@ class SettingsFragment : Fragment() {
                 tempFile.delete()
                 activity?.runOnUiThread {
                     loadingDialog.dismiss()
-                    val d = MaterialAlertDialogBuilder(ctx)
+                    val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                         .setTitle(R.string.error)
                         .setMessage(getString(R.string.font_invalid))
                         .setPositiveButton(R.string.ok, null)
@@ -426,7 +426,7 @@ class SettingsFragment : Fragment() {
                 tempFile.delete()
                 activity?.runOnUiThread {
                     loadingDialog.dismiss()
-                    val d = MaterialAlertDialogBuilder(ctx)
+                    val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                         .setTitle(R.string.error)
                         .setMessage(getString(R.string.font_already_added))
                         .setPositiveButton(R.string.ok, null)
@@ -453,7 +453,7 @@ class SettingsFragment : Fragment() {
                     finalFile.delete()
                     FontLangCache.remove(ctx, finalFile.absolutePath)
                     val langName = getCurrentLanguageName()
-                    val d = MaterialAlertDialogBuilder(ctx)
+                    val d = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
                         .setTitle(R.string.error)
                         .setMessage(getString(R.string.font_no_language_support, langName))
                         .setPositiveButton(R.string.ok, null)
@@ -477,7 +477,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showDeleteFontDialog(font: FontParser.FontInfo) {
-        val d = MaterialAlertDialogBuilder(requireContext())
+        val d = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
             .setTitle(R.string.delete_font)
             .setMessage(getString(R.string.delete_font_confirm, font.familyName))
             .setPositiveButton(R.string.delete) { _, _ ->
