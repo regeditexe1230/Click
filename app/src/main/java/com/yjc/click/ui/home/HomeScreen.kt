@@ -53,12 +53,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickText
+import com.yjc.click.ui.theme.LocalSectionBackground
 import com.yjc.click.ui.theme.PlatformEasing
-import com.yjc.click.ui.theme.SectionBackground
 import android.view.animation.AccelerateInterpolator
 
-/** 与 res/values/colors.xml 的 section_background 同值（#206750A4） */
-private val SegmentBackground = SectionBackground
+/** 框/分段控件填充色：见 [LocalSectionBackground]（固定配色 = 旧版 #206750A4，动态取色跟随 primary） */
 private val SectionShape = RoundedCornerShape(12.dp)
 private val IndicatorShape = RoundedCornerShape(8.dp)
 private val SegmentShape = RoundedCornerShape(10.dp)
@@ -288,7 +287,7 @@ private fun SectionBox(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(SectionShape)
-            .background(SectionBackground)
+            .background(LocalSectionBackground.current)
             .padding(12.dp)
             .testTag("sectionBox"),
         content = content,
@@ -327,7 +326,7 @@ private fun SegmentControl(
         modifier = Modifier
             .fillMaxWidth()
             .clip(SegmentShape)
-            .background(SegmentBackground),
+            .background(LocalSectionBackground.current),
     ) {
         val itemWidth = maxWidth / labels.size
         // 旧版指示器 = 项宽 + 4dp 左边距，选到最后一个选项时右边会超出容器被裁掉（实测右侧少 4dp）。

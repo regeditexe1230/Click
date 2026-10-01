@@ -51,6 +51,7 @@ class FloatingService : Service() {
     private var clickTargetX = 0f
     private var clickTargetY = 0f
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var dynamicColorWatcher: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -141,6 +142,8 @@ class FloatingService : Service() {
     private fun showFloatingView() {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingView = inflater.inflate(R.layout.floating_view, null) as FrameLayout
+        applyFloatingIcon(floatingView)
+        watchDynamicColor()
         val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
 
         params = WindowManager.LayoutParams(
@@ -252,11 +255,68 @@ class FloatingService : Service() {
         }
     }
 
+    /**
+     * 悬浮球圆底配色。
+     *
+     * - 固定配色：用旧版的 ic_floating_icon（@color/purple_500），与重构前逐像素一致；
+     * - 动态取色：圆底换成 Compose 侧同一份 colorScheme.primary（dynamicLight/DarkColorScheme
+     *   的 primary），加号仍是白色。
+     *
+     * 注意别用"向量里写 ?attr/colorPrimary"那种做法：Service 的 theme 是固定色板，
+     * 属性解析不出来会把圆底画成透明（踩过）。这里改成运行时给圆底上色。
+     */
+    private fun applyFloatingIcon(root: FrameLayout) {
+        val icon = root.findViewById<android.widget.ImageView>(R.id.floatingIcon) ?: return
+        if (!com.yjc.click.ui.theme.AppTheme.useDynamicColor) {
+            icon.setImageResource(R.drawable.ic_floating_icon)
+            return
+        }
+        val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
+        val oval = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(com.yjc.click.ui.theme.AppTheme.dynamicPrimaryArgb(this@FloatingService))
+            setSize(ballSize, ballSize)
+        }
+        // 旧向量里圆是 r=28 / 60 视口，四周各留 2dp，这里保持一致
+        val inset = (2 * resources.displayMetrics.density).toInt()
+        val layers = mutableListOf<android.graphics.drawable.Drawable>(
+            android.graphics.drawable.InsetDrawable(oval, inset),
+        )
+        // 加号用 onPrimary：深色动态配色的 primary 是浅色，白加号会看不清
+        androidx.appcompat.content.res.AppCompatResources
+            .getDrawable(this, R.drawable.ic_floating_plus)
+            ?.mutate()
+            ?.apply {
+                setTint(com.yjc.click.ui.theme.AppTheme.dynamicOnPrimaryArgb(this@FloatingService))
+                layers += this
+            }
+        icon.setImageDrawable(android.graphics.drawable.LayerDrawable(layers.toTypedArray()))
+    }
+
+    /**
+     * 悬浮球常驻期间用户可能切去设置里开关动态取色（这是常见用法），
+     * 服务不会重建，所以这里订阅 AppTheme 的状态，一变就给球和落点标记重新上色。
+     */
+    private fun watchDynamicColor() {
+        if (dynamicColorWatcher != null) return
+        dynamicColorWatcher = scope.launch {
+            androidx.compose.runtime.snapshotFlow {
+                com.yjc.click.ui.theme.AppTheme.useDynamicColor
+            }.collect {
+                if (floatingViewReady && floatingView.isAttachedToWindow) {
+                    applyFloatingIcon(floatingView)
+                }
+                (targetMarker as? FrameLayout)?.let { applyFloatingIcon(it) }
+            }
+        }
+    }
+
     private fun showTargetMarker(x: Float, y: Float) {
         hideTargetMarker()
         val markerSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val marker = inflater.inflate(R.layout.floating_view, null) as FrameLayout
+        applyFloatingIcon(marker)
         marker.alpha = 0.35f
 
         val markerParams = WindowManager.LayoutParams(
