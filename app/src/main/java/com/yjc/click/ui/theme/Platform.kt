@@ -28,6 +28,8 @@ fun ClickText(
     color: Color,
     modifier: Modifier = Modifier,
     textAlign: TextAlign? = null,
+    /** 行高比例覆盖：多行文本块的旧版高度规律不同（字体留白整块只加一次），可按需覆盖 */
+    lineHeightRatio: Float = LINE_HEIGHT_RATIO,
 ) {
     val customFamily = LocalClickFontFamily.current
     Text(
@@ -35,10 +37,9 @@ fun ClickText(
         modifier = modifier,
         color = color,
         fontSize = fontSize,
-        // 行高显式指定：取值来自旧版 Android TextView 的实测单行高度，
-        // 并关闭 PlatformTextStyle.includeFontPadding（置 true 会让行盒在指定行高之外
-        // 再叠加一层字体留白，导致整行偏高 3px）。
-        lineHeight = fontSize * LINE_HEIGHT_RATIO,
+        // 行高显式指定：Compose 的 M3 bodyLarge 带 0.5sp 字间距与固定行高，
+        // 不覆盖会与旧 TextView 渲染不同；关闭 includeFontPadding 才对得上旧版单行盒高。
+        lineHeight = fontSize * lineHeightRatio,
         letterSpacing = 0.sp,
         fontWeight = FontWeight.Normal,
         fontFamily = customFamily ?: FontFamily.Default,
@@ -51,7 +52,8 @@ fun ClickText(
 
 /**
  * 行高比例：实测对齐旧版 TextView 的单行盒高（16sp→62px、14sp→54px，配合 includeFontPadding=false）。
- * 该值经模拟器逐行比对确定：设 1.455 时设置页五行 bounds 与重构前完全一致（top/height 均相同）。
+ * 设 1.455 时设置页五行 bounds 与重构前完全一致（top/height 均相同）。
+ * 多行文本块（旧版字体留白整块只加一次）另按需覆盖，见 [ClickText] 的 lineHeightRatio。
  */
 private const val LINE_HEIGHT_RATIO = 1.455f
 
