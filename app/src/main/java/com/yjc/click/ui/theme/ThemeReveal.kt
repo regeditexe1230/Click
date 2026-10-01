@@ -42,7 +42,34 @@ object AppTheme {
     /** 当前渲染使用的深浅色（由 app_theme 偏好或系统设置解析而来） */
     var isDark by mutableStateOf(false)
 
+    /** 是否启用系统动态取色（Material You）：从壁纸派生配色 */
+    var useDynamicColor by mutableStateOf(false)
+
     private const val DURATION_MS = 400L
+
+    /**
+     * 切换"动态取色"：先抓旧画面，改状态后播一次圆形揭示（和切配色同一种过渡）。
+     */
+    fun applyDynamicColor(activity: Activity, enabled: Boolean) {
+        val window = activity.window
+        val view = window?.decorView
+        if (window == null || view == null || view.width <= 0 || view.height <= 0) {
+            useDynamicColor = enabled
+            return
+        }
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        PixelCopy.request(window, bitmap, { result ->
+            useDynamicColor = enabled
+            if (result == PixelCopy.SUCCESS) {
+                val rnd = java.util.Random()
+                RevealOverlay.play(
+                    activity,
+                    bitmap,
+                    Offset(rnd.nextInt(view.width).toFloat(), rnd.nextInt(view.height).toFloat()),
+                )
+            }
+        }, Handler(Looper.getMainLooper()))
+    }
 
     /** 解析主题偏好字符串 → 是否深色 */
     fun resolveDark(theme: String, systemDark: Boolean): Boolean = when (theme) {
