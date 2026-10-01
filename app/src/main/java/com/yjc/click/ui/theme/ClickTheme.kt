@@ -91,10 +91,10 @@ fun ClickTheme(
     // 包括顶栏标题、底栏标签、按钮文字，因此 M3 排版也要跟着换，否则换字体会只换一部分。
     val density = LocalDensity.current
     val typography = remember(density, integerFontAdvance, fontFamily) {
-        Typography()
+        val base = Typography()
             .regularWeights()
             .platformFamily(fontFamily ?: PlatformDefaultFontFamily)
-            .platformMetrics(density, integerFontAdvance)
+        if (integerFontAdvance) base.integerPixelSizes(density) else base
     }
     CompositionLocalProvider(
         LocalClickFontFamily provides fontFamily,
@@ -151,33 +151,24 @@ private fun Typography.platformFamily(family: FontFamily): Typography = copy(
 private fun TextStyle.platformFamily(family: FontFamily): TextStyle =
     copy(fontFamily = family)
 
-/**
- * 把 M3 默认排版换成旧版实测的度量：
- * - 行盒高度取平台标定值（14sp→54px，而 M3 的 20sp 行高只有 53px，会让按钮文字居中差 1px）
- * - 首页（integerAdvance）字号按旧版规则取整成整数像素
- */
-private fun Typography.platformMetrics(density: Density, integerAdvance: Boolean): Typography = copy(
-    displayLarge = displayLarge.platformMetrics(density, integerAdvance),
-    displayMedium = displayMedium.platformMetrics(density, integerAdvance),
-    displaySmall = displaySmall.platformMetrics(density, integerAdvance),
-    headlineLarge = headlineLarge.platformMetrics(density, integerAdvance),
-    headlineMedium = headlineMedium.platformMetrics(density, integerAdvance),
-    headlineSmall = headlineSmall.platformMetrics(density, integerAdvance),
-    titleLarge = titleLarge.platformMetrics(density, integerAdvance),
-    titleMedium = titleMedium.platformMetrics(density, integerAdvance),
-    titleSmall = titleSmall.platformMetrics(density, integerAdvance),
-    bodyLarge = bodyLarge.platformMetrics(density, integerAdvance),
-    bodyMedium = bodyMedium.platformMetrics(density, integerAdvance),
-    bodySmall = bodySmall.platformMetrics(density, integerAdvance),
-    labelLarge = labelLarge.platformMetrics(density, integerAdvance),
-    labelMedium = labelMedium.platformMetrics(density, integerAdvance),
-    labelSmall = labelSmall.platformMetrics(density, integerAdvance),
+/** 首页：字号按旧版 `getDimensionPixelSize()` 规则取整成整数像素（见 LocalIntegerFontAdvance） */
+private fun Typography.integerPixelSizes(density: Density): Typography = copy(
+    displayLarge = displayLarge.integerPixelSize(density),
+    displayMedium = displayMedium.integerPixelSize(density),
+    displaySmall = displaySmall.integerPixelSize(density),
+    headlineLarge = headlineLarge.integerPixelSize(density),
+    headlineMedium = headlineMedium.integerPixelSize(density),
+    headlineSmall = headlineSmall.integerPixelSize(density),
+    titleLarge = titleLarge.integerPixelSize(density),
+    titleMedium = titleMedium.integerPixelSize(density),
+    titleSmall = titleSmall.integerPixelSize(density),
+    bodyLarge = bodyLarge.integerPixelSize(density),
+    bodyMedium = bodyMedium.integerPixelSize(density),
+    bodySmall = bodySmall.integerPixelSize(density),
+    labelLarge = labelLarge.integerPixelSize(density),
+    labelMedium = labelMedium.integerPixelSize(density),
+    labelSmall = labelSmall.integerPixelSize(density),
 )
 
-private fun TextStyle.platformMetrics(density: Density, integerAdvance: Boolean): TextStyle {
-    if (!fontSize.isSp) return this
-    return copy(
-        fontSize = if (integerAdvance) density.platformFontSize(fontSize) else fontSize,
-        lineHeight = density.platformLineHeight(fontSize),
-    )
-}
+private fun TextStyle.integerPixelSize(density: Density): TextStyle =
+    if (fontSize.isSp) copy(fontSize = density.platformFontSize(fontSize)) else this
