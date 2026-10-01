@@ -48,9 +48,31 @@ object AppTheme {
     private const val DURATION_MS = 400L
 
     /**
-     * 切换"动态取色"：先抓旧画面，改状态后播一次圆形揭示（和切配色同一种过渡）。
+     * 动态取色开关的"让路"时长：M3 Switch 拇指滑动是 TweenSpec(100ms)，
+     * 而揭示层在点击后约 20~30ms 就会盖住整屏。若不等待，开关的动画在覆盖层底下播完，
+     * 用户看到的是"开关停在旧状态不动，等圆圈扫到它才跳到新状态"——就是那个"闪一下"。
+     * 先让它自己动完（100ms + 余量），再抓图、翻状态、播圆形揭示。
+     */
+    private const val SWITCH_SETTLE_MS = 180L
+
+    /** 等待中的动态取色切换（连点两次开关时，后一次覆盖前一次） */
+    private var pendingDynamicColor: Runnable? = null
+
+    /**
+     * 切换"动态取色"：等开关自己的状态动画播完 → 抓旧画面 → 翻状态 → 播圆形揭示（和切配色同一种过渡）。
      */
     fun applyDynamicColor(activity: Activity, enabled: Boolean) {
+        val handler = Handler(Looper.getMainLooper())
+        pendingDynamicColor?.let { handler.removeCallbacks(it) }
+        val task = Runnable {
+            pendingDynamicColor = null
+            startDynamicColorReveal(activity, enabled)
+        }
+        pendingDynamicColor = task
+        handler.postDelayed(task, SWITCH_SETTLE_MS)
+    }
+
+    private fun startDynamicColorReveal(activity: Activity, enabled: Boolean) {
         val window = activity.window
         val view = window?.decorView
         if (window == null || view == null || view.width <= 0 || view.height <= 0) {
@@ -183,12 +205,17 @@ private class RevealOverlay(
     }
 
     companion object {
+        /** 正在播的揭示（连点两次时把上一次掐掉，避免两层覆盖层叠在一起） */
+        private var runningAnimator: Animator? = null
+
         fun play(
             activity: Activity,
             snapshot: Bitmap,
             center: Offset,
             onReady: (() -> Unit)? = null,
         ) {
+            runningAnimator?.cancel()
+            runningAnimator = null
             val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
             val overlay = RevealOverlay(activity, snapshot, center)
             root.addView(
@@ -208,18 +235,20 @@ private class RevealOverlay(
             )
             overlay.post {
                 onReady?.invoke()
-                ValueAnimator.ofFloat(0f, 1f).apply {
+                val animator = ValueAnimator.ofFloat(0f, 1f).apply {
                     duration = 400L
                     interpolator = android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f)
                     addUpdateListener { overlay.radius = overlay.maxRadius * (it.animatedValue as Float) }
                     addListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator) {
+                            if (runningAnimator === animation) runningAnimator = null
                             (overlay.parent as? ViewGroup)?.removeView(overlay)
                             snapshot.recycle()
                         }
                     })
                     start()
                 }
+                runningAnimator = animator
             }
         }
     }
