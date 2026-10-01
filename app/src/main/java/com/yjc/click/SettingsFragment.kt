@@ -157,7 +157,7 @@ class SettingsFragment : Fragment() {
             .setTitle(R.string.select_language)
             .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
                 val selectedLocale = localeCodes[which]
-                AppTheme.fadeSwitch(requireActivity()) { applyLanguage(selectedLocale) }
+                AppTheme.fadeSwitch(requireActivity()) { applyLanguage(selectedLocale); updateLanguageDisplay() }
                 updateLanguageDisplay()
                 dialog.dismiss()
             }
