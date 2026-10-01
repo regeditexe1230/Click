@@ -289,7 +289,8 @@ private fun SectionBox(content: @Composable ColumnScope.() -> Unit) {
             .fillMaxWidth()
             .clip(SectionShape)
             .background(SectionBackground)
-            .padding(12.dp),
+            .padding(12.dp)
+            .testTag("sectionBox"),
         content = content,
     )
 }
