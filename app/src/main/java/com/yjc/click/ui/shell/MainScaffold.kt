@@ -328,20 +328,31 @@ private fun BottomBarItem(
         label = "navIndicator",
     )
     // 程序图标：1 → 0.7 → 1.1 → 1（旧 animateProgramIcon，每段 100ms）
-    val iconScale by animateFloatAsState(
-        targetValue = if (popScale) 0f else 1f,
-        animationSpec = keyframes {
-            durationMillis = 300
-            if (popScale) {
-                0.7f at 100
-                1.1f at 200
-                1f at 300
-            } else {
-                1f at 0
-            }
-        },
-        label = "navIconScale",
-    )
+    //
+    // 不能用 animateFloatAsState(targetValue = if (popScale) 0f else 1f)：keyframes 跑完后
+    // TargetBasedAnimation 取的是 target，图标会定格在 scale=0（动画结束图标就没了），
+    // 只有切走再切回来（target 变回 1f）才重新出现。这里改成显式 Animatable：
+    // 只有"刚选中程序页"那一次播回弹，终值固定 1f。
+    val iconScale = remember { Animatable(1f) }
+    var programWasSelected by remember { mutableStateOf(popScale) }
+    LaunchedEffect(popScale) {
+        val justSelected = popScale && !programWasSelected
+        programWasSelected = popScale
+        if (justSelected) {
+            iconScale.animateTo(
+                targetValue = 1f,
+                animationSpec = keyframes {
+                    durationMillis = 300
+                    0.7f at 100
+                    1.1f at 200
+                    1f at 300
+                },
+            )
+        } else {
+            // 切走、以及首帧（旋转恢复时本来就选中程序页）都不播，和旧版一致
+            iconScale.snapTo(1f)
+        }
+    }
     val interactionSource = remember { MutableInteractionSource() }
     // 旧版 itemIconTint / itemTextColor 的 SelectedStateList：
     // 图标选中 → colorOnSecondaryContainer、未选 → colorOnSurfaceVariant；
@@ -385,7 +396,7 @@ private fun BottomBarItem(
                     view.isSelected = selected
                     view.imageTintList = iconTint
                 },
-                modifier = Modifier.size(24.dp).scale(if (popScale) iconScale else 1f),
+                modifier = Modifier.size(24.dp).scale(if (popScale) iconScale.value else 1f),
             )
         }
         Spacer(modifier = Modifier.height(5.5.dp))
