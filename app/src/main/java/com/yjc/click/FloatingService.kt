@@ -141,7 +141,7 @@ class FloatingService : Service() {
     private fun showFloatingView() {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingView = inflater.inflate(R.layout.floating_view, null) as FrameLayout
-        val ballSize = (60 * resources.displayMetrics.density).toInt()
+        val ballSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
 
         params = WindowManager.LayoutParams(
             ballSize,
@@ -206,6 +206,7 @@ class FloatingService : Service() {
                     if (isDragging) {
                         params.x = initialX + dx
                         params.y = initialY + dy
+                        clampBallToScreen()
                         windowManager.updateViewLayout(floatingView, params)
                         val actual = floatingView.layoutParams as WindowManager.LayoutParams
                         android.util.Log.d("FloatingService", "DRAG params.x=${params.x} params.y=${params.y} actual.x=${actual.x} actual.y=${actual.y}")
@@ -253,7 +254,7 @@ class FloatingService : Service() {
 
     private fun showTargetMarker(x: Float, y: Float) {
         hideTargetMarker()
-        val markerSize = (60 * resources.displayMetrics.density).toInt()
+        val markerSize = (BALL_SIZE_DP * resources.displayMetrics.density).toInt()
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val marker = inflater.inflate(R.layout.floating_view, null) as FrameLayout
         marker.alpha = 0.35f
@@ -286,6 +287,19 @@ class FloatingService : Service() {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
         targetMarker = null
+    }
+
+    /**
+     * 把悬浮球限制在屏幕范围内。
+     *
+     * 滑动模式抬手时不会回弹（只有点击模式会 snapBallToDefault），若允许拖出屏幕，
+     * 悬浮球会彻底消失且再也无法拖动或点击，只能去通知栏/App 里停止服务重开。
+     */
+    private fun clampBallToScreen() {
+        val metrics = resources.displayMetrics
+        val size = if (floatingView.width > 0) floatingView.width else (BALL_SIZE_DP * metrics.density).toInt()
+        params.x = params.x.coerceIn(0, (metrics.widthPixels - size).coerceAtLeast(0))
+        params.y = params.y.coerceIn(0, (metrics.heightPixels - size).coerceAtLeast(0))
     }
 
     private fun snapBallToDefault() {
@@ -579,5 +593,6 @@ class FloatingService : Service() {
         private const val REQUEST_OPEN_APP = 0
         private const val REQUEST_STOP_SERVICE = 1
         private const val ACTION_STOP = "com.yjc.click.action.STOP"
+        private const val BALL_SIZE_DP = 60
     }
 }
