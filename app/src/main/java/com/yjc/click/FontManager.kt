@@ -6,6 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONArray
 import org.json.JSONObject
@@ -22,8 +25,21 @@ object FontManager {
     var currentTypeface: Typeface? = null
         private set
 
+    /**
+     * Compose 侧观察用：字体（或当前选中字体）变化时自增，令主题重组。
+     * 旧实现是遍历 View 树直接改 typeface，改用主题级 FontFamily 后，
+     * 需要让顶栏/底栏/首页这些已经组合好的界面也能跟着换字体。
+     */
+    var fontRevision by androidx.compose.runtime.mutableStateOf(0)
+        private set
+
+    fun notifyFontChanged() {
+        fontRevision++
+    }
+
     fun init(context: Context) {
         loadSelectedFont(context)
+        notifyFontChanged()
     }
 
     fun getCustomFonts(context: Context): List<FontParser.FontInfo> {
@@ -124,6 +140,7 @@ object FontManager {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_SELECTED, font?.filePath ?: "").apply()
         loadSelectedFont(context)
+        notifyFontChanged()
     }
 
     fun getSelectedFontPath(context: Context): String {

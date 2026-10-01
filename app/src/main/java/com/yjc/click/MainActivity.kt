@@ -7,23 +7,24 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.text.Editable
-import android.text.SpannableString
-import android.text.TextWatcher
-import android.text.style.ClickableSpan
 import android.view.View
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.ContextCompat
-import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.textfield.TextInputEditText
+import com.yjc.click.ui.home.HomeScreen
+import com.yjc.click.ui.shell.MainScaffold
+import com.yjc.click.ui.shell.MainTab
+import com.yjc.click.ui.theme.AppTheme
+import com.yjc.click.ui.theme.ClickTheme
+import com.yjc.click.ui.theme.ThemeReveal
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,8 +35,25 @@ class MainActivity : AppCompatActivity() {
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
-    private var isSwipeMode = false
-    private var isGestureMode = false
+    // ---- Compose 侧状态（替代原来 findViewById 后直接改 View）----
+    private var isSwipeMode by mutableStateOf(false)
+    private var isGestureMode by mutableStateOf(false)
+    private var fontFamily by mutableStateOf<FontFamily?>(null)
+    private var statusTextValue by mutableStateOf("")
+    private var swipeX1 by mutableStateOf("")
+    private var swipeY1 by mutableStateOf("")
+    private var swipeX2 by mutableStateOf("")
+    private var swipeY2 by mutableStateOf("")
+    private var swipeDuration by mutableStateOf("")
+    private var delayText by mutableStateOf("0")
+    private var repeatText by mutableStateOf("1")
+    private var infinite by mutableStateOf(false)
+    private var recordedStatus by mutableStateOf("")
+    private var recordedVisible by mutableStateOf(false)
+    private var canStart by mutableStateOf(false)
+    private var showStartOverlay by mutableStateOf(false)
+    private var canStop by mutableStateOf(false)
+    private var canRecord by mutableStateOf(false)
     private var isWarningDialogShowing = false
     private var notificationPermissionAsked = false
 
@@ -44,29 +62,14 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { }
 
-    private lateinit var radioClick: TextView
-    private lateinit var radioSwipe: TextView
-    private lateinit var modeIndicator: View
-    private lateinit var swipeParams: LinearLayout
-    private lateinit var radioSwipeManual: TextView
-    private lateinit var radioSwipeGesture: TextView
-    private lateinit var swipeMethodIndicator: View
-    private lateinit var manualSwipeParams: LinearLayout
-    private lateinit var gestureSwipeSection: LinearLayout
-    private lateinit var inputSwipeX1: TextInputEditText
-    private lateinit var inputSwipeY1: TextInputEditText
-    private lateinit var inputSwipeX2: TextInputEditText
-    private lateinit var inputSwipeY2: TextInputEditText
-    private lateinit var inputSwipeDuration: TextInputEditText
-    private lateinit var inputDelay: TextInputEditText
-    private lateinit var inputRepeat: TextInputEditText
-    private lateinit var checkInfinite: MaterialSwitch
-    private lateinit var btnStartFloating: Button
-    private lateinit var btnStartOverlay: View
-    private lateinit var btnStopFloating: Button
-    private lateinit var btnRecordGesture: Button
-    private lateinit var lblRecordedStatus: TextView
-    private lateinit var statusText: TextView
+    /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
+    private var selectedTab by mutableStateOf(MainTab.HOME)
+
+    /** 首次启动时底栏从底部滑入（旧实现在 onCreate 里对 BottomNavigationView 做 translationY 动画） */
+    private var playBottomBarEntrance by mutableStateOf(false)
+
+    /** 设置页 Fragment 是否已按需加载（旧实现首次切到设置页才加载） */
+    private var settingsFragmentLoaded by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,80 +83,115 @@ class MainActivity : AppCompatActivity() {
         // 启用edge-to-edge模式
         enableEdgeToEdge()
 
-        setContentView(R.layout.activity_main)
-
         // 恢复选中的底部导航项
-        val savedItemId = savedInstanceState?.getInt("selected_nav_item", R.id.nav_home) ?: R.id.nav_home
-
-        // 顶栏适配状态栏
-        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, windowInsets ->
-            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, insets.top, 0, 0)
-            windowInsets
+        val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
+        selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
+        playBottomBarEntrance = savedInstanceState == null
+        run {
+            val pref = getSharedPreferences("settings", MODE_PRIVATE)
+                .getString("app_theme", "follow_system") ?: "follow_system"
+            val sysDark = (resources.configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            AppTheme.isDark = AppTheme.resolveDark(pref, sysDark)
         }
 
-        // 底部导航栏延伸到系统导航栏区域
-        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, windowInsets ->
-            val insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            view.setPadding(0, 0, 0, insets.bottom)
-            windowInsets
-        }
-
-        // edge-to-edge 下窗口不会为系统栏/键盘缩放，需自行处理 inset：
-        // - 左右：系统栏与挖孔。横屏三键导航时导航栏在侧边，不补 inset 会把内容压在导航栏下面
-        // - 底部：键盘，否则底部的延时/次数输入框与启动按钮被键盘盖住
-        val rootView = findViewById<View>(R.id.root)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
-            val bars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            val cutout = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout())
-            val imeBottom = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
-            view.setPadding(
-                maxOf(bars.left, cutout.left),
-                0,
-                maxOf(bars.right, cutout.right),
-                imeBottom
-            )
-            windowInsets
-        }
-
-        // 底栏启动动画：从底部滑入（仅首次启动）
-        if (savedInstanceState == null) {
-            bottomNav.post {
-                bottomNav.translationY = bottomNav.height.toFloat()
-                bottomNav.animate()
-                    .translationY(0f)
-                    .setDuration(300)
-                    .setStartDelay(100)
-                    .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
-                    .start()
+        // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
+        // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
+        // inset 处理：顶栏补状态栏、底栏补导航栏（旧实现是给 toolbar / bottomNav 分别设 padding），
+        // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
+        setContent {
+            // 订阅字体变化：设置页里换字体时，已经组合好的顶栏/底栏/首页也要跟着换
+            // 主题状态一变就重新下发系统栏样式（含全面屏手势条那条的背景/图标明暗）。
+            // 放在这里而不是切换处：AppTheme.apply 是异步的（先 PixelCopy 抓图再切），
+            // 在调用点读 AppTheme.isDark 会拿到旧值。
+            LaunchedEffect(AppTheme.isDark) { applySystemBarStyle(AppTheme.isDark) }
+            val fontRevision = FontManager.fontRevision
+            val family = androidx.compose.runtime.remember(fontRevision) {
+                FontManager.currentTypeface?.let { FontFamily(it) }
+            }
+            ClickTheme(fontFamily = family, integerFontAdvance = true, darkTheme = AppTheme.isDark) {
+                // 配色切换时的"圆形揭示"过渡（圆心 = 点击位置）
+                ThemeReveal {
+                MainScaffold(
+                    selectedTab = selectedTab,
+                    onSelectTab = { tab -> selectedTab = tab },
+                    title = when (selectedTab) {
+                        MainTab.HOME -> "Click"
+                        MainTab.PROGRAM -> getString(R.string.nav_program)
+                        MainTab.SETTINGS -> getString(R.string.nav_settings)
+                    },
+                    playEntrance = playBottomBarEntrance,
+                    settingsContent = { },
+                    programContent = { },
+                    homeContent = {
+                    HomeScreen(
+                    statusText = statusTextValue,
+                    isSwipeMode = isSwipeMode,
+                    isGestureMode = isGestureMode,
+                    swipeX1 = swipeX1,
+                    swipeY1 = swipeY1,
+                    swipeX2 = swipeX2,
+                    swipeY2 = swipeY2,
+                    swipeDuration = swipeDuration,
+                    delay = delayText,
+                    repeat = repeatText,
+                    infinite = infinite,
+                    recordedStatus = recordedStatus,
+                    recordedVisible = recordedVisible,
+                    canStart = canStart,
+                    showStartOverlay = showStartOverlay,
+                    canStop = canStop,
+                    canRecord = canRecord,
+                    onEnableService = {
+                        showWarningDialog {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                    },
+                    onEnableOverlay = { requestOverlayPermission() },
+                    onModeSelected = { swipe ->
+                        if (swipe != isSwipeMode) {
+                            isSwipeMode = swipe
+                            saveConfig()
+                            if (swipe && !isSwipeConfigValid()) {
+                                val hint = if (!isGestureMode) {
+                                    getString(R.string.toast_fill_manual_params)
+                                } else {
+                                    getString(R.string.toast_record_gesture_first)
+                                }
+                                Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+                            }
+                            updateStatus()
+                        }
+                    },
+                    onSwipeMethodSelected = { gesture ->
+                        if (gesture != isGestureMode) {
+                            isGestureMode = gesture
+                            saveConfig()
+                            updateStatus()
+                        }
+                    },
+                    onSwipeX1Change = { swipeX1 = it; afterInputChange() },
+                    onSwipeY1Change = { swipeY1 = it; afterInputChange() },
+                    onSwipeX2Change = { swipeX2 = it; afterInputChange() },
+                    onSwipeY2Change = { swipeY2 = it; afterInputChange() },
+                    onSwipeDurationChange = { swipeDuration = it; afterInputChange() },
+                    onDelayChange = { delayText = it; afterInputChange() },
+                    onRepeatChange = { repeatText = it; afterInputChange() },
+                    onInfiniteChange = { infinite = it; saveConfig() },
+                    onStart = { handleStartButtonClick() },
+                    onStop = {
+                        AppConfig.running = false
+                        stopService(Intent(this, FloatingService::class.java))
+                        updateStatus()
+                    },
+                    onRecord = { startGestureRecording() },
+                    )
+                    },
+                )
+                }
             }
         }
-
-        statusText = findViewById(R.id.statusText)
-        radioClick = findViewById(R.id.radioClick)
-        radioSwipe = findViewById(R.id.radioSwipe)
-        modeIndicator = findViewById(R.id.modeIndicator)
-        swipeParams = findViewById(R.id.swipeParams)
-        radioSwipeManual = findViewById(R.id.radioSwipeManual)
-        radioSwipeGesture = findViewById(R.id.radioSwipeGesture)
-        swipeMethodIndicator = findViewById(R.id.swipeMethodIndicator)
-        manualSwipeParams = findViewById(R.id.manualSwipeParams)
-        gestureSwipeSection = findViewById(R.id.gestureSwipeSection)
-        inputSwipeX1 = findViewById(R.id.inputSwipeX1)
-        inputSwipeY1 = findViewById(R.id.inputSwipeY1)
-        inputSwipeX2 = findViewById(R.id.inputSwipeX2)
-        inputSwipeY2 = findViewById(R.id.inputSwipeY2)
-        inputSwipeDuration = findViewById(R.id.inputSwipeDuration)
-        inputDelay = findViewById(R.id.inputDelay)
-        inputRepeat = findViewById(R.id.inputRepeat)
-        checkInfinite = findViewById(R.id.checkInfinite)
-        btnStartFloating = findViewById(R.id.btnStartFloating)
-        btnStartOverlay = findViewById(R.id.btnStartOverlay)
-        btnStopFloating = findViewById(R.id.btnStopFloating)
-        btnRecordGesture = findViewById(R.id.btnRecordGesture)
-        lblRecordedStatus = findViewById(R.id.lblRecordedStatus)
 
         savedInstanceState?.let {
             pendingPermissionStep = try {
@@ -163,296 +201,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<Button>(R.id.btnEnableService).setOnClickListener {
-            showWarningDialog {
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-        }
-
-        findViewById<Button>(R.id.btnEnableOverlay).setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (!Settings.canDrawOverlays(this)) {
-                    Toast.makeText(this, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:$packageName")
-                    ))
-                } else {
-                    Toast.makeText(this, R.string.toast_overlay_enabled, Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
         // 恢复上次保存的配置（仅在全新启动时；旋转/重建交给系统与 savedInstanceState）
         if (savedInstanceState == null) {
             val snapshot = ConfigStore.load(this)
             isSwipeMode = snapshot.isSwipeMode
             isGestureMode = snapshot.isGestureMode
-            inputSwipeX1.setText(snapshot.swipeX1)
-            inputSwipeY1.setText(snapshot.swipeY1)
-            inputSwipeX2.setText(snapshot.swipeX2)
-            inputSwipeY2.setText(snapshot.swipeY2)
-            inputSwipeDuration.setText(snapshot.swipeDuration)
-            inputDelay.setText(snapshot.delay)
-            inputRepeat.setText(snapshot.repeat)
-            checkInfinite.isChecked = snapshot.infinite
-            inputRepeat.isEnabled = !snapshot.infinite
+            swipeX1 = snapshot.swipeX1
+            swipeY1 = snapshot.swipeY1
+            swipeX2 = snapshot.swipeX2
+            swipeY2 = snapshot.swipeY2
+            swipeDuration = snapshot.swipeDuration
+            delayText = snapshot.delay
+            repeatText = snapshot.repeat
+            infinite = snapshot.infinite
             // 同步一次内存中的运行时配置，避免启动后未改动控件时界面与参数不一致
             saveConfig()
         }
-
-        // 初始状态
-        radioClick.isSelected = !isSwipeMode
-        radioSwipe.isSelected = isSwipeMode
-        radioSwipeManual.isSelected = !isGestureMode
-        radioSwipeGesture.isSelected = isGestureMode
-
-        // 循环检查直到视图宽度有效
-        val checkRunnable = object : Runnable {
-            override fun run() {
-                if (radioClick.width > 0) {
-                    refreshIndicators()
-                } else {
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 50)
-                }
-            }
-        }
-        android.os.Handler(android.os.Looper.getMainLooper()).post(checkRunnable)
-
-        radioClick.setOnClickListener {
-            if (isSwipeMode) {
-                isSwipeMode = false
-                radioClick.isSelected = true
-                radioSwipe.isSelected = false
-                animateIndicator(modeIndicator, 0f)
-                collapseView(swipeParams)
-                saveConfig()
-                updateStatus()
-            }
-        }
-
-        radioSwipe.setOnClickListener {
-            if (!isSwipeMode) {
-                isSwipeMode = true
-                radioClick.isSelected = false
-                radioSwipe.isSelected = true
-                animateIndicator(modeIndicator, radioSwipe.x - radioClick.x)
-                expandView(swipeParams)
-                // 初始化滑动方式指示器宽度与位置
-                swipeMethodIndicator.post {
-                    val params = swipeMethodIndicator.layoutParams as android.widget.FrameLayout.LayoutParams
-                    params.width = radioSwipeManual.width - 8
-                    swipeMethodIndicator.layoutParams = params
-                    // 位置必须与已保存的滑动方式一致：否则从"点击模式 + 手势子模式"切进来时，
-                    // 指示器会停在默认位置（手动参数）上，与真实模式不符
-                    swipeMethodIndicator.x =
-                        if (isGestureMode) radioSwipeGesture.x - radioSwipeManual.x else 0f
-                }
-                saveConfig()
-                if (!isSwipeConfigValid()) {
-                    val hint = if (!isGestureMode) getString(R.string.toast_fill_manual_params) else getString(R.string.toast_record_gesture_first)
-                    Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
-                }
-                updateStatus()
-            }
-        }
-
-        radioSwipeManual.setOnClickListener {
-            if (!isGestureMode) return@setOnClickListener
-            isGestureMode = false
-            radioSwipeManual.isSelected = true
-            radioSwipeGesture.isSelected = false
-            animateIndicator(swipeMethodIndicator, 0f)
-            expandView(manualSwipeParams)
-            collapseView(gestureSwipeSection)
-            saveConfig()
-            updateStatus()
-        }
-
-        radioSwipeGesture.setOnClickListener {
-            if (isGestureMode) return@setOnClickListener
-            isGestureMode = true
-            radioSwipeManual.isSelected = false
-            radioSwipeGesture.isSelected = true
-            animateIndicator(swipeMethodIndicator, radioSwipeGesture.x - radioSwipeManual.x)
-            collapseView(manualSwipeParams)
-            expandView(gestureSwipeSection)
-            saveConfig()
-            updateStatus()
-        }
-
-        checkInfinite.setOnCheckedChangeListener { _, checked ->
-            inputRepeat.isEnabled = !checked
-            saveConfig()
-        }
-
-        // 底部导航栏
-        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        val homeContent = findViewById<View>(R.id.home_content)
-        val programPage = findViewById<View>(R.id.program_page)
-        val settingsPage = findViewById<View>(R.id.settings_page)
-        var previousItemId = savedItemId
-        var settingsFragmentLoaded = false
-
-        // 恢复选中的页面和状态
-        homeContent.visibility = if (savedItemId == R.id.nav_home) View.VISIBLE else View.GONE
-        programPage.visibility = if (savedItemId == R.id.nav_program) View.VISIBLE else View.GONE
-        settingsPage.visibility = if (savedItemId == R.id.nav_settings) View.VISIBLE else View.GONE
-        toolbar.title = when (savedItemId) {
-            R.id.nav_program -> getString(R.string.nav_program)
-            R.id.nav_settings -> getString(R.string.nav_settings)
-            else -> "Click"
-        }
-        bottomNavigation.selectedItemId = savedItemId
 
         // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
         savedInstanceState?.let {
             isSwipeMode = it.getBoolean("isSwipeMode", isSwipeMode)
             isGestureMode = it.getBoolean("isGestureMode", isGestureMode)
         }
-        if (isSwipeMode) {
-            radioClick.isSelected = false
-            radioSwipe.isSelected = true
-            swipeParams.visibility = View.VISIBLE
-        }
-        if (isGestureMode) {
-            radioSwipeManual.isSelected = false
-            radioSwipeGesture.isSelected = true
-            manualSwipeParams.visibility = View.GONE
-            gestureSwipeSection.visibility = View.VISIBLE
-        }
 
-        bottomNavigation.setOnItemSelectedListener { item ->
-            val homeItem = bottomNavigation.menu.findItem(R.id.nav_home)
-            val newItem = when (item.itemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
-            val oldItem = when (previousItemId) {
-                R.id.nav_home -> homeContent
-                R.id.nav_program -> programPage
-                R.id.nav_settings -> settingsPage
-                else -> homeContent
-            }
-
-            // 判断切换方向
-            val navItems = listOf(R.id.nav_home, R.id.nav_program, R.id.nav_settings)
-            val oldIndex = navItems.indexOf(previousItemId)
-            val newIndex = navItems.indexOf(item.itemId)
-            val goingForward = newIndex > oldIndex
-
-            // 切换页面动画
-            if (newItem != oldItem) {
-                val exitAnim = if (goingForward) R.anim.slide_out_left else R.anim.slide_out_right
-                val enterAnim = if (goingForward) R.anim.slide_in_right else R.anim.slide_in_left
-
-                // 退出动画
-                val exitAnimation = android.view.animation.AnimationUtils.loadAnimation(this, exitAnim)
-                oldItem.startAnimation(exitAnimation)
-                oldItem.visibility = View.GONE
-
-                // 进入动画
-                newItem.visibility = View.VISIBLE
-                val enterAnimation = android.view.animation.AnimationUtils.loadAnimation(this, enterAnim)
-                newItem.startAnimation(enterAnimation)
-
-                // 顶栏标题淡入淡出动画
-                toolbar.animate()
-                    .alpha(0f)
-                    .setDuration(126)
-                    .withEndAction {
-                        toolbar.title = when (item.itemId) {
-                            R.id.nav_home -> "Click"
-                            R.id.nav_program -> getString(R.string.nav_program)
-                            R.id.nav_settings -> getString(R.string.nav_settings)
-                            else -> "Click"
-                        }
-                        toolbar.animate()
-                            .alpha(1f)
-                            .setDuration(162)
-                            .start()
-                    }
-                    .start()
-            } else {
-                toolbar.title = when (item.itemId) {
-                    R.id.nav_home -> "Click"
-                    R.id.nav_program -> getString(R.string.nav_program)
-                    R.id.nav_settings -> getString(R.string.nav_settings)
-                    else -> "Click"
-                }
-            }
-
-            // 主页图标状态切换
-            val isHomeSelected = item.itemId == R.id.nav_home
-            homeItem?.icon?.state = if (isHomeSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
-
-            // 设置图标状态切换
-            val settingsItem = bottomNavigation.menu.findItem(R.id.nav_settings)
-            val isSettingsSelected = item.itemId == R.id.nav_settings
-            settingsItem?.icon?.state = if (isSettingsSelected) intArrayOf(android.R.attr.state_selected) else intArrayOf()
-
-            // 程序图标缩放动画
-            if (item.itemId == R.id.nav_program && previousItemId != R.id.nav_program) {
-                animateProgramIcon(bottomNavigation, 1)
-            }
-
-            // 加载设置页面Fragment（首次切换时）
-            if (item.itemId == R.id.nav_settings && !settingsFragmentLoaded) {
-                settingsFragmentLoaded = true
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.settings_page, SettingsFragment())
-                    .commit()
-            }
-
-            previousItemId = item.itemId
-            true
-        }
 
         // 主页图标初始为填充状态（默认就是ic_home）
-
-        onTextChanged(inputSwipeX1) { saveConfig(); updateStatus() }
-        onTextChanged(inputSwipeY1) { saveConfig(); updateStatus() }
-        onTextChanged(inputSwipeX2) { saveConfig(); updateStatus() }
-        onTextChanged(inputSwipeY2) { saveConfig(); updateStatus() }
-        onTextChanged(inputSwipeDuration) { saveConfig(); updateStatus() }
-        onTextChanged(inputDelay) { saveConfig(); updateStatus() }
-        onTextChanged(inputRepeat) { saveConfig(); updateStatus() }
-
-        btnRecordGesture.setOnClickListener {
-            if (!hasOverlayPermission()) {
-                Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-            if (!isServiceEnabled()) {
-                Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-            saveConfig()
-            val floatPrefs = getPreferences(Context.MODE_PRIVATE)
-            if (floatPrefs.getBoolean("float_tutorial_done", false).not()) {
-                floatPrefs.edit().putBoolean("float_tutorial_done", true).apply()
-                floatTutorialPending = true
-            }
-            AppConfig.recordRequested = true
-            AppConfig.preventExecution = false
-            if (!AppConfig.running) {
-                AppConfig.running = true
-                startFloatingService()
-            }
-            Toast.makeText(this, R.string.toast_swipe_to_record, Toast.LENGTH_SHORT).show()
-        }
-
-        btnStartOverlay.setOnClickListener { handleStartButtonClick() }
-
-        btnStartFloating.setOnClickListener { handleStartButtonClick() }
-
-        btnStopFloating.setOnClickListener {
-            AppConfig.running = false
-            stopService(Intent(this, FloatingService::class.java))
-            updateStatus()
-        }
 
         val prefs = getPreferences(Context.MODE_PRIVATE)
         if (prefs.getBoolean("first_launch_done", false).not()) {
@@ -476,11 +249,50 @@ class MainActivity : AppCompatActivity() {
         FontManager.applyFont(window.decorView)
     }
 
+    /**
+     * configChanges="uiMode" 让 Activity 不重建，但"跟随系统"时需要跟着系统深浅更新渲染状态。
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val pref = getSharedPreferences("settings", MODE_PRIVATE)
+            .getString("app_theme", "follow_system") ?: "follow_system"
+        if (pref == "follow_system") {
+            val sysDark = (android.content.res.Resources.getSystem().configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            // 走和手动切换同一条路：抓旧画面 + 圆形揭示 + 重新下发系统栏样式
+            AppTheme.apply(this, "follow_system", sysDark, null)
+            applySystemBarStyle(AppTheme.isDark)
+        }
+    }
+
+    /**
+     * 按当前深浅重新下发系统栏样式。
+     * enableEdgeToEdge() 只在 onCreate 调用一次，里面的"图标明暗"是按启动时的主题算的，
+     * 主题切换后必须再调一次，否则全面屏手势小白条那一条的背景/图标不会跟着变。
+     */
+    /** 供设置页在切换主题后调用 */
+    fun refreshSystemBarStyle() = applySystemBarStyle(AppTheme.isDark)
+
+    private fun applySystemBarStyle(dark: Boolean) {
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ) { dark },
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ) { dark },
+        )
+    }
     override fun onResume() {
         super.onResume()
-        // 应用字体（从设置页切换字体后）
+        // 应用字体：Compose 首页通过 ClickTheme 下发 FontFamily，
+        // View 部分（顶栏、底部导航、各类对话框）仍走原来的 View 树遍历逻辑
         FontManager.init(this)
         FontManager.applyFont(window.decorView)
+        fontFamily = FontManager.currentTypeface?.let { FontFamily(it) }
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
@@ -525,8 +337,7 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean("isSwipeMode", isSwipeMode)
         outState.putBoolean("isGestureMode", isGestureMode)
         // 保存当前选中的底部导航项
-        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        outState.putInt("selected_nav_item", bottomNavigation.selectedItemId)
+        outState.putInt("selected_nav_item", selectedTab.ordinal)
     }
 
     override fun onPause() {
@@ -541,44 +352,90 @@ class MainActivity : AppCompatActivity() {
         val accessibilityStatus = getString(if (serviceEnabled) R.string.status_enabled else R.string.status_disabled)
         val overlayStatus = getString(if (overlayGranted) R.string.status_enabled else R.string.status_disabled)
 
-        statusText.text = buildString {
+        statusTextValue = buildString {
             append(getString(R.string.status_accessibility, accessibilityStatus))
             append("\n")
             append(getString(R.string.status_overlay, overlayStatus))
         }
 
         val ready = serviceEnabled && overlayGranted && isSwipeConfigValid()
-        val canStart = ready && !AppConfig.running
-        btnStartFloating.isEnabled = canStart
-        btnStartOverlay.visibility = if (canStart) View.GONE else View.VISIBLE
-        btnStopFloating.isEnabled = AppConfig.running
-        btnRecordGesture.isEnabled = !AppConfig.running
+        val startable = ready && !AppConfig.running
+        canStart = startable
+        showStartOverlay = !startable
+        canStop = AppConfig.running
+        canRecord = !AppConfig.running
 
         val gesture = AppConfig.recordedGesture
         if (gesture.points.size >= 2) {
-            lblRecordedStatus.text = getString(R.string.status_gesture_recorded, gesture.points.size, gesture.totalDuration)
-            lblRecordedStatus.visibility = View.VISIBLE
+            recordedStatus = getString(R.string.status_gesture_recorded, gesture.points.size, gesture.totalDuration)
+            recordedVisible = true
         } else if (isSwipeMode && isGestureMode) {
-            lblRecordedStatus.text = getString(R.string.status_gesture_not_recorded)
-            lblRecordedStatus.visibility = View.VISIBLE
+            recordedStatus = getString(R.string.status_gesture_not_recorded)
+            recordedVisible = true
         } else {
-            lblRecordedStatus.visibility = View.GONE
+            recordedVisible = false
         }
     }
 
     private fun isSwipeConfigValid(): Boolean {
         if (!isSwipeMode) return true
         return if (!isGestureMode) {
-            inputSwipeX1.text?.isNotEmpty() == true &&
-            inputSwipeY1.text?.isNotEmpty() == true &&
-            inputSwipeX2.text?.isNotEmpty() == true &&
-            inputSwipeY2.text?.isNotEmpty() == true &&
+            swipeX1.isNotEmpty() &&
+            swipeY1.isNotEmpty() &&
+            swipeX2.isNotEmpty() &&
+            swipeY2.isNotEmpty() &&
             // 时长必须为正数：填 0 会让 StrokeDescription 抛 IllegalArgumentException，
             // 滑动会在协程里静默失败（用户端表现为"点了没反应"）
-            (inputSwipeDuration.text?.toString()?.toLongOrNull() ?: 0L) > 0L
+            (swipeDuration.toLongOrNull() ?: 0L) > 0L
         } else {
             AppConfig.recordedGesture.points.size >= 2
         }
+    }
+
+    /** Compose 输入框内容变化后的统一处理（等同于旧版 onTextChanged 的 saveConfig + updateStatus） */
+    private fun afterInputChange() {
+        saveConfig()
+        updateStatus()
+    }
+
+    /** 请求悬浮窗权限（旧版 btnEnableOverlay 的点击逻辑） */
+    private fun requestOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, R.string.toast_enable_overlay, Toast.LENGTH_SHORT).show()
+                startActivity(Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                ))
+            } else {
+                Toast.makeText(this, R.string.toast_overlay_enabled, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** 开始手势录制（旧版 btnRecordGesture 的点击逻辑） */
+    private fun startGestureRecording() {
+        if (!hasOverlayPermission()) {
+            Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!isServiceEnabled()) {
+            Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
+            return
+        }
+        saveConfig()
+        val floatPrefs = getPreferences(Context.MODE_PRIVATE)
+        if (floatPrefs.getBoolean("float_tutorial_done", false).not()) {
+            floatPrefs.edit().putBoolean("float_tutorial_done", true).apply()
+            floatTutorialPending = true
+        }
+        AppConfig.recordRequested = true
+        AppConfig.preventExecution = false
+        if (!AppConfig.running) {
+            AppConfig.running = true
+            startFloatingService()
+        }
+        Toast.makeText(this, R.string.toast_swipe_to_record, Toast.LENGTH_SHORT).show()
     }
 
     private fun saveConfig() {
@@ -587,27 +444,27 @@ class MainActivity : AppCompatActivity() {
         AppConfig.current = AppConfig(
             mode = mode,
             swipeMethod = swipeMethod,
-            swipeX1 = inputSwipeX1.text.toString().toFloatOrNull() ?: 0f,
-            swipeY1 = inputSwipeY1.text.toString().toFloatOrNull() ?: 0f,
-            swipeX2 = inputSwipeX2.text.toString().toFloatOrNull() ?: 0f,
-            swipeY2 = inputSwipeY2.text.toString().toFloatOrNull() ?: 0f,
-            swipeDuration = inputSwipeDuration.text.toString().toLongOrNull() ?: 0L,
-            delayMs = inputDelay.text.toString().toLongOrNull() ?: 0L,
-            repeatCount = if (checkInfinite.isChecked) -1 else (inputRepeat.text.toString().toIntOrNull() ?: 1)
+            swipeX1 = swipeX1.toFloatOrNull() ?: 0f,
+            swipeY1 = swipeY1.toFloatOrNull() ?: 0f,
+            swipeX2 = swipeX2.toFloatOrNull() ?: 0f,
+            swipeY2 = swipeY2.toFloatOrNull() ?: 0f,
+            swipeDuration = swipeDuration.toLongOrNull() ?: 0L,
+            delayMs = delayText.toLongOrNull() ?: 0L,
+            repeatCount = if (infinite) -1 else (repeatText.toIntOrNull() ?: 1)
         )
         ConfigStore.save(
             this,
             ConfigStore.Snapshot(
                 isSwipeMode = isSwipeMode,
                 isGestureMode = isGestureMode,
-                swipeX1 = inputSwipeX1.text?.toString() ?: "",
-                swipeY1 = inputSwipeY1.text?.toString() ?: "",
-                swipeX2 = inputSwipeX2.text?.toString() ?: "",
-                swipeY2 = inputSwipeY2.text?.toString() ?: "",
-                swipeDuration = inputSwipeDuration.text?.toString() ?: "",
-                delay = inputDelay.text?.toString() ?: "0",
-                repeat = inputRepeat.text?.toString() ?: "1",
-                infinite = checkInfinite.isChecked
+                swipeX1 = swipeX1,
+                swipeY1 = swipeY1,
+                swipeX2 = swipeX2,
+                swipeY2 = swipeY2,
+                swipeDuration = swipeDuration,
+                delay = delayText,
+                repeat = repeatText,
+                infinite = infinite
             )
         )
     }
@@ -723,141 +580,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun animateIndicator(indicator: View, targetX: Float) {
-        indicator.animate()
-            .x(targetX)
-            .setDuration(250)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
-            .start()
-    }
-
-    private fun refreshIndicators() {
-        if (radioClick.width > 0) {
-            val modeParams = modeIndicator.layoutParams
-            modeParams.width = radioClick.width
-            modeIndicator.layoutParams = modeParams
-            modeIndicator.x = if (isSwipeMode) (radioSwipe.left - radioClick.left).toFloat() else 0f
-            modeIndicator.visibility = View.VISIBLE
-        }
-
-        // 刷新滑动方式指示器
-        if (isSwipeMode && radioSwipeManual.width > 0) {
-            val swipeParams = swipeMethodIndicator.layoutParams
-            swipeParams.width = radioSwipeManual.width
-            swipeMethodIndicator.layoutParams = swipeParams
-            swipeMethodIndicator.x = if (isGestureMode) (radioSwipeGesture.left - radioSwipeManual.left).toFloat() else 0f
-            swipeMethodIndicator.visibility = View.VISIBLE
-        }
-    }
-
-    private fun expandView(view: View) {
-        // 只在完全展开（WRAP_CONTENT + VISIBLE）时跳过
-        if (view.visibility == View.VISIBLE && view.layoutParams.height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) return
-        
-        // 取消正在运行的 ValueAnimator（可能来自 collapseView）
-        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
-        prevAnimator?.cancel()
-        
-        view.animate().cancel()
-        
-        view.measure(
-            View.MeasureSpec.makeMeasureSpec((view.parent as View).width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val targetHeight = view.measuredHeight
-        
-        view.visibility = View.VISIBLE
-        view.alpha = 0f
-        
-        val params = view.layoutParams
-        params.height = 1
-        view.layoutParams = params
-        
-        view.animate()
-            .alpha(1f)
-            .setDuration(250)
-            .setInterpolator(android.view.animation.DecelerateInterpolator(2f))
-            .start()
-        
-        var cancelled = false
-        val animator = android.animation.ValueAnimator.ofInt(1, targetHeight)
-        view.setTag(R.id.anim_cancel_tag, animator)
-        animator.duration = 250
-        animator.interpolator = android.view.animation.DecelerateInterpolator(2f)
-        animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationCancel(animation: android.animation.Animator) {
-                cancelled = true
-            }
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                view.setTag(R.id.anim_cancel_tag, null)
-                if (!cancelled) {
-                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                    view.layoutParams = params
-                    view.alpha = 1f
-                }
-            }
-        })
-        animator.start()
-    }
-
-    private fun collapseView(view: View) {
-        if (view.visibility == View.GONE) return
-        
-        // 取消正在运行的 ValueAnimator（可能来自 expandView）
-        val prevAnimator = view.getTag(R.id.anim_cancel_tag) as? android.animation.ValueAnimator
-        prevAnimator?.cancel()
-        
-        view.animate().cancel()
-        
-        val currentHeight = view.height
-        if (currentHeight <= 0) {
-            view.visibility = View.GONE
-            return
-        }
-        
-        view.alpha = 1f
-        
-        val params = view.layoutParams
-        
-        var cancelled = false
-        val animator = android.animation.ValueAnimator.ofInt(currentHeight, 0)
-        view.setTag(R.id.anim_cancel_tag, animator)
-        animator.duration = 250
-        animator.interpolator = android.view.animation.AccelerateInterpolator(2f)
-        animator.addUpdateListener { anim ->
-            params.height = anim.animatedValue as Int
-            view.layoutParams = params
-            view.alpha = (anim.animatedValue as Int).toFloat() / currentHeight
-        }
-        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationCancel(animation: android.animation.Animator) {
-                cancelled = true
-            }
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                view.setTag(R.id.anim_cancel_tag, null)
-                if (!cancelled) {
-                    view.visibility = View.GONE
-                    view.alpha = 1f
-                    params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                    view.layoutParams = params
-                }
-            }
-        })
-        animator.start()
-    }
-
-    private fun onTextChanged(editText: TextInputEditText, action: () -> Unit) {
-        editText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { action() }
-        })
-    }
-
     /**
      * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，否则通知不会显示。
      * 每个进程只申请一次，避免反复打扰。
@@ -945,48 +667,6 @@ class MainActivity : AppCompatActivity() {
             (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
         return String(decoded, Charsets.UTF_8)
-    }
-
-    private fun animateProgramIcon(bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView, index: Int) {
-        val menuView = bottomNav.getChildAt(0) as? android.view.ViewGroup ?: return
-        if (index >= menuView.childCount) return
-        val itemView = menuView.getChildAt(index) as? android.view.ViewGroup ?: return
-        val iconView = findImageView(itemView) ?: return
-
-        iconView.pivotX = iconView.width / 2f
-        iconView.pivotY = iconView.height / 2f
-
-        // 缩放动画
-        iconView.animate()
-            .scaleX(0.7f)
-            .scaleY(0.7f)
-            .setDuration(100)
-            .withEndAction {
-                iconView.animate()
-                    .scaleX(1.1f)
-                    .scaleY(1.1f)
-                    .setDuration(100)
-                    .withEndAction {
-                        iconView.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(100)
-                            .start()
-                    }
-                    .start()
-            }
-            .start()
-    }
-
-    private fun findImageView(view: android.view.View): android.widget.ImageView? {
-        if (view is android.widget.ImageView) return view
-        if (view is android.view.ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val result = findImageView(view.getChildAt(i))
-                if (result != null) return result
-            }
-        }
-        return null
     }
 
     private fun applyLanguage() {

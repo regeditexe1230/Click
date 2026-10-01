@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  外壳迁移到 Compose 后，设置页 Fragment 容器仍需要一个稳定 id
+  （旧实现放在 activity_main.xml 里，见 MainScaffold.kt 的 SettingsHost）。
+-->
 <resources>
-    <item name="anim_cancel_tag" type="id" />
+    <item name="settings_page" type="id" />
 </resources>
