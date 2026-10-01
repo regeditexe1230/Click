@@ -68,20 +68,35 @@ val SectionBackground = Color(0x206750A4)
  */
 val LocalClickFontFamily = staticCompositionLocalOf<FontFamily?> { null }
 
+/**
+ * 该页面是否按"整数像素字号"渲染文本。
+ *
+ * 旧版首页的 TextView 被 FontManager 遍历覆盖成了 `Typeface.DEFAULT`，该字型在当前系统上的
+ * 全角字前进量是整数像素（实测 14sp→37px、12sp→32px）；而设置页位于 Fragment 树，
+ * 被覆盖的时机更晚（实测仍是主题默认字体，14sp→36.75px）。为保持与重构前逐像素一致，
+ * 首页需要按取整后的字号渲染，设置页保持浮点字号。
+ */
+val LocalIntegerFontAdvance = staticCompositionLocalOf { false }
+
 @Composable
 fun ClickTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     fontFamily: FontFamily? = null,
+    integerFontAdvance: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     // 排版全部使用常规字重：旧实现用 Typeface.DEFAULT 覆盖了所有 TextView 的字体，
     // 连 XML 里 textStyle="bold" 的标题实际渲染也是常规字重，这里保持一致。
-    // 字号同时按旧版规则取整成整数像素（见 Platform.kt 的 platformFontSize）。
+    // 字型同样对齐旧版被 FontManager 覆盖后的平台默认字型（见 PlatformDefaultFontFamily）。
     val density = LocalDensity.current
-    val typography = remember(density) {
-        Typography().regularWeights().platformSizes(density)
+    val typography = remember(density, integerFontAdvance) {
+        val base = Typography().regularWeights().platformFamily()
+        if (integerFontAdvance) base.integerPixelSizes(density) else base
     }
-    CompositionLocalProvider(LocalClickFontFamily provides fontFamily) {
+    CompositionLocalProvider(
+        LocalClickFontFamily provides fontFamily,
+        LocalIntegerFontAdvance provides integerFontAdvance,
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) ClickDarkColors else ClickLightColors,
             typography = typography,
@@ -111,24 +126,46 @@ private fun Typography.regularWeights(): Typography = copy(
     labelSmall = labelSmall.regularWeight(),
 )
 
-/** 把 M3 默认排版的每个字号都按旧版 getDimensionPixelSize() 规则取整成整数像素 */
-private fun Typography.platformSizes(density: Density): Typography = copy(
-    displayLarge = displayLarge.platformSize(density),
-    displayMedium = displayMedium.platformSize(density),
-    displaySmall = displaySmall.platformSize(density),
-    headlineLarge = headlineLarge.platformSize(density),
-    headlineMedium = headlineMedium.platformSize(density),
-    headlineSmall = headlineSmall.platformSize(density),
-    titleLarge = titleLarge.platformSize(density),
-    titleMedium = titleMedium.platformSize(density),
-    titleSmall = titleSmall.platformSize(density),
-    bodyLarge = bodyLarge.platformSize(density),
-    bodyMedium = bodyMedium.platformSize(density),
-    bodySmall = bodySmall.platformSize(density),
-    labelLarge = labelLarge.platformSize(density),
-    labelMedium = labelMedium.platformSize(density),
-    labelSmall = labelSmall.platformSize(density),
+/** 把 M3 默认排版统一换成旧版被 FontManager 覆盖后的平台默认字型 */
+private fun Typography.platformFamily(): Typography = copy(
+    displayLarge = displayLarge.platformFamily(),
+    displayMedium = displayMedium.platformFamily(),
+    displaySmall = displaySmall.platformFamily(),
+    headlineLarge = headlineLarge.platformFamily(),
+    headlineMedium = headlineMedium.platformFamily(),
+    headlineSmall = headlineSmall.platformFamily(),
+    titleLarge = titleLarge.platformFamily(),
+    titleMedium = titleMedium.platformFamily(),
+    titleSmall = titleSmall.platformFamily(),
+    bodyLarge = bodyLarge.platformFamily(),
+    bodyMedium = bodyMedium.platformFamily(),
+    bodySmall = bodySmall.platformFamily(),
+    labelLarge = labelLarge.platformFamily(),
+    labelMedium = labelMedium.platformFamily(),
+    labelSmall = labelSmall.platformFamily(),
 )
 
-private fun TextStyle.platformSize(density: Density): TextStyle =
+private fun TextStyle.platformFamily(): TextStyle =
+    copy(fontFamily = PlatformDefaultFontFamily)
+
+/** 首页：把 M3 默认排版的字号按旧版规则取整成整数像素 */
+private fun Typography.integerPixelSizes(density: Density): Typography = copy(
+    displayLarge = displayLarge.integerPixelSize(density),
+    displayMedium = displayMedium.integerPixelSize(density),
+    displaySmall = displaySmall.integerPixelSize(density),
+    headlineLarge = headlineLarge.integerPixelSize(density),
+    headlineMedium = headlineMedium.integerPixelSize(density),
+    headlineSmall = headlineSmall.integerPixelSize(density),
+    titleLarge = titleLarge.integerPixelSize(density),
+    titleMedium = titleMedium.integerPixelSize(density),
+    titleSmall = titleSmall.integerPixelSize(density),
+    bodyLarge = bodyLarge.integerPixelSize(density),
+    bodyMedium = bodyMedium.integerPixelSize(density),
+    bodySmall = bodySmall.integerPixelSize(density),
+    labelLarge = labelLarge.integerPixelSize(density),
+    labelMedium = labelMedium.integerPixelSize(density),
+    labelSmall = labelSmall.integerPixelSize(density),
+)
+
+private fun TextStyle.integerPixelSize(density: Density): TextStyle =
     if (fontSize.isSp) copy(fontSize = density.platformFontSize(fontSize)) else this
