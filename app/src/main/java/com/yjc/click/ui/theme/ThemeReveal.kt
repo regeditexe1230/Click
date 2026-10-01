@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * 配色切换的"圆形揭示"过渡。
@@ -117,6 +118,20 @@ object AppTheme {
         } else {
             context
         }
+
+    /**
+     * 动态取色下 Compose 用的 primary / onPrimary（与 ClickTheme 里的 dynamicLight/DarkColorScheme
+     * 同一来源），供 View 侧（悬浮球这类非 Compose 界面）取色，保证和页面主色完全一致。
+     */
+    fun dynamicPrimaryArgb(context: Context): Int = dynamicScheme(context).primary.toArgb()
+
+    fun dynamicOnPrimaryArgb(context: Context): Int = dynamicScheme(context).onPrimary.toArgb()
+
+    private fun dynamicScheme(context: Context) = if (isDark) {
+        androidx.compose.material3.dynamicDarkColorScheme(context)
+    } else {
+        androidx.compose.material3.dynamicLightColorScheme(context)
+    }
 
     /**
      * 应用主题偏好：先抓旧画面 → 持久化 → 让 View 侧（各类对话框）跟随 → 播放圆形揭示。
