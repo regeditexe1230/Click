@@ -21,7 +21,9 @@ import androidx.core.content.ContextCompat
 import com.yjc.click.ui.home.HomeScreen
 import com.yjc.click.ui.shell.MainScaffold
 import com.yjc.click.ui.shell.MainTab
+import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickTheme
+import com.yjc.click.ui.theme.ThemeReveal
 
 class MainActivity : AppCompatActivity() {
 
@@ -84,6 +86,14 @@ class MainActivity : AppCompatActivity() {
         val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
         selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
         playBottomBarEntrance = savedInstanceState == null
+        run {
+            val pref = getSharedPreferences("settings", MODE_PRIVATE)
+                .getString("app_theme", "follow_system") ?: "follow_system"
+            val sysDark = (resources.configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            AppTheme.isDark = AppTheme.resolveDark(pref, sysDark)
+        }
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
@@ -95,7 +105,9 @@ class MainActivity : AppCompatActivity() {
             val family = androidx.compose.runtime.remember(fontRevision) {
                 FontManager.currentTypeface?.let { FontFamily(it) }
             }
-            ClickTheme(fontFamily = family, integerFontAdvance = true) {
+            ClickTheme(fontFamily = family, integerFontAdvance = true, darkTheme = AppTheme.isDark) {
+                // 配色切换时的"圆形揭示"过渡（圆心 = 点击位置）
+                ThemeReveal {
                 MainScaffold(
                     selectedTab = selectedTab,
                     onSelectTab = { tab -> selectedTab = tab },
@@ -172,6 +184,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     },
                 )
+                }
             }
         }
 

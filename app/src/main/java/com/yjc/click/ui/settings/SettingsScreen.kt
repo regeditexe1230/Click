@@ -28,9 +28,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
@@ -69,7 +78,7 @@ fun SettingsScreen(
     dynamicColorChecked: Boolean,
     onLanguageClick: () -> Unit,
     onFontClick: () -> Unit,
-    onThemeSelected: (String) -> Unit,
+    onThemeSelected: (String, Offset) -> Unit,
     onColorSchemeHeaderClick: () -> Unit,
     onColorHeaderClick: () -> Unit,
     onBackgroundHeaderClick: () -> Unit,
@@ -291,25 +300,25 @@ private fun FlatOptions(
 }
 
 @Composable
-private fun ColorSchemeOptions(theme: String, onThemeSelected: (String) -> Unit) {
+private fun ColorSchemeOptions(theme: String, onThemeSelected: (String, Offset) -> Unit) {
     FlatOptions(shape = RowMiddleShape, horizontalPadding = 12.dp) {
         InnerDivider(bottomMargin = 12)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
         ) {
-            ThemeOption(R.drawable.theme_preview_light, R.string.light_theme, theme == "light") {
-                onThemeSelected("light")
+            ThemeOption(R.drawable.theme_preview_light, R.string.light_theme, theme == "light") { pos ->
+                onThemeSelected("light", pos)
             }
-            ThemeOption(R.drawable.theme_preview_dark, R.string.dark_theme, theme == "dark") {
-                onThemeSelected("dark")
+            ThemeOption(R.drawable.theme_preview_dark, R.string.dark_theme, theme == "dark") { pos ->
+                onThemeSelected("dark", pos)
             }
             ThemeOption(
                 R.drawable.theme_preview_system,
                 R.string.follow_system,
                 theme == "follow_system",
-            ) {
-                onThemeSelected("follow_system")
+            ) { pos ->
+                onThemeSelected("follow_system", pos)
             }
         }
     }
@@ -320,12 +329,17 @@ private fun RowScope.ThemeOption(
     previewRes: Int,
     labelRes: Int,
     selected: Boolean,
-    onSelect: () -> Unit,
+    onSelect: (Offset) -> Unit,
 ) {
+    var originInWindow by remember { mutableStateOf(Offset.Zero) }
     Column(
         modifier = Modifier
             .weight(1f)
-            .clickable(onClick = onSelect)
+            .onGloballyPositioned { originInWindow = it.positionInWindow() }
+            // 用 pointerInput 而非 clickable：需要拿到手指按下的具体位置，作为圆形揭示的圆心
+            .pointerInput(Unit) {
+                detectTapGestures { offset -> onSelect(originInWindow + offset) }
+            }
             .padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
