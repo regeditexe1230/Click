@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity() {
         homeScreen = findViewById(R.id.home_content)
         homeScreen.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         homeScreen.setContent {
-            ClickTheme(fontFamily = fontFamily) {
+            ClickTheme(fontFamily = fontFamily, integerFontAdvance = true) {
                 HomeScreen(
                     statusText = statusTextValue,
                     isSwipeMode = isSwipeMode,
