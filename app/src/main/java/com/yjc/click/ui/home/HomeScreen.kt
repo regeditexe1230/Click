@@ -330,7 +330,12 @@ private fun SegmentControl(
             .background(SegmentBackground),
     ) {
         val itemWidth = maxWidth / labels.size
-        val targetOffset = if (selectedIndex > 0) itemWidth * selectedIndex else 0.dp
+        // 旧版指示器 = 项宽 + 4dp 左边距，选到最后一个选项时右边会超出容器被裁掉（实测右侧少 4dp）。
+        // 这里只在会溢出时把偏移往回钳 4dp，其余选项位置与旧版完全一致。
+        val indicatorInset = 4.dp
+        val maxOffset = (maxWidth - itemWidth - indicatorInset).coerceAtLeast(0.dp)
+        val rawOffset = if (selectedIndex > 0) itemWidth * selectedIndex else 0.dp
+        val targetOffset = if (rawOffset > maxOffset) maxOffset else rawOffset
         val indicatorOffset by animateDpAsState(
             targetValue = targetOffset,
             animationSpec = tween(250, easing = IndicatorEasing),
@@ -339,7 +344,7 @@ private fun SegmentControl(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 4.dp)
+                .padding(start = indicatorInset)
                 .offset(x = indicatorOffset)
                 .width(itemWidth)
                 .height(36.dp)
