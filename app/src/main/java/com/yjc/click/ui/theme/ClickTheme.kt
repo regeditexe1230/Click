@@ -83,6 +83,8 @@ fun ClickTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     fontFamily: FontFamily? = null,
     integerFontAdvance: Boolean = false,
+    /** 是否使用系统动态取色（Material You，Android 12+）：从壁纸派生配色 */
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     // 排版全部使用常规字重：旧实现用 Typeface.DEFAULT 覆盖了所有 TextView 的字体，
@@ -101,11 +103,29 @@ fun ClickTheme(
         LocalIntegerFontAdvance provides integerFontAdvance,
     ) {
         MaterialTheme(
-            colorScheme = if (darkTheme) ClickDarkColors else ClickLightColors,
+            colorScheme = clickColorScheme(darkTheme, dynamicColor),
             typography = typography,
             content = content,
         )
     }
+}
+
+/**
+ * 选择配色方案：开启动态取色且系统支持（Android 12+）时用壁纸派生的 Material You 配色，
+ * 否则退回与旧版完全一致的固定色板（values/values-night 的映射）。
+ */
+@Composable
+private fun clickColorScheme(darkTheme: Boolean, dynamicColor: Boolean): androidx.compose.material3.ColorScheme {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scheme = androidx.compose.runtime.remember(darkTheme, dynamicColor, context) {
+        if (dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            if (darkTheme) androidx.compose.material3.dynamicDarkColorScheme(context)
+            else androidx.compose.material3.dynamicLightColorScheme(context)
+        } else {
+            null
+        }
+    }
+    return scheme ?: if (darkTheme) ClickDarkColors else ClickLightColors
 }
 
 private fun TextStyle.regularWeight() =
