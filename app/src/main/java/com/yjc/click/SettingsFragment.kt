@@ -41,12 +41,32 @@ class SettingsFragment : Fragment() {
     private var colorSchemeExpanded by mutableStateOf(false)
     private var colorExpanded by mutableStateOf(false)
     private var backgroundExpanded by mutableStateOf(false)
+    // 应用背景的预设列表（这一版预设只是个名字，见 BackgroundStore）
+    private var presets by mutableStateOf<List<BackgroundStore.Preset>>(emptyList())
+    private var selectedPresetId by mutableStateOf<String?>(null)
+    private var expandedPresetIds by mutableStateOf<Set<String>>(emptySet())
 
     private val fontPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri ?: return@registerForActivityResult
         handleFontSelected(uri)
+    }
+
+    /** 正在给哪个预设选图片（选择器回来后要用） */
+    private var pendingImagePresetId: String? = null
+
+    /**
+     * 背景图选择：和添加字体一样走 OpenDocument + MIME 过滤，只列图片，
+     * 非图片文件在选择器里就是灰的、点不了。
+     */
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        val presetId = pendingImagePresetId
+        pendingImagePresetId = null
+        if (uri == null || presetId == null) return@registerForActivityResult
+        handleImageSelected(presetId, uri)
     }
 
     override fun onCreateView(
@@ -90,6 +110,21 @@ class SettingsFragment : Fragment() {
                             AppTheme.applyDynamicColor(requireActivity(), checked, rowAnimMs)
                         },
                         onColorSelected = { key -> AppTheme.applyColor(requireActivity(), key) },
+                        presets = presets,
+                        selectedPresetId = selectedPresetId,
+                        expandedPresetIds = expandedPresetIds,
+                        onAddPreset = { addPreset() },
+                        onPresetSelect = { id -> selectPreset(id) },
+                        onPresetToggleExpand = { id -> togglePresetExpanded(id) },
+                        onPresetDelete = { id -> confirmDeletePreset(id) },
+                        onPresetAddImage = { id ->
+                            pendingImagePresetId = id
+                            imagePickerLauncher.launch(arrayOf("image/*"))
+                        },
+                        onPresetRemoveImage = { id -> removePresetImage(id) },
+                        onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
+                        onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
+                        onPresetParamsCommit = { persistPresets() },
                     )
                 }
             }
@@ -103,6 +138,13 @@ class SettingsFragment : Fragment() {
         colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
         colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
+        // 二级面板的展开状态同样跟着 bundle 走：收起一级再展开时不会丢
+        expandedPresetIds = savedInstanceState?.getStringArrayList("expanded_presets")?.toSet() ?: emptySet()
+
+        val background = BackgroundStore.load(requireContext())
+        presets = background.presets
+        selectedPresetId = background.selectedId
+        AppBackground.refresh(requireContext())
 
         theme = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             .getString("app_theme", "follow_system") ?: "follow_system"
@@ -152,6 +194,156 @@ class SettingsFragment : Fragment() {
         outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
         outState.putBoolean("color_expanded", colorExpanded)
         outState.putBoolean("background_expanded", backgroundExpanded)
+        outState.putStringArrayList("expanded_presets", ArrayList(expandedPresetIds))
+    }
+
+    // ==================== 应用背景预设 ====================
+
+    private fun addPreset() {
+        presets = presets + BackgroundStore.newPreset(presets)
+        persistPresets()
+    }
+
+    /**
+     * 选中/取消选中一个预设。
+     * 再点一次已经选中的圆圈就取消（回到「默认」）—— 列表里没有「默认」这一项，
+     * 不给这条退路的话就只能靠删预设才能回到默认状态。
+     */
+    private fun selectPreset(id: String) {
+        selectedPresetId = if (selectedPresetId == id) null else id
+        persistPresets()
+    }
+
+    /** 展开/收起某个预设的二级面板（多个可以同时展开） */
+    private fun togglePresetExpanded(id: String) {
+        expandedPresetIds =
+            if (id in expandedPresetIds) expandedPresetIds - id else expandedPresetIds + id
+    }
+
+    private fun confirmDeletePreset(id: String) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
+            .setTitle(R.string.delete_preset)
+            .setMessage(getString(
+                R.string.delete_preset_confirm,
+                BackgroundStore.displayName(requireContext(), preset.seq),
+            ))
+            .setPositiveButton(R.string.delete) { _, _ -> deletePreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deletePreset(id: String) {
+        presets.firstOrNull { it.id == id }?.imagePath?.let { File(it).delete() }
+        presets = presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那个 → 回到「默认」
+        if (selectedPresetId == id) selectedPresetId = null
+        expandedPresetIds = expandedPresetIds - id
+        persistPresets()
+    }
+
+    // ==================== 背景图片 ====================
+
+    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
+    private fun handleImageSelected(presetId: String, uri: Uri) {
+        val ctx = requireContext()
+        val progress = android.widget.ProgressBar(ctx).apply {
+            isIndeterminate = true
+            val dp48 = (48 * resources.displayMetrics.density).toInt()
+            setPadding(dp48, dp48, dp48, dp48)
+        }
+        val loading = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(R.string.font_checking)
+            .setView(progress)
+            .setCancelable(false)
+            .create()
+        loading.show()
+
+        Thread {
+            val name = getFileNameFromUri(uri) ?: "background"
+            val ext = name.substringAfterLast('.', "").lowercase().ifEmpty { "img" }
+            val temp = File(ctx.cacheDir, "temp_background.$ext")
+            val copied = try {
+                ctx.contentResolver.openInputStream(uri)?.use { input ->
+                    temp.outputStream().use { output -> input.copyTo(output) }
+                }
+                true
+            } catch (e: Exception) {
+                false
+            }
+
+            // 不是图片（比如 svg/pdf 这类 image/* 但解不开的）直接拒绝
+            val valid = copied && ImageLoader.isDecodableImage(temp.absolutePath)
+            var saved: File? = null
+            if (valid) {
+                val safe = name.substringBeforeLast('.').replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fff]"), "_")
+                saved = File(
+                    BackgroundStore.backgroundsDir(ctx),
+                    "${safe.take(24).ifEmpty { "bg" }}_${System.currentTimeMillis()}.$ext",
+                )
+                temp.copyTo(saved, overwrite = true)
+            }
+            temp.delete()
+
+            activity?.runOnUiThread {
+                loading.dismiss()
+                if (saved == null) {
+                    showImageError(R.string.image_read_error)
+                    return@runOnUiThread
+                }
+                val preset = presets.firstOrNull { it.id == presetId }
+                if (preset == null) {
+                    saved.delete()
+                    return@runOnUiThread
+                }
+                File(preset.imagePath ?: "").takeIf { it.exists() }?.delete()
+                presets = BackgroundStore.withPreset(
+                    presets,
+                    preset.copy(imagePath = saved.absolutePath),
+                )
+                persistPresets()   // 内部会刷新 AppBackground，背景立刻变
+            }
+        }.start()
+    }
+
+    /** 删掉这个预设的图片（右上角 ×）：文件删掉、面板回到「添加图片」 */
+    private fun removePresetImage(id: String) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        preset.imagePath?.let { File(it).delete() }
+        presets = BackgroundStore.withPreset(presets, preset.copy(imagePath = null))
+        persistPresets()
+    }
+
+    /** 滑块/输入框改透明度：改内存里的预设并**立刻**反映到背景上（拖动过程中就要看到变化），提交时再落盘 */
+    private fun setPresetAlpha(id: String, value: Int, scrim: Boolean) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        val clamped = value.coerceIn(0, 100)
+        val updated = if (scrim) preset.copy(scrimAlpha = clamped) else preset.copy(imageAlpha = clamped)
+        presets = BackgroundStore.withPreset(presets, updated)
+        // 注意不能调 AppBackground.refresh()：它是从偏好重新解析的，而这时还没落盘，
+        // 拖动过程中背景就不会变（之前的表现就是"松手才生效"）
+        if (selectedPresetId == id) AppBackground.apply(updated)
+    }
+
+    private fun showImageError(messageRes: Int) {
+        val d = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
+            .setTitle(R.string.error)
+            .setMessage(messageRes)
+            .setPositiveButton(R.string.ok, null)
+            .create()
+        d.show()
+        FontManager.applyFontToDialog(d)
+    }
+
+    private fun persistPresets() {
+        BackgroundStore.save(
+            requireContext(),
+            BackgroundStore.Snapshot(presets = presets, selectedId = selectedPresetId),
+        )
+        // 选中项 / 图片 / 透明度任何一处变了，外壳的背景都要跟着更新
+        AppBackground.refresh(requireContext())
     }
 
     // ==================== 语言 ====================

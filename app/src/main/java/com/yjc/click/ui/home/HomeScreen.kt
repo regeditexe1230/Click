@@ -120,7 +120,8 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            // 不画自己的底色：应用背景图要从页面后面透出来
+            //（没设背景图时，下层外壳的底色与本页原来的 background 同色，视觉一致）
             .semantics { testTagsAsResourceId = true }
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
