@@ -424,14 +424,20 @@ private fun ColorOptions(
             enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
             exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
         ) {
-            ColorChoices(selected = colorKey, onSelect = onColorSelected)
+            // 收起/展开动画还没停稳时不接受点击（transition 是动画的真实状态）
+            val animating = transition.currentState != transition.targetState
+            ColorChoices(
+                selected = colorKey,
+                enabled = !animating,
+                onSelect = onColorSelected,
+            )
         }
     }
 }
 
-/** 一排颜色圆圈：本色圆点，选中的那个外面加一圈描边 */
+/** 一排颜色圆圈：本色圆点，选中的那个外面加一圈描边；[enabled] 为 false 时不响应点击 */
 @Composable
-private fun ColorChoices(selected: String, onSelect: (String) -> Unit) {
+private fun ColorChoices(selected: String, enabled: Boolean, onSelect: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -452,7 +458,7 @@ private fun ColorChoices(selected: String, onSelect: (String) -> Unit) {
                             Modifier
                         }
                     )
-                    .clickable { onSelect(color.key) }
+                    .clickable(enabled = enabled) { onSelect(color.key) }
                     .testTag("settings_color_${color.key}")
                     .semantics { contentDescription = name },
                 contentAlignment = Alignment.Center,
