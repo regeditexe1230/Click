@@ -521,8 +521,8 @@ private fun ColorChoices(selected: String, enabled: Boolean, onSelect: (String) 
     }
 }
 
-/** 二级面板左右缩进：让它一眼看出属于上面那个预设 */
-private val Level2Indent = 12.dp
+/** 二级面板的上下内边距：面板与一级同底色，这一版是空的，靠留白 + 预设之间的分割线体现层级 */
+private val Level2Padding = 16.dp
 
 /**
  * 应用背景的预设列表。
@@ -544,8 +544,10 @@ private fun BackgroundPresets(
     val context = LocalContext.current
     FlatOptions(shape = RowBottomShape, horizontalPadding = 12.dp) {
         InnerDivider(topMargin = 8, bottomMargin = 4)
-        presets.forEach { preset ->
+        presets.forEachIndexed { index, preset ->
             val expanded = preset.id in expandedIds
+            // 预设之间用分割线隔开（展开面板时，这条线就落在这个预设的面板与下一个预设之间）
+            if (index > 0) InnerDivider()
             PresetRow(
                 id = preset.id,
                 name = BackgroundStore.displayName(context, preset.seq),
@@ -560,14 +562,11 @@ private fun BackgroundPresets(
                 enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                 exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
             ) {
-                // 二级面板：这一版刻意留空（只有内边距），背景设置做好后往这里填
+                // 二级面板：与一级同底色（不铺自己的背景），这一版刻意留空，背景设置做好后往这里填
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Level2Indent)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(vertical = 14.dp)
+                        .padding(vertical = Level2Padding)
                         .testTag("settings_bg_panel_${preset.id}"),
                 )
             }
