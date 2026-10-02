@@ -124,39 +124,16 @@ fun MainScaffold(
     // 设置页（Fragment 宿主）常驻，用 View 的显隐 + 自身滑动/淡入淡出与旧版三视图显隐等价
     val settingsSlide = remember { Animatable(if (selectedTab == MainTab.SETTINGS) 0f else 1f) }
     val settingsAlpha = remember { Animatable(if (selectedTab == MainTab.SETTINGS) 1f else 0f) }
-    // 首页/程序页也常驻，各自一条位移/透明度动画，参数与旧实现一致：
-    // 位移 360ms fast_out_slow_in（±10% 宽度），淡入 162ms（延迟 126ms）、淡出 126ms linear
-    val pageSlide = listOf(MainTab.HOME, MainTab.PROGRAM).associateWith {
-        remember { Animatable(if (it == selectedTab) 0f else 1f) }
-    }
-    val pageAlpha = listOf(MainTab.HOME, MainTab.PROGRAM).associateWith {
-        remember { Animatable(if (it == selectedTab) 1f else 0f) }
-    }
-    var previousTab by remember { mutableStateOf(selectedTab) }
     LaunchedEffect(selectedTab) {
-        val forward = selectedTab.ordinal > previousTab.ordinal
-        previousTab = selectedTab
         if (selectedTab == MainTab.SETTINGS) {
             settingsSlide.snapTo(1f)
             settingsAlpha.snapTo(0f)
             launch { settingsSlide.animateTo(0f, tween(360, easing = FastOutSlowInEasing)) }
-            launch { delay(126); settingsAlpha.animateTo(1f, tween(162, easing = LinearEasing)) }
+            delay(126)
+            settingsAlpha.animateTo(1f, tween(162, easing = LinearEasing))
         } else {
             launch { settingsSlide.animateTo(1f, tween(360, easing = FastOutSlowInEasing)) }
-            launch { settingsAlpha.animateTo(0f, tween(126, easing = LinearEasing)) }
-        }
-        listOf(MainTab.HOME, MainTab.PROGRAM).forEach { tab ->
-            val slide = pageSlide.getValue(tab)
-            val alpha = pageAlpha.getValue(tab)
-            if (tab == selectedTab) {
-                slide.snapTo(if (forward) 1f else -1f)
-                alpha.snapTo(0f)
-                launch { slide.animateTo(0f, tween(360, easing = FastOutSlowInEasing)) }
-                launch { delay(126); alpha.animateTo(1f, tween(162, easing = LinearEasing)) }
-            } else {
-                launch { slide.animateTo(if (forward) -1f else 1f, tween(360, easing = FastOutSlowInEasing)) }
-                launch { alpha.animateTo(0f, tween(126, easing = LinearEasing)) }
-            }
+            settingsAlpha.animateTo(0f, tween(126, easing = LinearEasing))
         }
     }
 
@@ -182,24 +159,27 @@ fun MainScaffold(
                     .settingsSlideOffset(settingsSlide.value)
                     .alpha(settingsAlpha.value),
             )
-            // 首页/程序页常驻（旧实现同样是三个 View 常驻、只切显隐），切页只做位移+透明度动画。
-            // 原来是 AnimatedContent：它会把离开的页面销毁、返回时整页重新组合，实测那一下
-            // UI 线程要 25~60ms（120Hz 下是 8.3ms 预算的好几倍），就是切页卡顿的来源。
-            MainTab.entries.forEach { tab ->
-                val slide = pageSlide[tab] ?: return@forEach   // 设置页走上面的宿主
-                val alpha = pageAlpha.getValue(tab)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pageSlideOffset(slide.value)
-                        .alpha(alpha.value),
-                ) {
-                    when (tab) {
-                        MainTab.HOME -> Box(Modifier.fillMaxSize().background(surface)) { homeContent() }
-                        MainTab.PROGRAM -> Box(Modifier.fillMaxSize().background(surface)) { programContent() }
-                        // 设置页由常驻的 Fragment 宿主呈现（上面那个 SettingsHost）
-                        MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
-                    }
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    val forward = targetState.ordinal > initialState.ordinal
+                    val enter = slideInHorizontally(
+                        animationSpec = tween(360, easing = FastOutSlowInEasing),
+                    ) { width -> if (forward) width / 10 else -width / 10 } +
+                            fadeIn(animationSpec = tween(162, delayMillis = 126, easing = LinearEasing))
+                    val exit = slideOutHorizontally(
+                        animationSpec = tween(360, easing = FastOutSlowInEasing),
+                    ) { width -> if (forward) -width / 10 else width / 10 } +
+                            fadeOut(animationSpec = tween(126, easing = LinearEasing))
+                    enter togetherWith exit
+                },
+                label = "pageTransition",
+            ) { tab ->
+                when (tab) {
+                    MainTab.HOME -> Box(Modifier.fillMaxSize().background(surface)) { homeContent() }
+                    MainTab.PROGRAM -> Box(Modifier.fillMaxSize().background(surface)) { programContent() }
+                    // 设置页由常驻的 Fragment 宿主呈现（避免重复创建 Fragment）
+                    MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
                 }
             }
         }
@@ -254,13 +234,6 @@ private fun SettingsHost(visible: Boolean, modifier: Modifier = Modifier) {
 }
 
 private fun Modifier.settingsSlideOffset(progress: Float): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val offset = (progress * placeable.width / 10f).toInt()
-    layout(placeable.width, placeable.height) { placeable.place(offset, 0) }
-}
-
-/** 首页/程序页的切页位移：progress 0=就位，+1=右移 1/10 宽，-1=左移 1/10 宽（与旧版一致） */
-private fun Modifier.pageSlideOffset(progress: Float): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
     val offset = (progress * placeable.width / 10f).toInt()
     layout(placeable.width, placeable.height) { placeable.place(offset, 0) }
