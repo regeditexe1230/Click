@@ -41,6 +41,10 @@ class SettingsFragment : Fragment() {
     private var colorSchemeExpanded by mutableStateOf(false)
     private var colorExpanded by mutableStateOf(false)
     private var backgroundExpanded by mutableStateOf(false)
+    // 应用背景的预设列表（这一版预设只是个名字，见 BackgroundStore）
+    private var presets by mutableStateOf<List<BackgroundStore.Preset>>(emptyList())
+    private var selectedPresetId by mutableStateOf<String?>(null)
+    private var expandedPresetIds by mutableStateOf<Set<String>>(emptySet())
 
     private val fontPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -90,6 +94,13 @@ class SettingsFragment : Fragment() {
                             AppTheme.applyDynamicColor(requireActivity(), checked, rowAnimMs)
                         },
                         onColorSelected = { key -> AppTheme.applyColor(requireActivity(), key) },
+                        presets = presets,
+                        selectedPresetId = selectedPresetId,
+                        expandedPresetIds = expandedPresetIds,
+                        onAddPreset = { addPreset() },
+                        onPresetSelect = { id -> selectPreset(id) },
+                        onPresetToggleExpand = { id -> togglePresetExpanded(id) },
+                        onPresetDelete = { id -> confirmDeletePreset(id) },
                     )
                 }
             }
@@ -103,6 +114,12 @@ class SettingsFragment : Fragment() {
         colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
         colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
+        // 二级面板的展开状态同样跟着 bundle 走：收起一级再展开时不会丢
+        expandedPresetIds = savedInstanceState?.getStringArrayList("expanded_presets")?.toSet() ?: emptySet()
+
+        val background = BackgroundStore.load(requireContext())
+        presets = background.presets
+        selectedPresetId = background.selectedId
 
         theme = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             .getString("app_theme", "follow_system") ?: "follow_system"
@@ -152,6 +169,60 @@ class SettingsFragment : Fragment() {
         outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
         outState.putBoolean("color_expanded", colorExpanded)
         outState.putBoolean("background_expanded", backgroundExpanded)
+        outState.putStringArrayList("expanded_presets", ArrayList(expandedPresetIds))
+    }
+
+    // ==================== 应用背景预设 ====================
+
+    private fun addPreset() {
+        presets = presets + BackgroundStore.newPreset(presets)
+        persistPresets()
+    }
+
+    /**
+     * 选中/取消选中一个预设。
+     * 再点一次已经选中的圆圈就取消（回到「默认」）—— 列表里没有「默认」这一项，
+     * 不给这条退路的话就只能靠删预设才能回到默认状态。
+     */
+    private fun selectPreset(id: String) {
+        selectedPresetId = if (selectedPresetId == id) null else id
+        persistPresets()
+    }
+
+    /** 展开/收起某个预设的二级面板（多个可以同时展开） */
+    private fun togglePresetExpanded(id: String) {
+        expandedPresetIds =
+            if (id in expandedPresetIds) expandedPresetIds - id else expandedPresetIds + id
+    }
+
+    private fun confirmDeletePreset(id: String) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
+            .setTitle(R.string.delete_preset)
+            .setMessage(getString(
+                R.string.delete_preset_confirm,
+                BackgroundStore.displayName(requireContext(), preset.seq),
+            ))
+            .setPositiveButton(R.string.delete) { _, _ -> deletePreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deletePreset(id: String) {
+        presets = presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那个 → 回到「默认」
+        if (selectedPresetId == id) selectedPresetId = null
+        expandedPresetIds = expandedPresetIds - id
+        persistPresets()
+    }
+
+    private fun persistPresets() {
+        BackgroundStore.save(
+            requireContext(),
+            BackgroundStore.Snapshot(presets = presets, selectedId = selectedPresetId),
+        )
     }
 
     // ==================== 语言 ====================

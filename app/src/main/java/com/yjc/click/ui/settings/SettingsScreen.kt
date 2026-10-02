@@ -1,6 +1,8 @@
 package com.yjc.click.ui.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -43,8 +45,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -54,6 +58,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yjc.click.BackgroundStore
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
@@ -82,6 +87,9 @@ fun SettingsScreen(
     backgroundExpanded: Boolean,
     dynamicColorChecked: Boolean,
     colorKey: String,
+    presets: List<BackgroundStore.Preset>,
+    selectedPresetId: String?,
+    expandedPresetIds: Set<String>,
     onLanguageClick: () -> Unit,
     onFontClick: () -> Unit,
     onThemeSelected: (String, Offset) -> Unit,
@@ -90,7 +98,12 @@ fun SettingsScreen(
     onBackgroundHeaderClick: () -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
     onColorSelected: (String) -> Unit,
+    onAddPreset: () -> Unit,
+    onPresetSelect: (String) -> Unit,
+    onPresetToggleExpand: (String) -> Unit,
+    onPresetDelete: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -184,7 +197,10 @@ fun SettingsScreen(
                     iconRes = R.drawable.ic_background,
                     titleRes = R.string.app_background,
                     descRes = R.string.app_background_desc,
-                    value = stringResource(R.string.default_value),
+                    // 没选中任何预设时是「默认」，否则显示当前选中的那一个
+                    value = presets.firstOrNull { it.id == selectedPresetId }
+                        ?.let { BackgroundStore.displayName(context, it.seq) }
+                        ?: stringResource(R.string.default_value),
                     shape = if (backgroundExpanded) RowMiddleShape else RowBottomShape,
                     testTag = "settings_background_header",
                     onClick = onBackgroundHeaderClick,
@@ -194,7 +210,15 @@ fun SettingsScreen(
                     enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                     exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
                 ) {
-                    FlatOptions(shape = RowBottomShape, horizontalPadding = 12.dp) { }
+                    BackgroundPresets(
+                        presets = presets,
+                        selectedId = selectedPresetId,
+                        expandedIds = expandedPresetIds,
+                        onSelect = onPresetSelect,
+                        onToggle = onPresetToggleExpand,
+                        onDelete = onPresetDelete,
+                        onAdd = onAddPreset,
+                    )
                 }
             }
         }
@@ -494,5 +518,148 @@ private fun ColorChoices(selected: String, enabled: Boolean, onSelect: (String) 
             }
             if (color != ClickColor.entries.last()) Spacer(modifier = Modifier.width(12.dp))
         }
+    }
+}
+
+/** 二级面板左右缩进：让它一眼看出属于上面那个预设 */
+private val Level2Indent = 12.dp
+
+/**
+ * 应用背景的预设列表。
+ *
+ * 每行 = 选中圆圈 + 名字 + 展开箭头 + 删除图标；点名字/箭头会在该行**下面**再展开一块面板
+ * （这一版是空的，真正的背景图片/颜色以后往里填），多个预设可以同时展开。
+ * 最下面是「添加预设」，样式与字体弹窗里的「添加字体」一致（主色加号 + 主色文字）。
+ */
+@Composable
+private fun BackgroundPresets(
+    presets: List<BackgroundStore.Preset>,
+    selectedId: String?,
+    expandedIds: Set<String>,
+    onSelect: (String) -> Unit,
+    onToggle: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onAdd: () -> Unit,
+) {
+    val context = LocalContext.current
+    FlatOptions(shape = RowBottomShape, horizontalPadding = 12.dp) {
+        InnerDivider(topMargin = 8, bottomMargin = 4)
+        presets.forEach { preset ->
+            val expanded = preset.id in expandedIds
+            PresetRow(
+                id = preset.id,
+                name = BackgroundStore.displayName(context, preset.seq),
+                selected = preset.id == selectedId,
+                expanded = expanded,
+                onSelect = { onSelect(preset.id) },
+                onToggle = { onToggle(preset.id) },
+                onDelete = { onDelete(preset.id) },
+            )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
+                exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
+            ) {
+                // 二级面板：这一版刻意留空（只有内边距），背景设置做好后往这里填
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Level2Indent)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(vertical = 14.dp)
+                        .testTag("settings_bg_panel_${preset.id}"),
+                )
+            }
+        }
+        AddPresetRow(onAdd)
+    }
+}
+
+@Composable
+private fun PresetRow(
+    id: String,
+    name: String,
+    selected: Boolean,
+    expanded: Boolean,
+    onSelect: () -> Unit,
+    onToggle: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(200, easing = LinearEasing),
+        label = "presetArrow",
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            modifier = Modifier.testTag("settings_bg_radio_$id"),
+        )
+        ClickText(
+            text = name,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onToggle)
+                .padding(vertical = 12.dp)
+                .testTag("settings_bg_name_$id"),
+        )
+        RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
+        RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
+    }
+}
+
+/** 行尾图标按钮：40dp 可点区域，图标 24dp、颜色 onSurfaceVariant */
+@Composable
+private fun RowIcon(iconRes: Int, tag: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            modifier = modifier.size(24.dp),
+        )
+    }
+}
+
+/** 「添加预设」：与字体弹窗里的「添加字体」同款（主色加号 + 主色文字 + 12dp 间距） */
+@Composable
+private fun AddPresetRow(onAdd: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onAdd)
+            .testTag("settings_bg_add"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_add),
+            contentDescription = null,
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.primary),
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        ClickText(
+            text = stringResource(R.string.add_preset),
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }

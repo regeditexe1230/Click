@@ -95,6 +95,11 @@
     <string name="app_background_desc">アプリの背景をカスタマイズ</string>
     <string name="default_value">デフォルト</string>
 
+    <string name="add_preset">プリセットを追加</string>
+    <string name="preset_name">プリセット%1$s</string>
+    <string name="delete_preset">プリセットを削除</string>
+    <string name="delete_preset_confirm">「%s」を削除しますか？</string>
+
     <string name="nav_home">ホーム</string>
     <string name="nav_program">プログラム</string>
     <string name="nav_settings">設定</string>

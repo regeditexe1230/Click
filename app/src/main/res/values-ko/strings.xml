@@ -95,6 +95,11 @@
     <string name="app_background_desc">앱 배경 사용자 지정</string>
     <string name="default_value">기본값</string>
 
+    <string name="add_preset">프리셋 추가</string>
+    <string name="preset_name">프리셋 %1$s</string>
+    <string name="delete_preset">프리셋 삭제</string>
+    <string name="delete_preset_confirm">\"%s\"을(를) 삭제할까요?</string>
+
     <string name="nav_home">홈</string>
     <string name="nav_program">프로그램</string>
     <string name="nav_settings">설정</string>
