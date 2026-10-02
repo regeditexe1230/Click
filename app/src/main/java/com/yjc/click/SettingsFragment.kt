@@ -53,6 +53,22 @@ class SettingsFragment : Fragment() {
         handleFontSelected(uri)
     }
 
+    /** 正在给哪个预设选图片（选择器回来后要用） */
+    private var pendingImagePresetId: String? = null
+
+    /**
+     * 背景图选择：和添加字体一样走 OpenDocument + MIME 过滤，只列图片，
+     * 非图片文件在选择器里就是灰的、点不了。
+     */
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        val presetId = pendingImagePresetId
+        pendingImagePresetId = null
+        if (uri == null || presetId == null) return@registerForActivityResult
+        handleImageSelected(presetId, uri)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -101,6 +117,14 @@ class SettingsFragment : Fragment() {
                         onPresetSelect = { id -> selectPreset(id) },
                         onPresetToggleExpand = { id -> togglePresetExpanded(id) },
                         onPresetDelete = { id -> confirmDeletePreset(id) },
+                        onPresetAddImage = { id ->
+                            pendingImagePresetId = id
+                            imagePickerLauncher.launch(arrayOf("image/*"))
+                        },
+                        onPresetRemoveImage = { id -> removePresetImage(id) },
+                        onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
+                        onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
+                        onPresetParamsCommit = { persistPresets() },
                     )
                 }
             }
@@ -120,6 +144,7 @@ class SettingsFragment : Fragment() {
         val background = BackgroundStore.load(requireContext())
         presets = background.presets
         selectedPresetId = background.selectedId
+        AppBackground.refresh(requireContext())
 
         theme = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             .getString("app_theme", "follow_system") ?: "follow_system"
@@ -211,6 +236,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun deletePreset(id: String) {
+        presets.firstOrNull { it.id == id }?.imagePath?.let { File(it).delete() }
         presets = presets.filterNot { it.id == id }
         // 删掉的正好是选中的那个 → 回到「默认」
         if (selectedPresetId == id) selectedPresetId = null
@@ -218,11 +244,104 @@ class SettingsFragment : Fragment() {
         persistPresets()
     }
 
+    // ==================== 背景图片 ====================
+
+    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
+    private fun handleImageSelected(presetId: String, uri: Uri) {
+        val ctx = requireContext()
+        val progress = android.widget.ProgressBar(ctx).apply {
+            isIndeterminate = true
+            val dp48 = (48 * resources.displayMetrics.density).toInt()
+            setPadding(dp48, dp48, dp48, dp48)
+        }
+        val loading = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(R.string.font_checking)
+            .setView(progress)
+            .setCancelable(false)
+            .create()
+        loading.show()
+
+        Thread {
+            val name = getFileNameFromUri(uri) ?: "background"
+            val ext = name.substringAfterLast('.', "").lowercase().ifEmpty { "img" }
+            val temp = File(ctx.cacheDir, "temp_background.$ext")
+            val copied = try {
+                ctx.contentResolver.openInputStream(uri)?.use { input ->
+                    temp.outputStream().use { output -> input.copyTo(output) }
+                }
+                true
+            } catch (e: Exception) {
+                false
+            }
+
+            // 不是图片（比如 svg/pdf 这类 image/* 但解不开的）直接拒绝
+            val valid = copied && ImageLoader.isDecodableImage(temp.absolutePath)
+            var saved: File? = null
+            if (valid) {
+                val safe = name.substringBeforeLast('.').replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fff]"), "_")
+                saved = File(
+                    BackgroundStore.backgroundsDir(ctx),
+                    "${safe.take(24).ifEmpty { "bg" }}_${System.currentTimeMillis()}.$ext",
+                )
+                temp.copyTo(saved, overwrite = true)
+            }
+            temp.delete()
+
+            activity?.runOnUiThread {
+                loading.dismiss()
+                if (saved == null) {
+                    showImageError(R.string.image_read_error)
+                    return@runOnUiThread
+                }
+                val preset = presets.firstOrNull { it.id == presetId }
+                if (preset == null) {
+                    saved.delete()
+                    return@runOnUiThread
+                }
+                File(preset.imagePath ?: "").takeIf { it.exists() }?.delete()
+                presets = BackgroundStore.withPreset(
+                    presets,
+                    preset.copy(imagePath = saved.absolutePath),
+                )
+                persistPresets()   // 内部会刷新 AppBackground，背景立刻变
+            }
+        }.start()
+    }
+
+    /** 删掉这个预设的图片（右上角 ×）：文件删掉、面板回到「添加图片」 */
+    private fun removePresetImage(id: String) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        preset.imagePath?.let { File(it).delete() }
+        presets = BackgroundStore.withPreset(presets, preset.copy(imagePath = null))
+        persistPresets()
+    }
+
+    /** 滑块/输入框改透明度：先改内存里的预设并刷新背景（拖动时实时看到效果），提交时再落盘 */
+    private fun setPresetAlpha(id: String, value: Int, scrim: Boolean) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        val clamped = value.coerceIn(0, 100)
+        val updated = if (scrim) preset.copy(scrimAlpha = clamped) else preset.copy(imageAlpha = clamped)
+        presets = BackgroundStore.withPreset(presets, updated)
+        AppBackground.refresh(requireContext())
+    }
+
+    private fun showImageError(messageRes: Int) {
+        val d = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
+            .setTitle(R.string.error)
+            .setMessage(messageRes)
+            .setPositiveButton(R.string.ok, null)
+            .create()
+        d.show()
+        FontManager.applyFontToDialog(d)
+    }
+
     private fun persistPresets() {
         BackgroundStore.save(
             requireContext(),
             BackgroundStore.Snapshot(presets = presets, selectedId = selectedPresetId),
         )
+        // 选中项 / 图片 / 透明度任何一处变了，外壳的背景都要跟着更新
+        AppBackground.refresh(requireContext())
     }
 
     // ==================== 语言 ====================
