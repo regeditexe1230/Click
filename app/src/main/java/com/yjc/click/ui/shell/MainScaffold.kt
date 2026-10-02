@@ -131,15 +131,28 @@ fun MainScaffold(
     var previousTab by remember { mutableStateOf(selectedTab) }
     // 只有访问过的页面才组合：冷启动不会把没去过的页面白组合一遍
     var visitedTabs by remember { mutableStateOf(setOf(selectedTab)) }
+    // 首次组合时各动画初值就已经是终态，这个 effect 却照样会跑一遍 —— 会把首页先挪到
+    // -10% 再淡入回来，冷启动就能看见一次横移淡入。跳过这一次。
+    var pageAnimationPlayed by remember { mutableStateOf(false) }
     val imeController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     LaunchedEffect(selectedTab) {
         if (selectedTab !in visitedTabs) visitedTabs = visitedTabs + selectedTab
+        val from = previousTab
+        previousTab = selectedTab
+        if (!pageAnimationPlayed) {
+            pageAnimationPlayed = true
+            // 直接摆到终态：当前页可见、其余页在屏幕外，不播动画
+            pageSlide.forEach { (tab, slide) -> slide.snapTo(if (tab == selectedTab) 0f else 1f) }
+            pageAlpha.forEach { (tab, alpha) -> alpha.snapTo(if (tab == selectedTab) 1f else 0f) }
+            settingsSlide.snapTo(if (selectedTab == MainTab.SETTINGS) 0f else 1f)
+            settingsAlpha.snapTo(if (selectedTab == MainTab.SETTINGS) 1f else 0f)
+            return@LaunchedEffect
+        }
         // 原来页面被销毁时输入框会失焦、键盘收起；常驻之后要手动收，行为保持一致
         imeController?.hide()
         focusManager.clearFocus(force = true)
-        val forward = selectedTab.ordinal > previousTab.ordinal
-        previousTab = selectedTab
+        val forward = selectedTab.ordinal > from.ordinal
         if (selectedTab == MainTab.SETTINGS) {
             settingsSlide.snapTo(1f)
             settingsAlpha.snapTo(0f)
