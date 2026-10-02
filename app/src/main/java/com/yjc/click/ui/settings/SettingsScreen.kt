@@ -31,17 +31,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.draw.clip
@@ -55,10 +60,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.BackgroundStore
+import com.yjc.click.ImageLoader
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
@@ -66,6 +74,8 @@ import com.yjc.click.ui.theme.PlatformEasing
 import com.yjc.click.ui.theme.LocalSectionBackground
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import java.io.File
+import kotlin.math.roundToInt
 
 private val ContainerShape = RoundedCornerShape(14.dp)
 private val RowTopShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
@@ -102,12 +112,18 @@ fun SettingsScreen(
     onPresetSelect: (String) -> Unit,
     onPresetToggleExpand: (String) -> Unit,
     onPresetDelete: (String) -> Unit,
+    onPresetAddImage: (String) -> Unit,
+    onPresetRemoveImage: (String) -> Unit,
+    onPresetImageAlpha: (String, Int) -> Unit,
+    onPresetScrimAlpha: (String, Int) -> Unit,
+    onPresetParamsCommit: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            // 不画自己的底色：应用背景图要能从页面后面透出来（没设背景图时，
+            // 下层的外壳底色与这里的 background 同色，视觉完全一致）
             // 把 Compose 的 testTag 暴露成 accessibility 的 resource-id，
             // 这样基于 uiautomator 的回归截图脚本（按 id 定位控件）无需改动即可继续工作
             .semantics { testTagsAsResourceId = true }
@@ -218,6 +234,11 @@ fun SettingsScreen(
                         onToggle = onPresetToggleExpand,
                         onDelete = onPresetDelete,
                         onAdd = onAddPreset,
+                        onAddImage = onPresetAddImage,
+                        onRemoveImage = onPresetRemoveImage,
+                        onImageAlpha = onPresetImageAlpha,
+                        onScrimAlpha = onPresetScrimAlpha,
+                        onParamsCommit = onPresetParamsCommit,
                     )
                 }
             }
@@ -521,15 +542,18 @@ private fun ColorChoices(selected: String, enabled: Boolean, onSelect: (String) 
     }
 }
 
-/** 二级面板的上下内边距：面板与一级同底色，这一版是空的，靠留白 + 预设之间的分割线体现层级 */
+/** 二级面板的上下内边距：面板与一级同底色，靠留白 + 预设之间的分割线体现层级 */
 private val Level2Padding = 16.dp
+
+/** 缩略图高度 */
+private val ImageThumbHeight = 140.dp
 
 /**
  * 应用背景的预设列表。
  *
- * 每行 = 选中圆圈 + 名字 + 展开箭头 + 删除图标；点名字/箭头会在该行**下面**再展开一块面板
- * （这一版是空的，真正的背景图片/颜色以后往里填），多个预设可以同时展开。
- * 最下面是「添加预设」，样式与字体弹窗里的「添加字体」一致（主色加号 + 主色文字）。
+ * 每行 = 选中圆圈 + 名字 + 展开箭头 + 删除图标；点名字/箭头会在该行**下面**再展开它的面板：
+ * 还没图时是「添加图片」，有图时是缩略图（右上角 × 删除）+ 文件名 + 两个透明度滑块。
+ * 多个预设可以同时展开。最下面是「添加预设」，样式与字体弹窗里的「添加字体」一致。
  */
 @Composable
 private fun BackgroundPresets(
@@ -540,6 +564,11 @@ private fun BackgroundPresets(
     onToggle: (String) -> Unit,
     onDelete: (String) -> Unit,
     onAdd: () -> Unit,
+    onAddImage: (String) -> Unit,
+    onRemoveImage: (String) -> Unit,
+    onImageAlpha: (String, Int) -> Unit,
+    onScrimAlpha: (String, Int) -> Unit,
+    onParamsCommit: () -> Unit,
 ) {
     val context = LocalContext.current
     FlatOptions(shape = RowBottomShape, horizontalPadding = 12.dp) {
@@ -562,16 +591,173 @@ private fun BackgroundPresets(
                 enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                 exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
             ) {
-                // 二级面板：与一级同底色（不铺自己的背景），这一版刻意留空，背景设置做好后往这里填
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Level2Padding)
-                        .testTag("settings_bg_panel_${preset.id}"),
+                PresetPanel(
+                    preset = preset,
+                    onAddImage = { onAddImage(preset.id) },
+                    onRemoveImage = { onRemoveImage(preset.id) },
+                    onImageAlpha = { value -> onImageAlpha(preset.id, value) },
+                    onScrimAlpha = { value -> onScrimAlpha(preset.id, value) },
+                    onCommit = onParamsCommit,
                 )
             }
         }
-        AddPresetRow(onAdd)
+        AddActionRow(
+            labelRes = R.string.add_preset,
+            tag = "settings_bg_add",
+            onClick = onAdd,
+        )
+    }
+}
+
+/** 预设的二级面板：与一级同底色（不铺自己的背景） */
+@Composable
+private fun PresetPanel(
+    preset: BackgroundStore.Preset,
+    onAddImage: () -> Unit,
+    onRemoveImage: () -> Unit,
+    onImageAlpha: (Int) -> Unit,
+    onScrimAlpha: (Int) -> Unit,
+    onCommit: () -> Unit,
+) {
+    val path = preset.imagePath
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Level2Padding)
+            .testTag("settings_bg_panel_${preset.id}"),
+    ) {
+        if (path == null) {
+            // 还没有图片：就一个「添加图片」，样式同「添加预设」
+            AddActionRow(
+                labelRes = R.string.add_image,
+                tag = "settings_bg_add_image_${preset.id}",
+                onClick = onAddImage,
+            )
+            return@Column
+        }
+
+        val thumbnail = remember(path) { ImageLoader.load(path, 720, 720) }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (thumbnail != null) {
+                Image(
+                    bitmap = thumbnail,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ImageThumbHeight)
+                        .clip(RoundedCornerShape(10.dp)),
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ImageThumbHeight)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                )
+            }
+            // 右上角的小×：删掉图片，按钮重新出现，可以再选一张
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable(onClick = onRemoveImage)
+                    .testTag("settings_bg_image_remove_${preset.id}"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_close),
+                    contentDescription = stringResource(R.string.remove_image),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+
+        Text(
+            text = File(path).name,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .testTag("settings_bg_image_name_${preset.id}"),
+        )
+
+        AlphaSliderRow(
+            labelRes = R.string.image_alpha,
+            value = preset.imageAlpha,
+            onValueChange = onImageAlpha,
+            onCommit = onCommit,
+            tag = "settings_bg_image_alpha_${preset.id}",
+        )
+        AlphaSliderRow(
+            labelRes = R.string.image_scrim,
+            value = preset.scrimAlpha,
+            onValueChange = onScrimAlpha,
+            onCommit = onCommit,
+            tag = "settings_bg_scrim_alpha_${preset.id}",
+        )
+    }
+}
+
+/** 一行透明度调节：标签 + 滑块（0–100）+ 输入框 + % */
+@Composable
+private fun AlphaSliderRow(
+    labelRes: Int,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    onCommit: () -> Unit,
+    tag: String,
+) {
+    // 输入框自己存一份文本：拖滑块时跟着刷新；手输时只留数字并回写到同一个值
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ClickText(
+            text = stringResource(labelRes),
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.width(86.dp),
+        )
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.roundToInt()) },
+            onValueChangeFinished = onCommit,
+            valueRange = 0f..100f,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp)
+                .testTag(tag),
+        )
+        OutlinedTextField(
+            value = text,
+            onValueChange = { input ->
+                val digits = input.filter { it.isDigit() }.take(3)
+                text = digits
+                digits.toIntOrNull()?.let {
+                    onValueChange(it.coerceIn(0, 100))
+                    onCommit()
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.width(74.dp).testTag(tag + "_input"),
+        )
+        ClickText(
+            text = "%",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp),
+        )
     }
 }
 
@@ -636,16 +822,16 @@ private fun RowIcon(iconRes: Int, tag: String, modifier: Modifier = Modifier, on
     }
 }
 
-/** 「添加预设」：与字体弹窗里的「添加字体」同款（主色加号 + 主色文字 + 12dp 间距） */
+/** 「添加预设」/「添加图片」：与字体弹窗里的「添加字体」同款（主色加号 + 主色文字 + 12dp 间距） */
 @Composable
-private fun AddPresetRow(onAdd: () -> Unit) {
+private fun AddActionRow(labelRes: Int, tag: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onAdd)
-            .testTag("settings_bg_add"),
+            .clickable(onClick = onClick)
+            .testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
@@ -656,7 +842,7 @@ private fun AddPresetRow(onAdd: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(12.dp))
         ClickText(
-            text = stringResource(R.string.add_preset),
+            text = stringResource(labelRes),
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.primary,
         )

@@ -3,6 +3,7 @@ package com.yjc.click
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.util.UUID
 
 /**
@@ -20,7 +21,22 @@ object BackgroundStore {
     private const val KEY_PRESETS = "presets"
     private const val KEY_SELECTED = "selected_preset"
 
-    data class Preset(val id: String, val seq: Int)
+    /**
+     * 一个预设。目前只携带一张背景图 + 两个透明度：
+     * [imageAlpha] 图片本身的不透明度（0 = 图看不见，100 = 原图），
+     * [scrimAlpha] 叠在图上的黑色遮罩不透明度（压暗亮图用）。
+     * 默认 80 相当于"背景色盖 20%"，即图片略微变淡、文字看得清。
+     */
+    data class Preset(
+        val id: String,
+        val seq: Int,
+        val imagePath: String? = null,
+        val imageAlpha: Int = DEFAULT_IMAGE_ALPHA,
+        val scrimAlpha: Int = DEFAULT_SCRIM_ALPHA,
+    )
+
+    const val DEFAULT_IMAGE_ALPHA = 80
+    const val DEFAULT_SCRIM_ALPHA = 0
 
     data class Snapshot(
         val presets: List<Preset> = emptyList(),
@@ -39,7 +55,17 @@ object BackgroundStore {
             val obj = arr.optJSONObject(i) ?: continue
             val id = obj.optString("id")
             if (id.isEmpty()) continue
-            presets.add(Preset(id, obj.optInt("seq", presets.size + 1)))
+            // 图片文件被清掉/删掉时按"没有图"处理，免得面板里挂着一个打不开的路径
+            val path = obj.optString("image_path").takeIf { it.isNotEmpty() && File(it).exists() }
+            presets.add(
+                Preset(
+                    id = id,
+                    seq = obj.optInt("seq", presets.size + 1),
+                    imagePath = path,
+                    imageAlpha = obj.optInt("image_alpha", DEFAULT_IMAGE_ALPHA).coerceIn(0, 100),
+                    scrimAlpha = obj.optInt("scrim_alpha", DEFAULT_SCRIM_ALPHA).coerceIn(0, 100),
+                ),
+            )
         }
         val selected = prefs.getString(KEY_SELECTED, "") ?: ""
         return Snapshot(
@@ -55,6 +81,9 @@ object BackgroundStore {
             arr.put(JSONObject().apply {
                 put("id", preset.id)
                 put("seq", preset.seq)
+                preset.imagePath?.let { put("image_path", it) }
+                put("image_alpha", preset.imageAlpha)
+                put("scrim_alpha", preset.scrimAlpha)
             })
         }
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -63,6 +92,10 @@ object BackgroundStore {
             .putString(KEY_SELECTED, snapshot.selectedId ?: "")
             .apply()
     }
+
+    /** 背景图存放目录（每个预设一张，文件名带时间戳避免重名） */
+    fun backgroundsDir(context: Context): File =
+        File(context.filesDir, "backgrounds").apply { if (!exists()) mkdirs() }
 
     /** 新预设：编号取最小未用值，所以删掉「预设一」再加回来还是「预设一」 */
     fun newPreset(presets: List<Preset>): Preset {
@@ -81,4 +114,8 @@ object BackgroundStore {
         val numeral = numerals.getOrNull(seq - 1) ?: seq.toString()
         return context.getString(R.string.preset_name, numeral)
     }
+
+    /** 替换列表里的某个预设（data class copy，直接换整个列表以便 Compose 察觉变化） */
+    fun withPreset(presets: List<Preset>, updated: Preset): List<Preset> =
+        presets.map { if (it.id == updated.id) updated else it }
 }

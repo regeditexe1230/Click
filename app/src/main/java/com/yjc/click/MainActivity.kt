@@ -89,6 +89,8 @@ class MainActivity : AppCompatActivity() {
         playBottomBarEntrance = savedInstanceState == null
         // 主题/深浅色状态从偏好读入（同一份逻辑服务侧也在用）
         AppTheme.loadFrom(this)
+        // 应用背景（选中预设里的图片与透明度）也在这里读一次，冷启动时外壳就能画对
+        AppBackground.refresh(this)
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。

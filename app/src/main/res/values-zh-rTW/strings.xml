@@ -99,6 +99,12 @@
     <string name="preset_name">預設%1$s</string>
     <string name="delete_preset">刪除預設</string>
     <string name="delete_preset_confirm">確定要刪除「%s」嗎？</string>
+    <string name="add_image">新增圖片</string>
+    <string name="remove_image">刪除圖片</string>
+    <string name="image_alpha">圖片透明度</string>
+    <string name="image_scrim">黑色遮罩</string>
+    <string name="image_invalid">不是有效的圖片檔</string>
+    <string name="image_read_error">無法讀取圖片檔</string>
 
     <string name="nav_home">主頁</string>
     <string name="nav_program">程式</string>
