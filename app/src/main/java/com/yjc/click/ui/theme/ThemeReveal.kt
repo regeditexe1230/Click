@@ -46,6 +46,9 @@ object AppTheme {
     /** 是否启用系统动态取色（Material You）：从壁纸派生配色 */
     var useDynamicColor by mutableStateOf(false)
 
+    /** 固定配色下选中的颜色（见 [ClickColor]），动态取色开启时不起作用 */
+    var colorKey by mutableStateOf(ClickColor.PURPLE.key)
+
     private const val DURATION_MS = 400L
 
     /**
@@ -79,28 +82,67 @@ object AppTheme {
             pendingAction = { startDynamicColorReveal(activity, enabled) }
             return
         }
-        val window = activity.window
-        val view = window?.decorView
-        if (window == null || view == null || view.width <= 0 || view.height <= 0) {
-            useDynamicColor = enabled
-            return
-        }
-        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        PixelCopy.request(window, bitmap, { result ->
-            if (result == PixelCopy.SUCCESS) {
-                val rnd = java.util.Random()
-                // 状态切换交给 onReady：等覆盖层挂上去再改，否则会先渲染一帧新配色（闪一下）
+        capture(activity) { snapshot ->
+            // 状态切换交给 onReady：等覆盖层挂上去再改，否则会先渲染一帧新配色（闪一下）
+            if (snapshot != null) {
                 RevealOverlay.play(
-                    activity,
-                    bitmap,
-                    Offset(rnd.nextInt(view.width).toFloat(), rnd.nextInt(view.height).toFloat()),
+                    activity, snapshot, revealCenter(activity, snapshot),
                     onReady = { useDynamicColor = enabled },
                     onFinished = { drainPending() },
                 )
             } else {
                 useDynamicColor = enabled
             }
+        }
+    }
+
+    /** 切换固定配色的颜色：和切配色方案完全同一种圆形揭示（含"播放中不打断"的排队） */
+    fun applyColor(activity: Activity, key: String) {
+        // 偏好先落盘：即使动画还没播完，这次选择也不会丢
+        activity.getSharedPreferences("settings", Activity.MODE_PRIVATE)
+            .edit().putString("app_color", key).apply()
+        if (RevealOverlay.isPlaying) {
+            pendingAction = { applyColor(activity, key) }
+            return
+        }
+        capture(activity) { snapshot ->
+            val changed = key != colorKey
+            colorKey = key
+            if (snapshot != null && changed) {
+                RevealOverlay.play(
+                    activity, snapshot, revealCenter(activity, snapshot),
+                    onFinished = { drainPending() },
+                )
+            } else {
+                snapshot?.recycle()
+                drainPending()
+            }
+        }
+    }
+
+    /** 抓一张当前窗口画面；失败或窗口不可用时回调 null */
+    private fun capture(activity: Activity, onCaptured: (Bitmap?) -> Unit) {
+        val window = activity.window
+        val view = window?.decorView
+        if (window == null || view == null || view.width <= 0 || view.height <= 0) {
+            onCaptured(null)
+            return
+        }
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        PixelCopy.request(window, bitmap, { result ->
+            onCaptured(if (result == PixelCopy.SUCCESS) bitmap else null)
         }, Handler(Looper.getMainLooper()))
+    }
+
+    /** 揭示圆心：屏幕上的随机一点（每次切换都随机） */
+    private fun revealCenter(activity: Activity, snapshot: Bitmap): Offset {
+        val root = activity.findViewById<ViewGroup>(android.R.id.content)
+        val rnd = java.util.Random()
+        return if (root != null && root.width > 0 && root.height > 0) {
+            Offset(rnd.nextInt(root.width).toFloat(), rnd.nextInt(root.height).toFloat())
+        } else {
+            Offset(snapshot.width / 2f, snapshot.height / 2f)
+        }
     }
 
     /** 解析主题偏好字符串 → 是否深色 */
@@ -121,6 +163,7 @@ object AppTheme {
     fun loadFrom(context: Context) {
         val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
         useDynamicColor = prefs.getBoolean("dynamic_color", false)
+        colorKey = ClickColor.fromKey(prefs.getString("app_color", ClickColor.PURPLE.key)).key
         val theme = prefs.getString("app_theme", "follow_system") ?: "follow_system"
         val systemDark = (android.content.res.Resources.getSystem().configuration.uiMode and
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
@@ -129,33 +172,24 @@ object AppTheme {
     }
 
     /**
-     * View 侧界面（各类对话框、悬浮窗）用的 context。
-     *
-     * 这些界面是 XML/View 实现，颜色来自 Theme.Click 里写死的 md_theme_* 固定色板；
-     * 开了动态取色后不能只换 Compose 那一半，否则同一个弹窗还是紫色。
-     * Material Components 的 DynamicColors 会套一层 Material You 的 theme overlay，
-     * 取的是同一组系统动态色令牌，所以和 Compose 侧的 dynamicLight/DarkColorScheme 一致。
+     * View 侧界面（各类对话框、悬浮窗）用的 context：动态取色套 Material You overlay，
+     * 自选颜色套对应的 theme overlay（见 ThemeOverlay.Click.Color.*），默认紫不套。
      */
-    fun viewContext(context: Context): Context =
-        if (useDynamicColor) {
-            com.google.android.material.color.DynamicColors.wrapContextIfAvailable(context)
-        } else {
-            context
+    fun viewContext(context: Context): Context = when {
+        useDynamicColor -> com.google.android.material.color.DynamicColors.wrapContextIfAvailable(context)
+        else -> {
+            val overlay = ClickColor.fromKey(colorKey).overlayStyle
+            if (overlay != 0) android.view.ContextThemeWrapper(context, overlay) else context
         }
-
-    /**
-     * 动态取色下 Compose 用的 primary / onPrimary（与 ClickTheme 里的 dynamicLight/DarkColorScheme
-     * 同一来源），供 View 侧（悬浮球这类非 Compose 界面）取色，保证和页面主色完全一致。
-     */
-    fun dynamicPrimaryArgb(context: Context): Int = dynamicScheme(context).primary.toArgb()
-
-    fun dynamicOnPrimaryArgb(context: Context): Int = dynamicScheme(context).onPrimary.toArgb()
-
-    private fun dynamicScheme(context: Context) = if (isDark) {
-        androidx.compose.material3.dynamicDarkColorScheme(context)
-    } else {
-        androidx.compose.material3.dynamicLightColorScheme(context)
     }
+
+    /** 当前配色的 primary / onPrimary（Compose 侧同一份 scheme），供悬浮球这类 View 取色 */
+    fun currentPrimaryArgb(context: Context): Int = currentScheme(context).primary.toArgb()
+
+    fun currentOnPrimaryArgb(context: Context): Int = currentScheme(context).onPrimary.toArgb()
+
+    private fun currentScheme(context: Context) =
+        schemeFor(context, ClickColor.fromKey(colorKey), isDark, useDynamicColor)
 
     /**
      * 应用主题偏好：先抓旧画面 → 持久化 → 让 View 侧（各类对话框）跟随 → 播放圆形揭示。

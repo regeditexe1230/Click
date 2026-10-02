@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.Density
  * Compose 侧的主题，取值与 res/values/colors.xml、res/values-night/colors.xml 一一对应，
  * 保证重构过程中配色不发生任何变化。
  */
-private val ClickLightColors = lightColorScheme(
+internal val ClickLightColors = lightColorScheme(
     primary = Color(0xFF6750A4),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFEADDFF),
@@ -38,7 +38,7 @@ private val ClickLightColors = lightColorScheme(
     outlineVariant = Color(0xFFCAC4D0),
 )
 
-private val ClickDarkColors = darkColorScheme(
+internal val ClickDarkColors = darkColorScheme(
     primary = Color(0xFFD0BCFF),
     onPrimary = Color(0xFF381E72),
     primaryContainer = Color(0xFF4F378B),
@@ -94,12 +94,10 @@ fun ClickTheme(
     integerFontAdvance: Boolean = false,
     /** 是否使用系统动态取色（Material You，Android 12+）：从壁纸派生配色 */
     dynamicColor: Boolean = false,
+    /** 固定配色下选的颜色（见 [ClickColor]）；动态取色开启时忽略 */
+    colorKey: String = ClickColor.PURPLE.key,
     content: @Composable () -> Unit,
 ) {
-    // 排版全部使用常规字重：旧实现用 Typeface.DEFAULT 覆盖了所有 TextView 的字体，
-    // 连 XML 里 textStyle="bold" 的标题实际渲染也是常规字重，这里保持一致。
-    // 字型：旧版 FontManager 会把自定义字体（或默认字体）铺到**所有** TextView 上，
-    // 包括顶栏标题、底栏标签、按钮文字，因此 M3 排版也要跟着换，否则换字体会只换一部分。
     val density = LocalDensity.current
     val typography = remember(density, integerFontAdvance, fontFamily) {
         val base = Typography()
@@ -107,10 +105,11 @@ fun ClickTheme(
             .platformFamily(fontFamily ?: PlatformDefaultFontFamily)
         if (integerFontAdvance) base.integerPixelSizes(density) else base
     }
-    val colorScheme = clickColorScheme(darkTheme, dynamicColor)
-    // 框/行的填充色：固定配色保持旧版常量；动态取色时跟随壁纸派生的 primary（同样 12.5%）
+    val color = ClickColor.fromKey(colorKey)
+    val colorScheme = clickColorScheme(darkTheme, dynamicColor, color)
+    // 框/行填充：默认紫沿用旧版常量，动态取色或自选颜色时用该配色的 primary 12.5%
     val sectionBackground =
-        if (dynamicColor) colorScheme.primary.copy(alpha = 0.125f) else SectionBackground
+        if (dynamicColor || color.seed != null) colorScheme.primary.copy(alpha = 0.125f) else SectionBackground
     CompositionLocalProvider(
         LocalClickFontFamily provides fontFamily,
         LocalIntegerFontAdvance provides integerFontAdvance,
@@ -125,21 +124,25 @@ fun ClickTheme(
 }
 
 /**
- * 选择配色方案：开启动态取色且系统支持（Android 12+）时用壁纸派生的 Material You 配色，
- * 否则退回与旧版完全一致的固定色板（values/values-night 的映射）。
+ * 选择配色：动态取色（Android 12+）用壁纸派生配色；否则默认紫=旧版固定色板，
+ * 其余颜色用 [seededScheme] 从种子色生成。
  */
 @Composable
-private fun clickColorScheme(darkTheme: Boolean, dynamicColor: Boolean): androidx.compose.material3.ColorScheme {
+private fun clickColorScheme(
+    darkTheme: Boolean,
+    dynamicColor: Boolean,
+    color: ClickColor,
+): androidx.compose.material3.ColorScheme {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val scheme = androidx.compose.runtime.remember(darkTheme, dynamicColor, context) {
-        if (dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            if (darkTheme) androidx.compose.material3.dynamicDarkColorScheme(context)
-            else androidx.compose.material3.dynamicLightColorScheme(context)
-        } else {
-            null
+    return androidx.compose.runtime.remember(darkTheme, dynamicColor, color, context) {
+        when {
+            dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S ->
+                if (darkTheme) androidx.compose.material3.dynamicDarkColorScheme(context)
+                else androidx.compose.material3.dynamicLightColorScheme(context)
+            color.seed == null -> if (darkTheme) ClickDarkColors else ClickLightColors
+            else -> seededScheme(color.seed, darkTheme)
         }
     }
-    return scheme ?: if (darkTheme) ClickDarkColors else ClickLightColors
 }
 
 private fun TextStyle.regularWeight() =

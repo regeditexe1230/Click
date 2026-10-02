@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 固定配色可选颜色的 XML 色值：由 app 里 Material 算法生成的色板导出
+     （生成脚本 build/verify/gen_theme_colors.py，值来自 seededRoles()） -->
+<resources>
+    <!-- blue -->
+    <color name="theme_blue_primary">#FF36618E</color>
+    <color name="theme_blue_onPrimary">#FFFFFFFF</color>
+    <color name="theme_blue_primaryContainer">#FFD1E4FF</color>
+    <color name="theme_blue_onPrimaryContainer">#FF001D36</color>
+    <color name="theme_blue_secondaryContainer">#FFD7E3F7</color>
+    <color name="theme_blue_onSecondaryContainer">#FF101C2B</color>
+    <color name="theme_blue_surfaceContainerHigh">#FFE6E8EE</color>
+    <color name="theme_blue_onSurface">#FF191C20</color>
+    <color name="theme_blue_onSurfaceVariant">#FF43474E</color>
+    <color name="theme_blue_outline">#FF73777F</color>
+    <color name="theme_blue_outlineVariant">#FFC3C7CF</color>
+    <!-- red -->
+    <color name="theme_red_primary">#FF904A42</color>
+    <color name="theme_red_onPrimary">#FFFFFFFF</color>
+    <color name="theme_red_primaryContainer">#FFFFDAD5</color>
+    <color name="theme_red_onPrimaryContainer">#FF3B0906</color>
+    <color name="theme_red_secondaryContainer">#FFFFDAD5</color>
+    <color name="theme_red_onSecondaryContainer">#FF2C1512</color>
+    <color name="theme_red_surfaceContainerHigh">#FFF7E4E1</color>
+    <color name="theme_red_onSurface">#FF231918</color>
+    <color name="theme_red_onSurfaceVariant">#FF534341</color>
+    <color name="theme_red_outline">#FF857370</color>
+    <color name="theme_red_outlineVariant">#FFD8C2BE</color>
+    <!-- yellow -->
+    <color name="theme_yellow_primary">#FF765A0B</color>
+    <color name="theme_yellow_onPrimary">#FFFFFFFF</color>
+    <color name="theme_yellow_primaryContainer">#FFFFDF99</color>
+    <color name="theme_yellow_onPrimaryContainer">#FF251A00</color>
+    <color name="theme_yellow_secondaryContainer">#FFF4E0BB</color>
+    <color name="theme_yellow_onSecondaryContainer">#FF241A04</color>
+    <color name="theme_yellow_surfaceContainerHigh">#FFF0E7D9</color>
+    <color name="theme_yellow_onSurface">#FF1F1B13</color>
+    <color name="theme_yellow_onSurfaceVariant">#FF4D4639</color>
+    <color name="theme_yellow_outline">#FF7E7667</color>
+    <color name="theme_yellow_outlineVariant">#FFD0C5B4</color>
+    <!-- green -->
+    <color name="theme_green_primary">#FF3B6939</color>
+    <color name="theme_green_onPrimary">#FFFFFFFF</color>
+    <color name="theme_green_primaryContainer">#FFBCF0B4</color>
+    <color name="theme_green_onPrimaryContainer">#FF002204</color>
+    <color name="theme_green_secondaryContainer">#FFD5E8CF</color>
+    <color name="theme_green_onSecondaryContainer">#FF111F0F</color>
+    <color name="theme_green_surfaceContainerHigh">#FFE6E9E0</color>
+    <color name="theme_green_onSurface">#FF191D17</color>
+    <color name="theme_green_onSurfaceVariant">#FF424940</color>
+    <color name="theme_green_outline">#FF72796F</color>
+    <color name="theme_green_outlineVariant">#FFC2C9BD</color>
+</resources>
