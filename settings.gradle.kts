@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "click"
 include(":app")
+include(":benchmark")
