@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自选颜色给 View 侧（各类弹窗）用的 theme overlay：
+     只覆盖配色相关的属性，其余继承 Theme.Click -->
+<resources>
+    <style name="ThemeOverlay.Click.Color.Blue" parent="">
+        <item name="colorPrimary">@color/theme_blue_primary</item>
+        <item name="colorOnPrimary">@color/theme_blue_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/theme_blue_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/theme_blue_onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/theme_blue_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/theme_blue_onSecondaryContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/theme_blue_surfaceContainerHigh</item>
+        <item name="colorOnSurface">@color/theme_blue_onSurface</item>
+        <item name="colorOnSurfaceVariant">@color/theme_blue_onSurfaceVariant</item>
+        <item name="colorOutline">@color/theme_blue_outline</item>
+        <item name="colorOutlineVariant">@color/theme_blue_outlineVariant</item>
+    </style>
+    <style name="ThemeOverlay.Click.Color.Red" parent="">
+        <item name="colorPrimary">@color/theme_red_primary</item>
+        <item name="colorOnPrimary">@color/theme_red_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/theme_red_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/theme_red_onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/theme_red_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/theme_red_onSecondaryContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/theme_red_surfaceContainerHigh</item>
+        <item name="colorOnSurface">@color/theme_red_onSurface</item>
+        <item name="colorOnSurfaceVariant">@color/theme_red_onSurfaceVariant</item>
+        <item name="colorOutline">@color/theme_red_outline</item>
+        <item name="colorOutlineVariant">@color/theme_red_outlineVariant</item>
+    </style>
+    <style name="ThemeOverlay.Click.Color.Yellow" parent="">
+        <item name="colorPrimary">@color/theme_yellow_primary</item>
+        <item name="colorOnPrimary">@color/theme_yellow_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/theme_yellow_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/theme_yellow_onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/theme_yellow_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/theme_yellow_onSecondaryContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/theme_yellow_surfaceContainerHigh</item>
+        <item name="colorOnSurface">@color/theme_yellow_onSurface</item>
+        <item name="colorOnSurfaceVariant">@color/theme_yellow_onSurfaceVariant</item>
+        <item name="colorOutline">@color/theme_yellow_outline</item>
+        <item name="colorOutlineVariant">@color/theme_yellow_outlineVariant</item>
+    </style>
+    <style name="ThemeOverlay.Click.Color.Green" parent="">
+        <item name="colorPrimary">@color/theme_green_primary</item>
+        <item name="colorOnPrimary">@color/theme_green_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/theme_green_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/theme_green_onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/theme_green_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/theme_green_onSecondaryContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/theme_green_surfaceContainerHigh</item>
+        <item name="colorOnSurface">@color/theme_green_onSurface</item>
+        <item name="colorOnSurfaceVariant">@color/theme_green_onSurfaceVariant</item>
+        <item name="colorOutline">@color/theme_green_outline</item>
+        <item name="colorOutlineVariant">@color/theme_green_outlineVariant</item>
+    </style>
+</resources>

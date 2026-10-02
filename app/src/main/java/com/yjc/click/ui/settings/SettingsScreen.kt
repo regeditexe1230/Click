@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -41,16 +43,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.R
+import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
 import com.yjc.click.ui.theme.LocalSectionBackground
@@ -76,6 +81,7 @@ fun SettingsScreen(
     colorExpanded: Boolean,
     backgroundExpanded: Boolean,
     dynamicColorChecked: Boolean,
+    colorKey: String,
     onLanguageClick: () -> Unit,
     onFontClick: () -> Unit,
     onThemeSelected: (String, Offset) -> Unit,
@@ -83,6 +89,7 @@ fun SettingsScreen(
     onColorHeaderClick: () -> Unit,
     onBackgroundHeaderClick: () -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
+    onColorSelected: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -158,7 +165,9 @@ fun SettingsScreen(
                 ) {
                     ColorOptions(
                         checked = dynamicColorChecked,
+                        colorKey = colorKey,
                         onCheckedChange = onDynamicColorChange,
+                        onColorSelected = onColorSelected,
                     )
                 }
                 Gap2dp()
@@ -373,7 +382,12 @@ private fun RowScope.ThemeOption(
 }
 
 @Composable
-private fun ColorOptions(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun ColorOptions(
+    checked: Boolean,
+    colorKey: String,
+    onCheckedChange: (Boolean) -> Unit,
+    onColorSelected: (String) -> Unit,
+) {
     FlatOptions(shape = RowMiddleShape, horizontalPadding = 22.dp) {
         InnerDivider(topMargin = 8, bottomMargin = 8)
         Row(
@@ -403,6 +417,54 @@ private fun ColorOptions(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
                 )
             }
             Switch(checked = checked, onCheckedChange = onCheckedChange)
+        }
+        // 动态取色打开时这排颜色直接收起来（配色由壁纸决定）
+        AnimatedVisibility(
+            visible = !checked,
+            enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
+            exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
+        ) {
+            ColorChoices(selected = colorKey, onSelect = onColorSelected)
+        }
+    }
+}
+
+/** 一排颜色圆圈：本色圆点，选中的那个外面加一圈描边 */
+@Composable
+private fun ColorChoices(selected: String, onSelect: (String) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ClickColor.entries.forEach { color ->
+            val isSelected = color.key == selected
+            val name = stringResource(color.labelRes)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .clickable { onSelect(color.key) }
+                    .testTag("settings_color_${color.key}")
+                    .semantics { contentDescription = name },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color(color.swatch)),
+                )
+            }
+            if (color != ClickColor.entries.last()) Spacer(modifier = Modifier.width(12.dp))
         }
     }
 }
