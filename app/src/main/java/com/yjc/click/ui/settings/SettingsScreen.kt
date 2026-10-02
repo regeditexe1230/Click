@@ -601,6 +601,8 @@ private fun BackgroundPresets(
                 )
             }
         }
+        // 最后一个预设下面也来一条：把列表和「添加预设」分开（列表为空时不画，免得两条线挨在一起）
+        if (presets.isNotEmpty()) InnerDivider()
         AddActionRow(
             labelRes = R.string.add_preset,
             tag = "settings_bg_add",
@@ -627,11 +629,12 @@ private fun PresetPanel(
             .testTag("settings_bg_panel_${preset.id}"),
     ) {
         if (path == null) {
-            // 还没有图片：就一个「添加图片」，样式同「添加预设」
+            // 还没有图片：就一个「添加图片」，样式同「添加预设」，左侧再缩进 12dp
             AddActionRow(
                 labelRes = R.string.add_image,
                 tag = "settings_bg_add_image_${preset.id}",
                 onClick = onAddImage,
+                modifier = Modifier.padding(start = 12.dp),
             )
             return@Column
         }
@@ -824,9 +827,14 @@ private fun RowIcon(iconRes: Int, tag: String, modifier: Modifier = Modifier, on
 
 /** 「添加预设」/「添加图片」：与字体弹窗里的「添加字体」同款（主色加号 + 主色文字 + 12dp 间距） */
 @Composable
-private fun AddActionRow(labelRes: Int, tag: String, onClick: () -> Unit) {
+private fun AddActionRow(
+    labelRes: Int,
+    tag: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(8.dp))

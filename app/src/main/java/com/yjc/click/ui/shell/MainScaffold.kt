@@ -150,8 +150,9 @@ fun MainScaffold(
     val backgroundImage = remember(backgroundPath, screenW, screenH) {
         backgroundPath?.let { ImageLoader.load(it, screenW, screenH) }
     }
-    // 顶栏/底栏底色不透明度：有背景图时跟着黑色遮罩联动（遮罩越重，栏越不透明、字越清楚）
-    val barAlpha = if (backgroundPath == null) 1f else 0.6f + 0.4f * (AppBackground.scrimAlpha / 100f)
+    // 顶栏/底栏底色：有背景图时**完全不画**（图从状态栏一路贯到导航栏），
+    // 没背景图时保持原来的不透明底色（与旧版一致）
+    val barAlpha = if (backgroundPath == null) 1f else 0f
 
     Box(modifier = Modifier.fillMaxSize().background(surface)) {
         if (backgroundImage != null) {

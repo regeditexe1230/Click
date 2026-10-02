@@ -316,13 +316,15 @@ class SettingsFragment : Fragment() {
         persistPresets()
     }
 
-    /** 滑块/输入框改透明度：先改内存里的预设并刷新背景（拖动时实时看到效果），提交时再落盘 */
+    /** 滑块/输入框改透明度：改内存里的预设并**立刻**反映到背景上（拖动过程中就要看到变化），提交时再落盘 */
     private fun setPresetAlpha(id: String, value: Int, scrim: Boolean) {
         val preset = presets.firstOrNull { it.id == id } ?: return
         val clamped = value.coerceIn(0, 100)
         val updated = if (scrim) preset.copy(scrimAlpha = clamped) else preset.copy(imageAlpha = clamped)
         presets = BackgroundStore.withPreset(presets, updated)
-        AppBackground.refresh(requireContext())
+        // 注意不能调 AppBackground.refresh()：它是从偏好重新解析的，而这时还没落盘，
+        // 拖动过程中背景就不会变（之前的表现就是"松手才生效"）
+        if (selectedPresetId == id) AppBackground.apply(updated)
     }
 
     private fun showImageError(messageRes: Int) {
