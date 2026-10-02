@@ -37,11 +37,10 @@ class NavigationBenchmark {
         compilationMode = CompilationMode.None(),
         setupBlock = { pressHome() },
     ) {
-        startActivityAndWait()
-        device.wait(Until.hasObject(By.res("nav_home")), 5_000)
+        launchApp()
     }
 
-    /** 底部导航来回切：程序 → 设置 → 首页 ×3（用户反馈最卡的地方） */
+    /** 底部导航来回切：程序 → 设置 → 首页 ×3（用户反馈最卡的地方），首页固定"点击"模式 */
     @Test
     fun tabSwitching() = rule.measureRepeated(
         packageName = PACKAGE,
@@ -50,8 +49,31 @@ class NavigationBenchmark {
         compilationMode = CompilationMode.None(),
         setupBlock = {
             pressHome()
-            startActivityAndWait()
-            device.wait(Until.hasObject(By.res("nav_home")), 5_000)
+            launchApp()
+            tap("radioClick")
+        },
+    ) {
+        repeat(3) {
+            tap("nav_program")
+            tap("nav_settings")
+            tap("nav_home")
+        }
+    }
+
+    /**
+     * 同上，但首页切到"滑动"模式：首页有 7 个输入框，切页如果要重建整页，
+     * 这里比"点击"模式（3 个输入框）贵好几倍，信噪比高——用来看"页面常驻"到底省了多少。
+     */
+    @Test
+    fun tabSwitchingSwipe() = rule.measureRepeated(
+        packageName = PACKAGE,
+        metrics = listOf(FrameTimingMetric()),
+        iterations = 5,
+        compilationMode = CompilationMode.None(),
+        setupBlock = {
+            pressHome()
+            launchApp()
+            tap("radioSwipe")
         },
     ) {
         repeat(3) {
@@ -70,8 +92,7 @@ class NavigationBenchmark {
         compilationMode = CompilationMode.None(),
         setupBlock = {
             pressHome()
-            startActivityAndWait()
-            device.wait(Until.hasObject(By.res("nav_home")), 5_000)
+            launchApp()
         },
     ) {
         repeat(4) {
@@ -80,13 +101,31 @@ class NavigationBenchmark {
         }
     }
 
+    /**
+     * 启动 app 并确保真的到了首页：安装 / pm clear 之后会先弹"使用说明"和通知权限弹窗，
+     * 它们会把后面的点击全吃掉（症状是 0 frames）。这里主动点掉，基准自己就能跑通。
+     */
+    private fun MacrobenchmarkScope.launchApp() {
+        startActivityAndWait()
+        while (true) {
+            val dialog = device.wait(Until.findObject(By.res("android:id/button1")), 800)
+                ?: device.wait(Until.findObject(By.res(DIALOG_ID)), 800)
+                ?: break
+            dialog.click()
+            device.waitForIdle(500)
+        }
+        check(device.wait(Until.hasObject(By.res("nav_home")), 5_000)) { "首页没出现，前面可能还有弹窗" }
+    }
+
     private fun MacrobenchmarkScope.tap(tag: String) {
-        val node = device.wait(Until.findObject(By.res(tag)), 2_000) ?: return
+        val node = device.wait(Until.findObject(By.res(tag)), 2_000)
+        check(node != null) { "找不到控件 $tag" }
         node.click()
         device.waitForIdle(500)
     }
 
     private companion object {
         const val PACKAGE = "com.yjc.click"
+        const val DIALOG_ID = "com.android.permissioncontroller:id/permission_allow_button"
     }
 }
