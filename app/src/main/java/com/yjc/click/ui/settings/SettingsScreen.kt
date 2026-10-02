@@ -144,7 +144,12 @@ fun SettingsScreen(
                     enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                     exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
                 ) {
-                    ColorSchemeOptions(theme = theme, onThemeSelected = onThemeSelected)
+                    // 展开/收起动画没停稳时不接受点击（transition 是动画的真实状态）
+                    ColorSchemeOptions(
+                        theme = theme,
+                        enabled = transition.currentState == transition.targetState,
+                        onThemeSelected = onThemeSelected,
+                    )
                 }
                 Gap2dp()
 
@@ -166,6 +171,8 @@ fun SettingsScreen(
                     ColorOptions(
                         checked = dynamicColorChecked,
                         colorKey = colorKey,
+                        // 这一块展开/收起时开关也不接点击，免得配色在动画途中翻转（同"卡一下"的根源）
+                        enabled = transition.currentState == transition.targetState,
                         onCheckedChange = onDynamicColorChange,
                         onColorSelected = onColorSelected,
                     )
@@ -309,23 +316,28 @@ private fun FlatOptions(
 }
 
 @Composable
-private fun ColorSchemeOptions(theme: String, onThemeSelected: (String, Offset) -> Unit) {
+private fun ColorSchemeOptions(
+    theme: String,
+    enabled: Boolean,
+    onThemeSelected: (String, Offset) -> Unit,
+) {
     FlatOptions(shape = RowMiddleShape, horizontalPadding = 12.dp) {
         InnerDivider(bottomMargin = 12)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
         ) {
-            ThemeOption(R.drawable.theme_preview_light, R.string.light_theme, theme == "light") { pos ->
+            ThemeOption(R.drawable.theme_preview_light, R.string.light_theme, theme == "light", enabled) { pos ->
                 onThemeSelected("light", pos)
             }
-            ThemeOption(R.drawable.theme_preview_dark, R.string.dark_theme, theme == "dark") { pos ->
+            ThemeOption(R.drawable.theme_preview_dark, R.string.dark_theme, theme == "dark", enabled) { pos ->
                 onThemeSelected("dark", pos)
             }
             ThemeOption(
                 R.drawable.theme_preview_system,
                 R.string.follow_system,
                 theme == "follow_system",
+                enabled,
             ) { pos ->
                 onThemeSelected("follow_system", pos)
             }
@@ -338,6 +350,7 @@ private fun RowScope.ThemeOption(
     previewRes: Int,
     labelRes: Int,
     selected: Boolean,
+    enabled: Boolean,
     onSelect: (Offset) -> Unit,
 ) {
     var originInWindow by remember { mutableStateOf(Offset.Zero) }
@@ -345,10 +358,17 @@ private fun RowScope.ThemeOption(
         modifier = Modifier
             .weight(1f)
             .onGloballyPositioned { originInWindow = it.positionInWindow() }
-            // 用 pointerInput 而非 clickable：需要拿到手指按下的具体位置，作为圆形揭示的圆心
-            .pointerInput(Unit) {
-                detectTapGestures { offset -> onSelect(originInWindow + offset) }
-            }
+            // 用 pointerInput 而非 clickable：需要拿到手指按下的具体位置，作为圆形揭示的圆心；
+            // 展开/收起动画期间不挂手势（enabled=false），避免动画没停稳就切主题
+            .then(
+                if (enabled) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures { offset -> onSelect(originInWindow + offset) }
+                    }
+                } else {
+                    Modifier
+                }
+            )
             .padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -385,6 +405,7 @@ private fun RowScope.ThemeOption(
 private fun ColorOptions(
     checked: Boolean,
     colorKey: String,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     onColorSelected: (String) -> Unit,
 ) {
@@ -416,7 +437,8 @@ private fun ColorOptions(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            // 动画期间吞掉回调（不加 enabled=false，免得开关中途变灰闪一下）
+            Switch(checked = checked, onCheckedChange = { if (enabled) onCheckedChange(it) })
         }
         // 动态取色打开时这排颜色直接收起来（配色由壁纸决定）
         AnimatedVisibility(
