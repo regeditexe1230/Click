@@ -96,11 +96,10 @@ class MainActivity : AppCompatActivity() {
         // 键盘 inset 由 Column 的 imePadding 承担（旧实现是给 root 设 padding）。
         setContent {
             // 订阅字体变化：设置页里换字体时，已经组合好的顶栏/底栏/首页也要跟着换
-            // 主题状态一变就重新下发系统栏样式（含全面屏手势条那条的背景/图标明暗）。
-            // 放在这里而不是切换处：AppTheme.apply 是异步的（先 PixelCopy 抓图再切），
-            // 在调用点读 AppTheme.isDark 会拿到旧值。
-            // 动态取色开关也会换掉系统栏（手势条）的底色，所以一起订阅。
-            LaunchedEffect(AppTheme.isDark, AppTheme.useDynamicColor) {
+            // 只有深浅色影响系统栏图标的明暗；系统栏本身是透明的，背景靠页面自己画，
+            // 所以换颜色/动态取色都不需要重新下发（之前订阅了 useDynamicColor，会在
+            // 开关切换动画途中多调一次 enableEdgeToEdge，看着就是"卡一下"）。
+            LaunchedEffect(AppTheme.isDark) {
                 applySystemBarStyle(AppTheme.isDark)
             }
             val fontRevision = FontManager.fontRevision

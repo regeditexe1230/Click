@@ -84,7 +84,10 @@ class SettingsFragment : Fragment() {
                             dynamicColorChecked = checked
                             requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
                                 .edit().putBoolean("dynamic_color", checked).apply()
-                            AppTheme.applyDynamicColor(requireActivity(), checked)
+                            // 颜色排收起 300ms / 展开 400ms（与 SettingsScreen 里的动画一致），
+                            // 只有它可见（颜色区块展开着）时才需要等它动完再翻配色
+                            val rowAnimMs = if (colorExpanded) (if (checked) 300L else 400L) + 30L else 0L
+                            AppTheme.applyDynamicColor(requireActivity(), checked, rowAnimMs)
                         },
                         onColorSelected = { key -> AppTheme.applyColor(requireActivity(), key) },
                     )

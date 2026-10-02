@@ -63,9 +63,11 @@ object AppTheme {
     private var pendingDynamicColor: Runnable? = null
 
     /**
-     * 切换"动态取色"：等开关自己的状态动画播完 → 抓旧画面 → 翻状态 → 播圆形揭示（和切配色同一种过渡）。
+     * 切换"动态取色"：等开关自己的状态动画播完 → 抓旧画面 → 翻状态 → 播圆形揭示。
+     * [extraDelayMs] 是颜色那排圆圈收起/展开的时长（设置页算好传进来）：那排还在动的时候不能翻配色，
+     * 否则整页配色会在它收缩到一半时整体跳一下 —— 看着就是"收缩时卡一下"。
      */
-    fun applyDynamicColor(activity: Activity, enabled: Boolean) {
+    fun applyDynamicColor(activity: Activity, enabled: Boolean, extraDelayMs: Long = 0L) {
         val handler = Handler(Looper.getMainLooper())
         pendingDynamicColor?.let { handler.removeCallbacks(it) }
         val task = Runnable {
@@ -73,7 +75,7 @@ object AppTheme {
             startDynamicColorReveal(activity, enabled)
         }
         pendingDynamicColor = task
-        handler.postDelayed(task, SWITCH_SETTLE_MS)
+        handler.postDelayed(task, maxOf(SWITCH_SETTLE_MS, extraDelayMs))
     }
 
     private fun startDynamicColorReveal(activity: Activity, enabled: Boolean) {
