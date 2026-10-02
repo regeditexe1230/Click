@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.yjc.click.BackgroundStore
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
@@ -701,7 +702,7 @@ private fun PresetPanel(
             tag = "settings_bg_image_alpha_${preset.id}",
         )
         AlphaSliderRow(
-            labelRes = R.string.image_scrim,
+            labelRes = if (AppTheme.isDark) R.string.image_scrim_dark else R.string.image_scrim_light,
             value = preset.scrimAlpha,
             onValueChange = onScrimAlpha,
             onCommit = onCommit,
