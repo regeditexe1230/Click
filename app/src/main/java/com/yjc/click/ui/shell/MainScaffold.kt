@@ -2,18 +2,12 @@ package com.yjc.click.ui.shell
 
 import android.content.res.ColorStateList
 import android.widget.ImageView
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -50,8 +44,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -124,16 +120,47 @@ fun MainScaffold(
     // 设置页（Fragment 宿主）常驻，用 View 的显隐 + 自身滑动/淡入淡出与旧版三视图显隐等价
     val settingsSlide = remember { Animatable(if (selectedTab == MainTab.SETTINGS) 0f else 1f) }
     val settingsAlpha = remember { Animatable(if (selectedTab == MainTab.SETTINGS) 1f else 0f) }
+    // 首页/程序页也常驻（旧实现同样是三个 View 常驻、只切显隐），各自一条位移+透明度动画，
+    // 参数与原来完全一致：位移 360ms fast_out_slow_in ±10% 宽，淡入 162ms（延迟 126ms）、淡出 126ms
+    val pageSlide = listOf(MainTab.HOME, MainTab.PROGRAM).associateWith {
+        remember { Animatable(if (it == selectedTab) 0f else 1f) }
+    }
+    val pageAlpha = listOf(MainTab.HOME, MainTab.PROGRAM).associateWith {
+        remember { Animatable(if (it == selectedTab) 1f else 0f) }
+    }
+    var previousTab by remember { mutableStateOf(selectedTab) }
+    // 只有访问过的页面才组合：冷启动不会把没去过的页面白组合一遍
+    var visitedTabs by remember { mutableStateOf(setOf(selectedTab)) }
+    val imeController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     LaunchedEffect(selectedTab) {
+        if (selectedTab !in visitedTabs) visitedTabs = visitedTabs + selectedTab
+        // 原来页面被销毁时输入框会失焦、键盘收起；常驻之后要手动收，行为保持一致
+        imeController?.hide()
+        focusManager.clearFocus(force = true)
+        val forward = selectedTab.ordinal > previousTab.ordinal
+        previousTab = selectedTab
         if (selectedTab == MainTab.SETTINGS) {
             settingsSlide.snapTo(1f)
             settingsAlpha.snapTo(0f)
             launch { settingsSlide.animateTo(0f, tween(360, easing = FastOutSlowInEasing)) }
-            delay(126)
-            settingsAlpha.animateTo(1f, tween(162, easing = LinearEasing))
+            launch { delay(126); settingsAlpha.animateTo(1f, tween(162, easing = LinearEasing)) }
         } else {
             launch { settingsSlide.animateTo(1f, tween(360, easing = FastOutSlowInEasing)) }
-            settingsAlpha.animateTo(0f, tween(126, easing = LinearEasing))
+            launch { settingsAlpha.animateTo(0f, tween(126, easing = LinearEasing)) }
+        }
+        listOf(MainTab.HOME, MainTab.PROGRAM).forEach { tab ->
+            val slide = pageSlide.getValue(tab)
+            val alpha = pageAlpha.getValue(tab)
+            if (tab == selectedTab) {
+                slide.snapTo(if (forward) 1f else -1f)
+                alpha.snapTo(0f)
+                launch { slide.animateTo(0f, tween(360, easing = FastOutSlowInEasing)) }
+                launch { delay(126); alpha.animateTo(1f, tween(162, easing = LinearEasing)) }
+            } else {
+                launch { slide.animateTo(if (forward) -1f else 1f, tween(360, easing = FastOutSlowInEasing)) }
+                launch { alpha.animateTo(0f, tween(126, easing = LinearEasing)) }
+            }
         }
     }
 
@@ -152,36 +179,33 @@ fun MainScaffold(
         TopBar(title = displayedTitle, alpha = titleAlpha.value, surface = surface)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            // 首页/程序页常驻：切页只做位移+透明度，不再整页重建。
+            // 原来是 AnimatedContent —— 它会把离开的页面销毁、回来时重新组合，实测那一帧
+            // UI 线程要 25~60ms（首页有 7 个输入框），120Hz 下就是明显的顿一下。
+            // 叠放次序用 zIndex 控制（不动组合顺序，避免页面被当成新节点重建）：
+            // 选中的页面盖在上面；设置页宿主放在最后，切到设置页时永远在最上层。
+            listOf(MainTab.HOME, MainTab.PROGRAM).forEach { tab ->
+                if (tab == selectedTab || tab in visitedTabs) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .zIndex(if (tab == selectedTab) 1f else 0f)
+                            .tabSlideLayer(pageSlide.getValue(tab), pageAlpha.getValue(tab)),
+                    ) {
+                        when (tab) {
+                            MainTab.HOME -> Box(Modifier.fillMaxSize().background(surface)) { homeContent() }
+                            MainTab.PROGRAM -> Box(Modifier.fillMaxSize().background(surface)) { programContent() }
+                            MainTab.SETTINGS -> Unit
+                        }
+                    }
+                }
+            }
             SettingsHost(
                 visible = selectedTab == MainTab.SETTINGS,
                 modifier = Modifier
                     .fillMaxSize()
-                    .settingsSlideOffset(settingsSlide.value)
-                    .alpha(settingsAlpha.value),
+                    .tabSlideLayer(settingsSlide, settingsAlpha),
             )
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    val forward = targetState.ordinal > initialState.ordinal
-                    val enter = slideInHorizontally(
-                        animationSpec = tween(360, easing = FastOutSlowInEasing),
-                    ) { width -> if (forward) width / 10 else -width / 10 } +
-                            fadeIn(animationSpec = tween(162, delayMillis = 126, easing = LinearEasing))
-                    val exit = slideOutHorizontally(
-                        animationSpec = tween(360, easing = FastOutSlowInEasing),
-                    ) { width -> if (forward) -width / 10 else width / 10 } +
-                            fadeOut(animationSpec = tween(126, easing = LinearEasing))
-                    enter togetherWith exit
-                },
-                label = "pageTransition",
-            ) { tab ->
-                when (tab) {
-                    MainTab.HOME -> Box(Modifier.fillMaxSize().background(surface)) { homeContent() }
-                    MainTab.PROGRAM -> Box(Modifier.fillMaxSize().background(surface)) { programContent() }
-                    // 设置页由常驻的 Fragment 宿主呈现（避免重复创建 Fragment）
-                    MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
-                }
-            }
         }
 
         BottomBar(
@@ -233,10 +257,14 @@ private fun SettingsHost(visible: Boolean, modifier: Modifier = Modifier) {
     )
 }
 
-private fun Modifier.settingsSlideOffset(progress: Float): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val offset = (progress * placeable.width / 10f).toInt()
-    layout(placeable.width, placeable.height) { placeable.place(offset, 0) }
+private fun Modifier.tabSlideLayer(
+    slide: Animatable<Float, *>,
+    alphaAnim: Animatable<Float, *>,
+): Modifier = graphicsLayer {
+    // 位移/透明度都留在绘制阶段（原 AnimatedContent 的 slideInHorizontally 就是这样）：
+    // 换个 Modifier.layout 写法的话，动画每帧都要重新 measure+place 整页，比省下的组合还贵。
+    translationX = slide.value * size.width / 10f
+    alpha = alphaAnim.value
 }
 
 @Composable
