@@ -59,7 +59,12 @@ class SettingsFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                ClickTheme(fontFamily = fontFamily, darkTheme = AppTheme.isDark, dynamicColor = AppTheme.useDynamicColor) {
+                ClickTheme(
+                    fontFamily = fontFamily,
+                    darkTheme = AppTheme.isDark,
+                    dynamicColor = AppTheme.useDynamicColor,
+                    colorKey = AppTheme.colorKey,
+                ) {
                     SettingsScreen(
                         languageValue = languageValue,
                         fontValue = fontValue,
@@ -68,6 +73,7 @@ class SettingsFragment : Fragment() {
                         colorExpanded = colorExpanded,
                         backgroundExpanded = backgroundExpanded,
                         dynamicColorChecked = dynamicColorChecked,
+                        colorKey = AppTheme.colorKey,
                         onLanguageClick = { showLanguageDialog() },
                         onFontClick = { showFontDialog() },
                         onThemeSelected = { newTheme, origin -> applyTheme(newTheme, origin) },
@@ -80,6 +86,7 @@ class SettingsFragment : Fragment() {
                                 .edit().putBoolean("dynamic_color", checked).apply()
                             AppTheme.applyDynamicColor(requireActivity(), checked)
                         },
+                        onColorSelected = { key -> AppTheme.applyColor(requireActivity(), key) },
                     )
                 }
             }
