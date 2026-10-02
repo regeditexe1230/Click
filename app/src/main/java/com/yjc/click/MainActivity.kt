@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
                 integerFontAdvance = true,
                 darkTheme = AppTheme.isDark,
                 dynamicColor = AppTheme.useDynamicColor,
+                colorKey = AppTheme.colorKey,
             ) {
                 // 配色切换时的"圆形揭示"过渡（圆心 = 点击位置）
                 ThemeReveal {
