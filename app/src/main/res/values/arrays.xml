@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 预设默认名用的序号（中文数字）。超出数组长度时 [BackgroundStore.displayName] 回落到阿拉伯数字 -->
+<resources>
+    <string-array name="preset_numerals">
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+        <item>七</item>
+        <item>八</item>
+        <item>九</item>
+        <item>十</item>
+        <item>十一</item>
+        <item>十二</item>
+        <item>十三</item>
+        <item>十四</item>
+        <item>十五</item>
+        <item>十六</item>
+        <item>十七</item>
+        <item>十八</item>
+        <item>十九</item>
+        <item>二十</item>
+    </string-array>
+</resources>

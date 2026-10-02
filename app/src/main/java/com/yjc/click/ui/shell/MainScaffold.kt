@@ -14,6 +14,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -53,6 +54,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalDensity
@@ -63,7 +65,10 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.yjc.click.AppBackground
+import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
 import kotlinx.coroutines.delay
@@ -137,59 +142,100 @@ fun MainScaffold(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(surface)
-            // 让外壳里的 testTag（nav_home/nav_program/nav_settings）像旧版 View id 一样
-            // 暴露成 accessibility resource-id，供 uiautomator/自动化脚本定位
-            .semantics { testTagsAsResourceId = true }
-            // edge-to-edge：左右补系统栏/挖孔（旧实现给 root 设 padding），底部补键盘
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(
-                androidx.compose.foundation.layout.WindowInsetsSides.Horizontal))
-            .imePadding(),
-    ) {
-        TopBar(title = displayedTitle, alpha = titleAlpha.value, surface = surface)
+    // 应用背景：选中预设里的图 + 两个透明度（整屏铺满，顶栏/底栏压在上面）
+    val backgroundPath = AppBackground.imagePath
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenW = with(density) { configuration.screenWidthDp.dp.roundToPx() }
+    val screenH = with(density) { configuration.screenHeightDp.dp.roundToPx() }
+    val backgroundImage = remember(backgroundPath, screenW, screenH) {
+        backgroundPath?.let { ImageLoader.load(it, screenW, screenH) }
+    }
+    // 顶栏/底栏底色：有背景图时**完全不画**（图从状态栏一路贯到导航栏），
+    // 没背景图时保持原来的不透明底色（与旧版一致）
+    val barAlpha = if (backgroundPath == null) 1f else 0f
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            SettingsHost(
-                visible = selectedTab == MainTab.SETTINGS,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .settingsSlideOffset(settingsSlide.value)
-                    .alpha(settingsAlpha.value),
+    Box(modifier = Modifier.fillMaxSize().background(surface)) {
+        if (backgroundImage != null) {
+            Image(
+                bitmap = backgroundImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = AppBackground.imageAlpha / 100f,
+                modifier = Modifier.fillMaxSize(),
             )
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    val forward = targetState.ordinal > initialState.ordinal
-                    val enter = slideInHorizontally(
-                        animationSpec = tween(360, easing = FastOutSlowInEasing),
-                    ) { width -> if (forward) width / 10 else -width / 10 } +
-                            fadeIn(animationSpec = tween(162, delayMillis = 126, easing = LinearEasing))
-                    val exit = slideOutHorizontally(
-                        animationSpec = tween(360, easing = FastOutSlowInEasing),
-                    ) { width -> if (forward) -width / 10 else width / 10 } +
-                            fadeOut(animationSpec = tween(126, easing = LinearEasing))
-                    enter togetherWith exit
-                },
-                label = "pageTransition",
-            ) { tab ->
-                when (tab) {
-                    MainTab.HOME -> Box(Modifier.fillMaxSize().background(surface)) { homeContent() }
-                    MainTab.PROGRAM -> Box(Modifier.fillMaxSize().background(surface)) { programContent() }
-                    // 设置页由常驻的 Fragment 宿主呈现（避免重复创建 Fragment）
-                    MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
-                }
+            if (AppBackground.scrimAlpha > 0) {
+                // 遮罩颜色跟随深浅色：浅色下用白色（把亮图压向背景色，深色文字才看得清），
+                // 深色下用黑色
+                val scrimColor = if (AppTheme.isDark) Color.Black else Color.White
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(scrimColor.copy(alpha = AppBackground.scrimAlpha / 100f)),
+                )
             }
         }
 
-        BottomBar(
-            selectedTab = selectedTab,
-            onSelectTab = onSelectTab,
-            surface = surface,
-            translationY = with(LocalDensity.current) { (entrance.value * 80.dp.toPx()).toInt() },
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // 让外壳里的 testTag（nav_home/nav_program/nav_settings）像旧版 View id 一样
+                // 暴露成 accessibility resource-id，供 uiautomator/自动化脚本定位
+                .semantics { testTagsAsResourceId = true }
+                // edge-to-edge：左右补系统栏/挖孔（旧实现给 root 设 padding），底部补键盘
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(
+                    androidx.compose.foundation.layout.WindowInsetsSides.Horizontal))
+                .imePadding(),
+        ) {
+            TopBar(
+                title = displayedTitle,
+                alpha = titleAlpha.value,
+                surface = surface,
+                barAlpha = barAlpha,
+            )
+
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                SettingsHost(
+                    visible = selectedTab == MainTab.SETTINGS,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .settingsSlideOffset(settingsSlide.value)
+                        .alpha(settingsAlpha.value),
+                )
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        val forward = targetState.ordinal > initialState.ordinal
+                        val enter = slideInHorizontally(
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
+                        ) { width -> if (forward) width / 10 else -width / 10 } +
+                                fadeIn(animationSpec = tween(162, delayMillis = 126, easing = LinearEasing))
+                        val exit = slideOutHorizontally(
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
+                        ) { width -> if (forward) -width / 10 else width / 10 } +
+                                fadeOut(animationSpec = tween(126, easing = LinearEasing))
+                        enter togetherWith exit
+                    },
+                    label = "pageTransition",
+                ) { tab ->
+                    when (tab) {
+                        // 页面本身不画底色：应用背景图要能透出来（没设图时下层外壳的 surface 同色）
+                        MainTab.HOME -> Box(Modifier.fillMaxSize()) { homeContent() }
+                        MainTab.PROGRAM -> Box(Modifier.fillMaxSize()) { programContent() }
+                        // 设置页由常驻的 Fragment 宿主呈现（避免重复创建 Fragment）
+                        MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
+                    }
+                }
+            }
+
+            BottomBar(
+                selectedTab = selectedTab,
+                onSelectTab = onSelectTab,
+                surface = surface,
+                barAlpha = barAlpha,
+                translationY = with(LocalDensity.current) { (entrance.value * 80.dp.toPx()).toInt() },
+            )
+        }
     }
 }
 
@@ -240,12 +286,13 @@ private fun Modifier.settingsSlideOffset(progress: Float): Modifier = layout { m
 }
 
 @Composable
-private fun TopBar(title: String, alpha: Float, surface: Color) {
+private fun TopBar(title: String, alpha: Float, surface: Color, barAlpha: Float = 1f) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(96.dp)
-            .background(surface),
+            // 有背景图时这里是半透明的（不透明度跟黑色遮罩联动），图从状态栏一路透上来
+            .background(surface.copy(alpha = barAlpha)),
     ) {
         // 旧布局：96dp 容器内居中一个 MaterialToolbar（64dp，顶部再补状态栏 padding），
         // 实测标题块 bounds = [42,118][167,196]，即距容器顶 118px（44.95dp）
@@ -267,15 +314,17 @@ private fun BottomBar(
     onSelectTab: (MainTab) -> Unit,
     surface: Color,
     translationY: Int,
+    barAlpha: Float = 1f,
 ) {
     // 旧版 BottomNavigationView 是带 3dp tonalElevation 的 Material 组件：
     // 实测底栏底色 = 表面色叠加 8% primary（浅色 [241,233,247]、深色 [35,32,43]），
     // 与页面背景（[254,247,255] / [20,18,24]）明显不同，这里按同一公式合成。
+    // 有背景图时整条半透明（不透明度跟黑色遮罩联动），图从下面透出来。
     val barColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(surface)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(barColor)
+            .background(barColor.copy(alpha = barAlpha))
             .windowInsetsPadding(WindowInsets.navigationBars)
             .height(80.dp)
             .offsetY(translationY),

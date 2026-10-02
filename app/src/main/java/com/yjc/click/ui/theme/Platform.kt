@@ -55,7 +55,13 @@ private fun currentPlatformTypeface(): android.graphics.Typeface =
  * 2. 运行时探测：现造一个真正的 [android.widget.TextView]（旧版用的就是它）按当前设备的
  *    font_scale / 密度 / 系统字体量一次——用于标定表覆盖不到的字号或别的设备
  *    （例如手机 OEM 字体行高比例与模拟器 Roboto 不同）。
+ *
+ * 探测结果按 (取整后的 px 字号, 字型) 缓存在进程级 map 里：`remember` 只在同一次组合里有效，
+ * 而页面（例如首页）每次切回来都会重新组合一次，30 个文本十来个字号就要全部重量一遍，
+ * 实测这正是切页那一帧变长的一部分。
  */
+private val lineBoxProbeCache = HashMap<Pair<Int, android.graphics.Typeface>, Int>()
+
 @Composable
 fun platformLineBoxPx(fontSize: TextUnit): Int {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -63,16 +69,18 @@ fun platformLineBoxPx(fontSize: TextUnit): Int {
     val px = with(density) { fontSize.toPx().roundToInt() }.coerceAtLeast(1)
     val typeface = currentPlatformTypeface()
     val measured = androidx.compose.runtime.remember(px, typeface) {
-        val probe = android.widget.TextView(context)
-        probe.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, px.toFloat())
-        probe.typeface = typeface
-        probe.includeFontPadding = true
-        probe.text = "测"
-        probe.measure(
-            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
-            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
-        )
-        probe.measuredHeight
+        lineBoxProbeCache.getOrPut(px to typeface) {
+            val probe = android.widget.TextView(context)
+            probe.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, px.toFloat())
+            probe.typeface = typeface
+            probe.includeFontPadding = true
+            probe.text = "测"
+            probe.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+            )
+            probe.measuredHeight
+        }
     }
     // 标定值是在模拟器（fontScale = 1.0）上量出来的：只有当前设备字体缩放同为 1.0 时才用它，
     // 否则（例如手机 font_scale = 0.81、OEM 字体行高比例不同）一律用运行时真机探测值。

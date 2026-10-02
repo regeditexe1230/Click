@@ -104,6 +104,19 @@
     <string name="app_background_desc">Customize app background</string>
     <string name="default_value">Default</string>
 
+    <!-- App background presets -->
+    <string name="add_preset">Add preset</string>
+    <string name="preset_name">Preset %1$s</string>
+    <string name="delete_preset">Delete preset</string>
+    <string name="delete_preset_confirm">Delete \"%s\"?</string>
+    <string name="add_image">Add image</string>
+    <string name="remove_image">Remove image</string>
+    <string name="image_alpha">Image opacity</string>
+    <string name="image_scrim_light">White overlay</string>
+    <string name="image_scrim_dark">Black overlay</string>
+    <string name="image_invalid">Not a valid image file</string>
+    <string name="image_read_error">Cannot read the image file</string>
+
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_program">Program</string>
