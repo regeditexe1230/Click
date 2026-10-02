@@ -68,6 +68,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.yjc.click.AppBackground
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
 import kotlinx.coroutines.delay
@@ -164,10 +165,13 @@ fun MainScaffold(
                 modifier = Modifier.fillMaxSize(),
             )
             if (AppBackground.scrimAlpha > 0) {
+                // 遮罩颜色跟随深浅色：浅色下用白色（把亮图压向背景色，深色文字才看得清），
+                // 深色下用黑色
+                val scrimColor = if (AppTheme.isDark) Color.Black else Color.White
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = AppBackground.scrimAlpha / 100f)),
+                        .background(scrimColor.copy(alpha = AppBackground.scrimAlpha / 100f)),
                 )
             }
         }

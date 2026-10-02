@@ -102,7 +102,8 @@
     <string name="add_image">画像を追加</string>
     <string name="remove_image">画像を削除</string>
     <string name="image_alpha">画像の不透明度</string>
-    <string name="image_scrim">黒いオーバーレイ</string>
+    <string name="image_scrim_light">白いオーバーレイ</string>
+    <string name="image_scrim_dark">黒いオーバーレイ</string>
     <string name="image_invalid">有効な画像ファイルではありません</string>
     <string name="image_read_error">画像ファイルを読み込めません</string>
 

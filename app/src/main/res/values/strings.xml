@@ -116,7 +116,8 @@
     <string name="add_image">添加图片</string>
     <string name="remove_image">删除图片</string>
     <string name="image_alpha">图片透明度</string>
-    <string name="image_scrim">黑色遮罩</string>
+    <string name="image_scrim_light">白色遮罩</string>
+    <string name="image_scrim_dark">黑色遮罩</string>
     <string name="image_invalid">不是有效的图片文件</string>
     <string name="image_read_error">无法读取图片文件</string>
 

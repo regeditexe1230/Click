@@ -112,7 +112,8 @@
     <string name="add_image">Add image</string>
     <string name="remove_image">Remove image</string>
     <string name="image_alpha">Image opacity</string>
-    <string name="image_scrim">Black overlay</string>
+    <string name="image_scrim_light">White overlay</string>
+    <string name="image_scrim_dark">Black overlay</string>
     <string name="image_invalid">Not a valid image file</string>
     <string name="image_read_error">Cannot read the image file</string>
 
