@@ -11,8 +11,9 @@ android {
         minSdk = 24
         targetSdk = 33
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // debug 包一定会被判定为 DEBUGGABLE：这里测的是"跨提交可比"，绝对值偏慢，看趋势即可
-        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "DEBUGGABLE"
+        // debug 包会被判 DEBUGGABLE、模拟器会被判 EMULATOR：这里测的是"跨提交可比"，
+        // 绝对值偏慢，看趋势即可
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "DEBUGGABLE,EMULATOR,LOW-BATTERY"
     }
 
     // 测的是 :app 这个模块里的 debug 包（已加 <profileable>）

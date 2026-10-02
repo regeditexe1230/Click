@@ -32,6 +32,9 @@ class NavigationBenchmark {
         metrics = listOf(StartupTimingMetric()),
         iterations = 5,
         startupMode = StartupMode.COLD,
+        // 不能用 CompilationMode.DEFAULT：它会通过 app 自带的 profileinstaller 装 baseline profile，
+        // 而那个版本不支持新 SDK（模拟器 API 37 上直接抛异常）。测 debug 包本来也没 profile。
+        compilationMode = CompilationMode.None(),
         setupBlock = { pressHome() },
     ) {
         startActivityAndWait()
