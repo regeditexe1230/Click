@@ -45,6 +45,7 @@ object UpdateStore {
     private const val PREFS_NAME = "update_settings"
     private const val KEY_AUTO = "auto_check"
     private const val KEY_CHANNEL = "channel"
+    private const val KEY_IGNORED = "ignored_version"
 
     /** 启动时自动检查（旧版本这里是空按钮，默认开） */
     var autoCheck by mutableStateOf(true)
@@ -70,6 +71,10 @@ object UpdateStore {
     var error by mutableStateOf(0)
         private set
 
+    /** 勾过「此版本不再提醒」的 versionCode（0 = 没勾过）：自动检查到这个版本就不弹窗了 */
+    var ignoredVersion by mutableStateOf(0)
+        private set
+
     /** 启动时的自动检查只自动弹一次窗，这里记住本进程是否已经弹过 */
     private var autoPrompted = false
 
@@ -85,6 +90,7 @@ object UpdateStore {
         autoCheck = prefs.getBoolean(KEY_AUTO, true)
         channel = UpdateChannel.entries.firstOrNull { it.prefKey == prefs.getString(KEY_CHANNEL, null) }
             ?: UpdateChannel.STABLE
+        ignoredVersion = prefs.getInt(KEY_IGNORED, 0)
     }
 
     fun setAutoCheck(context: Context, value: Boolean) {
@@ -100,6 +106,13 @@ object UpdateStore {
         // 换通道后旧结果作废
         available = null
         dialogVisible = false
+    }
+
+    /** 弹窗里勾/取消「此版本不再提醒」：只记一个 versionCode，0 = 不忽略任何版本 */
+    fun setIgnoredVersion(context: Context, code: Int) {
+        ignoredVersion = code
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putInt(KEY_IGNORED, code).apply()
     }
 
     internal fun status(text: String) {
@@ -152,7 +165,9 @@ object UpdateManager {
             UpdateChecker.check(app, UpdateStore.channel)
                 .onSuccess { release ->
                     // 自动检查只自动弹一次窗；手动点检查、切分支、开开关都是每次都弹
-                    val prompt = release != null && (!auto || UpdateStore.claimAutoPrompt())
+                    // 勾过「此版本不再提醒」的版本，自动检查不再弹（设置行的小字照常更新）
+                    val ignored = release != null && release.versionCode == UpdateStore.ignoredVersion
+                    val prompt = release != null && (!auto || (!ignored && UpdateStore.claimAutoPrompt()))
                     UpdateStore.release(release, showDialog = prompt)
                     UpdateStore.status(
                         if (release == null) app.getString(R.string.update_latest)

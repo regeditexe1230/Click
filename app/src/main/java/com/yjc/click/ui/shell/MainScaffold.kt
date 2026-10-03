@@ -255,6 +255,13 @@ fun MainScaffold(
                 downloading = UpdateStore.downloading,
                 progress = UpdateStore.progress,
                 errorRes = UpdateStore.error,
+                ignored = UpdateStore.ignoredVersion == updateRelease.versionCode,
+                onIgnoreChange = { ignore ->
+                    UpdateStore.setIgnoredVersion(
+                        updateContext,
+                        if (ignore) updateRelease.versionCode else 0,
+                    )
+                },
                 onInstall = { UpdateManager.install(updateContext, updateScope, updateRelease) },
                 onCancelDownload = { UpdateManager.cancelDownload(updateContext) },
                 onLater = { UpdateStore.dismissDialog() },
