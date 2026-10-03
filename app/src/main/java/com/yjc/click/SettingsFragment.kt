@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.RadioButton
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -541,16 +543,34 @@ class SettingsFragment : Fragment() {
 
     // ==================== 更新 ====================
 
-    /** 选更新分支：正式版 / 测试版（和语言、字体弹窗同一套单选列表样式） */
+    /** 选更新分支：正式版 / 测试版，每项下面一行小字说明（和语言、字体弹窗同一套单选样式） */
     private fun showUpdateChannelDialog() {
         val ctx = requireContext()
         val channels = UpdateChannel.entries
-        val names = channels.map { getString(it.labelRes) }.toTypedArray()
         val currentIndex = channels.indexOf(UpdateStore.channel).coerceAtLeast(0)
+        var selected = currentIndex
+
+        // 系统单选项只显示一行字，这里换成两行的自定义行：标题 + 小字说明
+        val adapter = object : ArrayAdapter<UpdateChannel>(
+            ctx,
+            R.layout.dialog_single_choice_item,
+            channels,
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = convertView
+                    ?: LayoutInflater.from(ctx).inflate(R.layout.dialog_single_choice_item, parent, false)
+                val channel = channels[position]
+                view.findViewById<TextView>(R.id.choice_title).setText(channel.labelRes)
+                view.findViewById<TextView>(R.id.choice_desc).setText(channel.descRes)
+                view.findViewById<RadioButton>(R.id.choice_radio).isChecked = position == selected
+                return view
+            }
+        }
 
         val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
             .setTitle(R.string.update_channel)
-            .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+            .setSingleChoiceItems(adapter, currentIndex) { dialog, which ->
+                selected = which
                 val picked = channels[which]
                 val changed = picked != UpdateStore.channel
                 UpdateStore.setChannel(ctx, picked)
