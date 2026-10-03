@@ -31,12 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +69,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.BackgroundStore
@@ -274,7 +277,12 @@ fun SettingsScreen(
                     testTag = "settings_update_auto",
                 ) {
                     // 点击范围只有开关本身，整行不响应
-                    Switch(checked = autoCheckUpdates, onCheckedChange = onAutoCheckUpdatesChange)
+                    // 开关自带 48dp 最小点击区，会把这一行顶得比别的行高，这里去掉它
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+                    ) {
+                        Switch(checked = autoCheckUpdates, onCheckedChange = onAutoCheckUpdatesChange)
+                    }
                 }
                 Gap2dp()
                 SettingsRow(
