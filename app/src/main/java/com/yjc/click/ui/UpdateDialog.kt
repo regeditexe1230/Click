@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -57,7 +58,10 @@ internal fun UpdateDialog(
 ) {
     val context = LocalContext.current
     val currentVersion = remember { UpdateChecker.installedVersionName(context) }
-    val notes = remember(release.notes) { releaseNotes(release.notes) }
+    // 更新日志是双语的（英文段 + 中文段），按当前界面语言只显示一段
+    val locales = LocalConfiguration.current.locales
+    val chinese = !locales.isEmpty && locales[0].language == "zh"
+    val notes = remember(release.notes, chinese) { releaseNotes(release.notes, chinese) }
     AlertDialog(
         onDismissRequest = { if (!downloading) onLater() },
         title = {
@@ -189,12 +193,32 @@ private val compareUrl = Regex("^https?://\\S*github\\.com/\\S*/compare/\\S*$")
 /** CI 写在正文里的 versionCode 标记，只给客户端读，别显示给用户 */
 private val versionMarker = Regex("<!--\\s*version-code:\\s*\\d+\\s*-->")
 
-private fun releaseNotes(raw: String): String = raw.lineSequence()
-    .map { it.trim() }
-    .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
-    .filterNot { compareUrl.matches(it) }
-    .filterNot { versionMarker.containsMatchIn(it) }
-    .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
-    .map { markdownLink.replace(it, "$1").replace("**", "") }
-    .joinToString("\n")
-    .trim()
+/** 正文是双语的：英文段在前，中文段从「修复：/更新：」这行开始 */
+private val chineseSection = Regex("^\\s*(修复|更新)\\s*[:：]")
+
+/** 标题下面那行 ===== 是给 GitHub 纯文本看的，弹窗里不显示 */
+private val underline = Regex("^=+$")
+
+private fun releaseNotes(raw: String, chinese: Boolean): String {
+    val lines = raw.lineSequence()
+        .map { it.trim() }
+        .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
+        .filterNot { compareUrl.matches(it) }
+        .filterNot { versionMarker.containsMatchIn(it) }
+        .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
+        .map { markdownLink.replace(it, "$1").replace("**", "") }
+        .toList()
+
+    // 按语言取段；老版本正文没有中文标题，切不开就整段原样显示
+    val cut = lines.indexOfFirst { chineseSection.containsMatchIn(it) }
+    val picked = when {
+        cut < 0 -> lines
+        chinese -> lines.subList(cut, lines.size)
+        else -> lines.subList(0, cut)
+    }
+    return picked
+        .filterNot { underline.matches(it) }
+        .dropWhile { it.isEmpty() }
+        .dropLastWhile { it.isEmpty() }
+        .joinToString("\n")
+}

@@ -62,6 +62,11 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk dist/Click.apk
           ls -l dist
 
+      # 正文格式：CI 先生成中文提交列表兜底，发版后再 PATCH 成双语（参考 click-beta2 / click-update2）：
+      #   Fix：  / Update：  下面 18 个 =，之后是英文条目
+      #   修复： / 更新：    下面 21 个 =，之后是中文条目
+      # 客户端按当前界面语言只显示对应那一段（中文→中文段，其它语言→英文段），
+      # 末尾的 <!-- version-code: N --> 必须保留，客户端靠它读 versionCode
       - name: 生成更新日志（上一个 tag 到本次 tag 的提交标题）
         run: |
           mkdir -p dist
