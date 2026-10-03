@@ -16,10 +16,12 @@
     <string name="toast_operation_paused">Operation paused</string>
     <string name="toast_enable_overlay">Please enable overlay permission</string>
     <string name="toast_overlay_enabled">Overlay permission enabled</string>
+    <string name="toast_overlay_revoked">Overlay permission revoked, floating ball stopped</string>
     <string name="toast_fill_manual_params">Please fill in manual parameters</string>
     <string name="toast_record_gesture_first">Please record a gesture first</string>
     <string name="toast_need_overlay_for_record">Overlay permission required to record gesture</string>
     <string name="toast_need_accessibility_for_record">Accessibility service required to record gesture</string>
+    <string name="toast_need_accessibility">Accessibility service required to run</string>
     <string name="toast_swipe_to_record">Swipe on screen to record gesture</string>
     <string name="toast_floating_started">Floating ball started</string>
 
@@ -100,6 +102,12 @@
     <string name="color_desc">Change app theme color</string>
     <string name="dynamic_color">Dynamic Colors</string>
     <string name="dynamic_color_desc">Apply colors from system wallpaper</string>
+    <string name="theme_color">Theme Color</string>
+    <string name="color_purple">Purple</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_red">Red</string>
+    <string name="color_yellow">Yellow</string>
+    <string name="color_green">Green</string>
     <string name="app_background">App Background</string>
     <string name="app_background_desc">Customize app background</string>
     <string name="default_value">Default</string>

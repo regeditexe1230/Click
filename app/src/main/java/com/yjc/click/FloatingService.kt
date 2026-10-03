@@ -1,5 +1,6 @@
 package com.yjc.click
 
+import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,6 +12,7 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -52,11 +54,48 @@ class FloatingService : Service() {
     private var clickTargetY = 0f
     private val scope = CoroutineScope(Dispatchers.Main)
     private var dynamicColorWatcher: Job? = null
+    private var overlayOpWatcher: AppOpsManager.OnOpChangedListener? = null
+    private var overlayRevoked = false
 
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
+        watchOverlayPermission()
+    }
+
+    /**
+     * 监听悬浮窗权限：用户在执行过程中撤销权限时，系统会直接收走球窗口，
+     * 服务若继续留在后台就成了「有通知没球」的僵尸态，这里主动停掉并提示。
+     */
+    private fun watchOverlayPermission() {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return
+        val watcher = object : AppOpsManager.OnOpChangedListener {
+            override fun onOpChanged(op: String?, packageName: String?) {
+                if (op != AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW) return
+                if (packageName != null && packageName != this@FloatingService.packageName) return
+                if (!Settings.canDrawOverlays(this@FloatingService)) {
+                    scope.launch { handleOverlayRevoked() }
+                }
+            }
+        }
+        try {
+            appOps.startWatchingMode(AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW, packageName, watcher)
+            overlayOpWatcher = watcher
+        } catch (e: Exception) {
+            android.util.Log.w("FloatingService", "watchOverlayPermission failed", e)
+        }
+    }
+
+    private fun handleOverlayRevoked() {
+        if (overlayRevoked) return
+        overlayRevoked = true
+        android.util.Log.w("FloatingService", "overlay permission revoked, stopping service")
+        Toast.makeText(this, R.string.toast_overlay_revoked, Toast.LENGTH_LONG).show()
+        AppConfig.running = false
+        AppConfig.operationActive = false
+        job?.cancel()
+        stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -506,7 +545,7 @@ class FloatingService : Service() {
                 var service = ClickAccessibilityService.instance
                 if (service == null) {
                     android.util.Log.w("FloatingService", "startOperation: waiting for accessibility service")
-                    val deadline = System.currentTimeMillis() + 5000
+                    val deadline = System.currentTimeMillis() + 2000
                     while (service == null && System.currentTimeMillis() < deadline) {
                         delay(100)
                         service = ClickAccessibilityService.instance
@@ -514,6 +553,12 @@ class FloatingService : Service() {
                 }
                 if (service == null) {
                     android.util.Log.w("FloatingService", "startOperation: accessibility service timed out")
+                    // 无障碍没开时点球不能毫无反应，给个提示（旧版这里是静默返回）
+                    Toast.makeText(
+                        this@FloatingService,
+                        R.string.toast_need_accessibility,
+                        Toast.LENGTH_LONG
+                    ).show()
                     // 无法执行时也要复位状态，否则通知与界面会一直停留在"执行中"
                     AppConfig.running = false
                     AppConfig.operationActive = false
@@ -628,6 +673,15 @@ class FloatingService : Service() {
     override fun onDestroy() {
         job?.cancel()
         scope.cancel()
+        overlayOpWatcher?.let {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
+            try {
+                appOps?.stopWatchingMode(it)
+            } catch (e: Exception) {
+                android.util.Log.w("FloatingService", "stopWatchingMode failed", e)
+            }
+        }
+        overlayOpWatcher = null
         AppConfig.running = false
         AppConfig.operationActive = false
         recordingOverlay?.let {
