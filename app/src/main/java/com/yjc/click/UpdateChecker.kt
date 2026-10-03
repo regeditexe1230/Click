@@ -95,7 +95,7 @@ object UpdateChecker {
             val dir = File(context.cacheDir, "updates").apply { mkdirs() }
             val target = File(dir, "Click-${release.versionCode}.apk")
             val temp = File(dir, "Click-${release.versionCode}.apk.tmp")
-            saveTo(release.downloadUrl, temp, onProgress)
+            saveTo(release.downloadUrl, temp, release.sizeBytes, onProgress)
             if (target.exists()) target.delete()
             if (!temp.renameTo(target)) {
                 temp.copyTo(target, overwrite = true)
@@ -198,6 +198,7 @@ object UpdateChecker {
             try {
                 return fetch(candidate)
             } catch (e: Exception) {
+                Log.w(TAG, "read failed: $candidate (${e.javaClass.simpleName}: ${e.message})")
                 last = e
             }
         }
@@ -220,13 +221,15 @@ object UpdateChecker {
         }
     }
 
-    private fun saveTo(url: String, target: File, onProgress: (Int) -> Unit) {
+    /** 安装包走镜像优先：直连 github.com 下资产经常卡住，镜像反而稳 */
+    private fun saveTo(url: String, target: File, expectedSize: Long, onProgress: (Int) -> Unit) {
         var last: Exception? = null
-        for (candidate in listOf(url, MIRROR + url)) {
+        for (candidate in listOf(MIRROR + url, url)) {
             try {
-                fetchTo(candidate, target, onProgress)
+                fetchTo(candidate, target, expectedSize, onProgress)
                 return
             } catch (e: Exception) {
+                Log.w(TAG, "download failed: $candidate (${e.javaClass.simpleName}: ${e.message})")
                 last = e
                 target.delete()
             }
@@ -234,7 +237,7 @@ object UpdateChecker {
         throw last ?: IllegalStateException("download failed")
     }
 
-    private fun fetchTo(url: String, target: File, onProgress: (Int) -> Unit) {
+    private fun fetchTo(url: String, target: File, expectedSize: Long, onProgress: (Int) -> Unit) {
         Log.d(TAG, "download ${url.substringBefore('?')}")
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT
@@ -244,7 +247,9 @@ object UpdateChecker {
         try {
             val code = connection.responseCode
             if (code !in 200..299) throw IllegalStateException("HTTP $code")
-            val total = connection.contentLengthLong
+            // 镜像走分块传输时没有 Content-Length，用 Release 里带的文件大小兜底
+            val length = connection.contentLengthLong
+            val total = if (length > 0) length else expectedSize
             connection.inputStream.use { input ->
                 target.outputStream().use { output ->
                     val buffer = ByteArray(64 * 1024)

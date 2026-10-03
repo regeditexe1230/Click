@@ -129,7 +129,10 @@ object UpdateManager {
                         else app.getString(R.string.update_found, release.versionName.ifBlank { release.tag })
                     )
                 }
-                .onFailure { UpdateStore.status(app.getString(R.string.update_failed)) }
+                .onFailure {
+                    android.util.Log.w("UpdateManager", "check failed", it)
+                    UpdateStore.status(app.getString(R.string.update_failed))
+                }
         }
     }
 
@@ -148,7 +151,11 @@ object UpdateManager {
                 return@launch
             }
             UpdateStore.download(false)
-            when (UpdateChecker.verify(app, file, release)) {
+            // 校验失败也不能把弹窗卡在"下载中"
+            val result = runCatching { UpdateChecker.verify(app, file, release) }
+                .getOrDefault(VerifyResult.BROKEN)
+            android.util.Log.i("UpdateManager", "verify=$result file=${file.name}")
+            when (result) {
                 VerifyResult.OK -> {
                     UpdateStore.dismissDialog()
                     if (UpdateChecker.install(app, file)) {
