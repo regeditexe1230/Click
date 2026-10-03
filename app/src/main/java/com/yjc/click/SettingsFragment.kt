@@ -8,7 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.RadioButton
+import android.widget.CheckedTextView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -557,12 +557,14 @@ class SettingsFragment : Fragment() {
             channels,
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                // 用弹窗自己的 context 渲染这一行，圆点/文字色才跟系统单选行一致
                 val view = convertView
-                    ?: LayoutInflater.from(ctx).inflate(R.layout.dialog_single_choice_item, parent, false)
+                    ?: LayoutInflater.from(parent.context)
+                        .inflate(R.layout.dialog_single_choice_item, parent, false)
                 val channel = channels[position]
                 view.findViewById<TextView>(R.id.choice_title).setText(channel.labelRes)
                 view.findViewById<TextView>(R.id.choice_desc).setText(channel.descRes)
-                view.findViewById<RadioButton>(R.id.choice_radio).isChecked = position == selected
+                view.findViewById<CheckedTextView>(R.id.choice_mark).isChecked = position == selected
                 return view
             }
         }
