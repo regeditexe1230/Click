@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.yjc.click.ui.settings.SettingsScreen
 import com.yjc.click.ui.theme.AppTheme
@@ -38,6 +39,7 @@ class SettingsFragment : Fragment() {
     private var theme by mutableStateOf("follow_system")
     private var fontFamily by mutableStateOf<FontFamily?>(null)
     private var dynamicColorChecked by mutableStateOf(false)
+    private var autoCheckUpdates by mutableStateOf(false)
     private var colorSchemeExpanded by mutableStateOf(false)
     private var colorExpanded by mutableStateOf(false)
     private var backgroundExpanded by mutableStateOf(false)
@@ -93,6 +95,7 @@ class SettingsFragment : Fragment() {
                         colorExpanded = colorExpanded,
                         backgroundExpanded = backgroundExpanded,
                         dynamicColorChecked = dynamicColorChecked,
+                        autoCheckUpdates = autoCheckUpdates,
                         colorKey = AppTheme.colorKey,
                         onLanguageClick = { showLanguageDialog() },
                         onFontClick = { showFontDialog() },
@@ -125,6 +128,29 @@ class SettingsFragment : Fragment() {
                         onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
                         onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
                         onPresetParamsCommit = { persistPresets() },
+                        // 更新三行：状态都放在 UpdateStore 里，检查/下载由 UpdateManager 跑
+                        onAutoCheckUpdatesChange = { checked ->
+                            autoCheckUpdates = checked
+                            UpdateStore.setAutoCheck(requireContext(), checked)
+                            // 刚打开就先查一次，用户能立刻看到结果
+                            if (checked) UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
+                        },
+                        updateChannel = UpdateStore.channel,
+                        updateStatus = UpdateStore.status,
+                        updateRelease = UpdateStore.available,
+                        updateDialogVisible = UpdateStore.dialogVisible,
+                        updateDownloading = UpdateStore.downloading,
+                        updateProgress = UpdateStore.progress,
+                        onUpdateChannelClick = { showUpdateChannelDialog() },
+                        onCheckUpdatesClick = {
+                            UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
+                        },
+                        onUpdateInstall = {
+                            UpdateStore.available?.let { release ->
+                                UpdateManager.install(requireContext(), viewLifecycleOwner.lifecycleScope, release)
+                            }
+                        },
+                        onUpdateLater = { UpdateStore.dismissDialog() },
                     )
                 }
             }
@@ -138,6 +164,7 @@ class SettingsFragment : Fragment() {
         colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
         colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
+        autoCheckUpdates = UpdateStore.autoCheck
         // 二级面板的展开状态同样跟着 bundle 走：收起一级再展开时不会丢
         expandedPresetIds = savedInstanceState?.getStringArrayList("expanded_presets")?.toSet() ?: emptySet()
 
@@ -482,10 +509,9 @@ class SettingsFragment : Fragment() {
         // 弹窗显示后：1) 应用字体预览 2) "添加字体"项着色
         dialog.setOnShowListener {
             val listView = dialog.listView ?: return@setOnShowListener
-            val primaryColor = android.util.TypedValue().let {
-                ctx.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, it, true)
-                it.data
-            }
+            // 取当前配色的 primary：不能从 ctx.theme 解 colorPrimary，那是主题里写死的紫色，
+            // 换配色/开动态取色都不会变（"添加字体"一直是紫的）
+            val primaryColor = AppTheme.currentPrimaryArgb(ctx)
 
             for (i in 0 until listView.childCount) {
                 val child = listView.getChildAt(i)
@@ -519,6 +545,31 @@ class SettingsFragment : Fragment() {
             } else false
         }
 
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    // ==================== 更新 ====================
+
+    /** 选更新分支：正式版 / 测试版（和语言、字体弹窗同一套单选列表样式） */
+    private fun showUpdateChannelDialog() {
+        val ctx = requireContext()
+        val channels = UpdateChannel.entries
+        val names = channels.map { getString(it.labelRes) }.toTypedArray()
+        val currentIndex = channels.indexOf(UpdateStore.channel).coerceAtLeast(0)
+
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(R.string.update_channel)
+            .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+                val picked = channels[which]
+                val changed = picked != UpdateStore.channel
+                UpdateStore.setChannel(ctx, picked)
+                dialog.dismiss()
+                // 换了通道就按新通道查一次，省得用户再点一次「检查更新」
+                if (changed) UpdateManager.check(ctx, viewLifecycleOwner.lifecycleScope)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
         dialog.show()
         FontManager.applyFontToDialog(dialog)
     }

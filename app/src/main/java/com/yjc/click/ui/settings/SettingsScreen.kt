@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,10 +29,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +72,9 @@ import androidx.compose.ui.unit.sp
 import com.yjc.click.BackgroundStore
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.RemoteRelease
+import com.yjc.click.UpdateChannel
+import com.yjc.click.UpdateChecker
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
@@ -97,6 +104,7 @@ fun SettingsScreen(
     colorExpanded: Boolean,
     backgroundExpanded: Boolean,
     dynamicColorChecked: Boolean,
+    autoCheckUpdates: Boolean,
     colorKey: String,
     presets: List<BackgroundStore.Preset>,
     selectedPresetId: String?,
@@ -118,6 +126,17 @@ fun SettingsScreen(
     onPresetImageAlpha: (String, Int) -> Unit,
     onPresetScrimAlpha: (String, Int) -> Unit,
     onPresetParamsCommit: () -> Unit,
+    onAutoCheckUpdatesChange: (Boolean) -> Unit,
+    updateChannel: UpdateChannel,
+    updateStatus: String,
+    updateRelease: RemoteRelease?,
+    updateDialogVisible: Boolean,
+    updateDownloading: Boolean,
+    updateProgress: Int,
+    onUpdateChannelClick: () -> Unit,
+    onCheckUpdatesClick: () -> Unit,
+    onUpdateInstall: () -> Unit,
+    onUpdateLater: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
@@ -243,9 +262,156 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            // ---------------- 更新 ----------------
+            SectionTitle(R.string.update_section)
+            SettingsCard {
+                SettingsRow(
+                    iconRes = R.drawable.ic_download,
+                    titleRes = R.string.auto_check_updates,
+                    descRes = R.string.auto_check_updates_desc,
+                    shape = RowTopShape,
+                    testTag = "settings_update_auto",
+                ) {
+                    // 点击范围只有开关本身，整行不响应
+                    Switch(checked = autoCheckUpdates, onCheckedChange = onAutoCheckUpdatesChange)
+                }
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_swap_horiz,
+                    titleRes = R.string.update_channel,
+                    descRes = R.string.update_channel_desc,
+                    value = stringResource(updateChannel.labelRes),
+                    shape = RowMiddleShape,
+                    testTag = "settings_update_channel",
+                    onClick = onUpdateChannelClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_update,
+                    titleRes = R.string.check_updates,
+                    descRes = R.string.check_updates_desc,
+                    value = updateStatus,
+                    shape = RowBottomShape,
+                    testTag = "settings_update_check",
+                    onClick = onCheckUpdatesClick,
+                )
+            }
+            if (updateDialogVisible && updateRelease != null) {
+                UpdateDialog(
+                    release = updateRelease,
+                    downloading = updateDownloading,
+                    progress = updateProgress,
+                    onInstall = onUpdateInstall,
+                    onLater = onUpdateLater,
+                )
+            }
         }
     }
 }
+
+/** 有可用更新：当前 → 最新 + 更新日志 + 安装/稍后 */
+@Composable
+private fun UpdateDialog(
+    release: RemoteRelease,
+    downloading: Boolean,
+    progress: Int,
+    onInstall: () -> Unit,
+    onLater: () -> Unit,
+) {
+    val context = LocalContext.current
+    val currentVersion = remember { UpdateChecker.installedVersionName(context) }
+    val notes = remember(release.notes) { releaseNotes(release.notes) }
+    AlertDialog(
+        onDismissRequest = { if (!downloading) onLater() },
+        title = {
+            ClickText(stringResource(R.string.update_available), 18.sp, MaterialTheme.colorScheme.onSurface)
+        },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    ClickText(currentVersion, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+                    Image(
+                        painter = painterResource(R.drawable.ic_arrow_right),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(16.dp),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                    )
+                    ClickText(
+                        release.versionName.ifBlank { release.tag },
+                        14.sp,
+                        MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                if (notes.isNotBlank()) {
+                    ClickText(
+                        text = notes,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState()),
+                    )
+                }
+                if (downloading) {
+                    LinearProgressIndicator(
+                        progress = { progress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onInstall, enabled = !downloading) {
+                ClickText(
+                    text = if (downloading) {
+                        stringResource(R.string.update_downloading, progress)
+                    } else {
+                        stringResource(R.string.update_install)
+                    },
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onLater, enabled = !downloading) {
+                ClickText(stringResource(R.string.update_later), 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+    )
+}
+
+/**
+ * 更新日志正文：去掉 markdown 记号，丢掉 GitHub 自动生成的 compare 链接
+ * （只有那行链接时等于没写日志，不如不显示），剩下的按原样显示。
+ */
+private val markdownLink = Regex("\\[([^\\]]+)]\\([^)]+\\)")
+private val compareUrl = Regex("^https?://\\S*github\\.com/\\S*/compare/\\S*$")
+
+private fun releaseNotes(raw: String): String = raw.lineSequence()
+    .map { it.trim() }
+    .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
+    .filterNot { compareUrl.matches(it) }
+    .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
+    .map { markdownLink.replace(it, "$1").replace("**", "") }
+    .joinToString("\n")
+    .trim()
 
 @Composable
 private fun themeDisplayName(theme: String): String = when (theme) {
@@ -307,17 +473,18 @@ private fun SettingsRow(
     iconRes: Int,
     titleRes: Int,
     descRes: Int,
-    value: String,
+    value: String = "",
     shape: Shape,
     testTag: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(LocalSectionBackground.current)
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .testTag(testTag)
             .padding(horizontal = 22.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -340,7 +507,11 @@ private fun SettingsRow(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        ClickText(value, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+        if (trailing != null) {
+            trailing()
+        } else {
+            ClickText(value, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
