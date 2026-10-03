@@ -56,13 +56,10 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
 
-      # 资产名带版本号（Click-4.9-beta.apk），免得所有包都叫 Click.apk，
-      # 用户下载目录里堆一堆同名文件分不清哪个是哪版。客户端 pickAsset() 在找不到
-      # Click.apk 时会退回“第一个 .apk”，所以老版本应用照样能更新。
-      - name: 整理产物（资产名带版本号）
+      - name: 整理产物（资产名固定为 Click.apk）
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Click-$VERSION_NAME.apk"
+          cp app/build/outputs/apk/release/app-release.apk dist/Click.apk
           ls -l dist
 
       # 正文格式：CI 先生成中文提交列表兜底，发版后再 PATCH 成双语（参考 click-beta2 / click-update2）：
@@ -99,7 +96,7 @@ jobs:
       - name: 上传 APK 到 Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.apk
+          files: dist/Click.apk
           name: ${{ env.VERSION_NAME }}
           prerelease: ${{ startsWith(github.ref_name, 'click-beta') }}
           body_path: dist/notes.md

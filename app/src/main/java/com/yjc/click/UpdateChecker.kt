@@ -193,7 +193,6 @@ object UpdateChecker {
 
     private fun pickAsset(assets: JSONArray?): Pair<String, Long>? {
         if (assets == null) return null
-        var clickLike: Pair<String, Long>? = null
         var fallback: Pair<String, Long>? = null
         for (i in 0 until assets.length()) {
             val asset = assets.optJSONObject(i) ?: continue
@@ -202,12 +201,10 @@ object UpdateChecker {
             val url = asset.optString("browser_download_url")
             if (url.isEmpty()) continue
             val entry = url to asset.optLong("size")
-            // 资产名现在带版本号（Click-4.9-beta.apk），老包叫 Click.apk
             if (name.equals(PREFERRED_ASSET, ignoreCase = true)) return entry
-            if (clickLike == null && name.startsWith("click", ignoreCase = true)) clickLike = entry
             if (fallback == null) fallback = entry
         }
-        return clickLike ?: fallback
+        return fallback
     }
 
     private fun readText(url: String): String {
