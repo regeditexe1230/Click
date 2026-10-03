@@ -46,7 +46,8 @@ object UpdateStore {
     var autoCheck by mutableStateOf(true)
         private set
 
-    var channel by mutableStateOf(UpdateChannel.BETA)
+    // 默认走正式版：没手动选过通道的人都只收 v* 的正式包
+    var channel by mutableStateOf(UpdateChannel.STABLE)
         private set
 
     /** 设置行右侧那行小字：检查中 / 已是最新 / 发现新版本 / 下载中 50%… */
@@ -72,7 +73,7 @@ object UpdateStore {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         autoCheck = prefs.getBoolean(KEY_AUTO, true)
         channel = UpdateChannel.entries.firstOrNull { it.prefKey == prefs.getString(KEY_CHANNEL, null) }
-            ?: UpdateChannel.BETA
+            ?: UpdateChannel.STABLE
     }
 
     fun setAutoCheck(context: Context, value: Boolean) {
