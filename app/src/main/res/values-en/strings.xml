@@ -134,7 +134,23 @@
     <string name="update_channel_desc">Change the branch the app gets updates from</string>
     <string name="check_updates">Check for updates</string>
     <string name="check_updates_desc">Check and install the latest version</string>
-    <string name="update_off">Off</string>
+    <string name="update_channel_stable">Stable</string>
+    <string name="update_channel_stable_desc">Stable release</string>
+    <string name="update_channel_beta">Beta</string>
+    <string name="update_channel_beta_desc">Try new features early, may be unstable</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_latest">Up to date</string>
+    <string name="update_found">Update available %1$s</string>
+    <string name="update_failed">Check failed, please check your network</string>
+    <string name="update_available">Update available</string>
+    <string name="update_downloading">Downloading %1$d%%</string>
+    <string name="update_download_failed">Download failed, please try again</string>
+    <string name="update_install">Install update</string>
+    <string name="update_later">Later</string>
+    <string name="update_installing">Handed to the system installer</string>
+    <string name="update_verify_failed">Package verification failed</string>
+    <string name="update_signature_mismatch">The package signature differs from the installed app, please uninstall it first</string>
+    <string name="update_need_install_permission">Please allow installing unknown apps first</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

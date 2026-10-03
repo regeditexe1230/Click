@@ -123,7 +123,23 @@
     <string name="update_channel_desc">アプリが更新を取得するブランチを変更します</string>
     <string name="check_updates">更新を確認</string>
     <string name="check_updates_desc">最新版を確認してインストールします</string>
-    <string name="update_off">オフ</string>
+    <string name="update_channel_stable">安定版</string>
+    <string name="update_channel_stable_desc">安定したリリース版</string>
+    <string name="update_channel_beta">ベータ版</string>
+    <string name="update_channel_beta_desc">新機能を先行して試せます（不安定な場合があります）</string>
+    <string name="update_checking">確認中…</string>
+    <string name="update_latest">最新版です</string>
+    <string name="update_found">新しいバージョンがあります %1$s</string>
+    <string name="update_failed">確認に失敗しました。ネットワークをご確認ください</string>
+    <string name="update_available">新しいバージョンがあります</string>
+    <string name="update_downloading">ダウンロード中 %1$d%%</string>
+    <string name="update_download_failed">ダウンロードに失敗しました。もう一度お試しください</string>
+    <string name="update_install">更新をインストール</string>
+    <string name="update_later">後で</string>
+    <string name="update_installing">システムのインストーラーに渡しました</string>
+    <string name="update_verify_failed">パッケージの検証に失敗しました</string>
+    <string name="update_signature_mismatch">パッケージの署名が現在のバージョンと異なります。先にアンインストールしてください</string>
+    <string name="update_need_install_permission">先に「提供元不明のアプリ」のインストールを許可してください</string>
 
     <string name="nav_home">ホーム</string>
     <string name="nav_program">プログラム</string>

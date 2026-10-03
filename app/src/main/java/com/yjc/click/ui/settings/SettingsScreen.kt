@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,10 +29,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +72,9 @@ import androidx.compose.ui.unit.sp
 import com.yjc.click.BackgroundStore
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.RemoteRelease
+import com.yjc.click.UpdateChannel
+import com.yjc.click.UpdateChecker
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickColor
 import com.yjc.click.ui.theme.ClickText
@@ -120,8 +127,16 @@ fun SettingsScreen(
     onPresetScrimAlpha: (String, Int) -> Unit,
     onPresetParamsCommit: () -> Unit,
     onAutoCheckUpdatesChange: (Boolean) -> Unit,
-    onUpdateChannelClick: () -> Unit,
+    updateChannel: UpdateChannel,
+    updateStatus: String,
+    updateRelease: RemoteRelease?,
+    updateDialogVisible: Boolean,
+    updateDownloading: Boolean,
+    updateProgress: Int,
+    onUpdateChannelSelected: (UpdateChannel) -> Unit,
     onCheckUpdatesClick: () -> Unit,
+    onUpdateInstall: () -> Unit,
+    onUpdateLater: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
@@ -249,9 +264,9 @@ fun SettingsScreen(
             }
 
             // ---------------- 更新 ----------------
+            var channelDialogVisible by remember { mutableStateOf(false) }
             SectionTitle(R.string.update_section)
             SettingsCard {
-                // 三项先占位，还没接更新逻辑
                 SettingsRow(
                     iconRes = R.drawable.ic_download,
                     titleRes = R.string.auto_check_updates,
@@ -267,24 +282,176 @@ fun SettingsScreen(
                     iconRes = R.drawable.ic_swap_horiz,
                     titleRes = R.string.update_channel,
                     descRes = R.string.update_channel_desc,
-                    value = "",
+                    value = stringResource(updateChannel.labelRes),
                     shape = RowMiddleShape,
                     testTag = "settings_update_channel",
-                    onClick = onUpdateChannelClick,
+                    onClick = { channelDialogVisible = true },
                 )
                 Gap2dp()
                 SettingsRow(
                     iconRes = R.drawable.ic_update,
                     titleRes = R.string.check_updates,
                     descRes = R.string.check_updates_desc,
-                    value = "",
+                    value = updateStatus,
                     shape = RowBottomShape,
                     testTag = "settings_update_check",
                     onClick = onCheckUpdatesClick,
                 )
             }
+            if (channelDialogVisible) {
+                UpdateChannelDialog(
+                    current = updateChannel,
+                    onDismiss = { channelDialogVisible = false },
+                    onSelect = { channel ->
+                        channelDialogVisible = false
+                        onUpdateChannelSelected(channel)
+                    },
+                )
+            }
+            if (updateDialogVisible && updateRelease != null) {
+                UpdateDialog(
+                    release = updateRelease,
+                    downloading = updateDownloading,
+                    progress = updateProgress,
+                    onInstall = onUpdateInstall,
+                    onLater = onUpdateLater,
+                )
+            }
         }
     }
+}
+
+/** 选更新分支：正式版 / 测试版 */
+@Composable
+private fun UpdateChannelDialog(
+    current: UpdateChannel,
+    onDismiss: () -> Unit,
+    onSelect: (UpdateChannel) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            ClickText(stringResource(R.string.update_channel), 18.sp, MaterialTheme.colorScheme.onSurface)
+        },
+        text = {
+            Column {
+                UpdateChannel.entries.forEach { channel ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onSelect(channel) }
+                            .testTag("update_channel_${channel.prefKey}")
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = channel == current, onClick = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            ClickText(stringResource(channel.labelRes), 16.sp, MaterialTheme.colorScheme.onSurface)
+                            ClickText(
+                                text = stringResource(channel.descRes),
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                ClickText(stringResource(R.string.cancel), 14.sp, MaterialTheme.colorScheme.primary)
+            }
+        },
+    )
+}
+
+/** 有可用更新：当前 → 最新 + 更新日志 + 安装/稍后 */
+@Composable
+private fun UpdateDialog(
+    release: RemoteRelease,
+    downloading: Boolean,
+    progress: Int,
+    onInstall: () -> Unit,
+    onLater: () -> Unit,
+) {
+    val context = LocalContext.current
+    val currentVersion = remember { UpdateChecker.installedVersionName(context) }
+    AlertDialog(
+        onDismissRequest = { if (!downloading) onLater() },
+        title = {
+            ClickText(stringResource(R.string.update_available), 18.sp, MaterialTheme.colorScheme.onSurface)
+        },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    ClickText(currentVersion, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+                    Image(
+                        painter = painterResource(R.drawable.ic_arrow_right),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(16.dp),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                    )
+                    ClickText(
+                        release.versionName.ifBlank { release.tag },
+                        14.sp,
+                        MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                if (release.notes.isNotBlank()) {
+                    ClickText(
+                        text = release.notes.trim(),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState()),
+                    )
+                }
+                if (downloading) {
+                    LinearProgressIndicator(
+                        progress = { progress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onInstall, enabled = !downloading) {
+                ClickText(
+                    text = if (downloading) {
+                        stringResource(R.string.update_downloading, progress)
+                    } else {
+                        stringResource(R.string.update_install)
+                    },
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onLater, enabled = !downloading) {
+                ClickText(stringResource(R.string.update_later), 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+    )
 }
 
 @Composable
