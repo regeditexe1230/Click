@@ -119,8 +119,8 @@
     <string name="update_section">更新</string>
     <string name="auto_check_updates">自動檢查更新</string>
     <string name="auto_check_updates_desc">應用啟動後自動檢查更新</string>
-    <string name="update_channel">測試更新管道</string>
-    <string name="update_channel_desc">提前體驗即將發布的新功能</string>
+    <string name="update_channel">更新分支</string>
+    <string name="update_channel_desc">變更應用程式取得更新的分支</string>
     <string name="check_updates">檢查更新</string>
     <string name="check_updates_desc">檢查並安裝最新版本</string>
     <string name="update_off">關閉</string>

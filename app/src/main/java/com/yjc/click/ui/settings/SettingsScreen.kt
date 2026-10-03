@@ -252,20 +252,21 @@ fun SettingsScreen(
             SettingsCard {
                 // 三项先占位，还没接更新逻辑
                 SettingsRow(
-                    iconRes = R.drawable.ic_cloud_download,
+                    iconRes = R.drawable.ic_download,
                     titleRes = R.string.auto_check_updates,
                     descRes = R.string.auto_check_updates_desc,
-                    value = stringResource(R.string.update_off),
                     shape = RowTopShape,
                     testTag = "settings_update_auto",
                     onClick = onAutoCheckUpdatesClick,
-                )
+                ) {
+                    Switch(checked = false, onCheckedChange = null) // 占位开关，不做功能
+                }
                 Gap2dp()
                 SettingsRow(
                     iconRes = R.drawable.ic_swap_horiz,
                     titleRes = R.string.update_channel,
                     descRes = R.string.update_channel_desc,
-                    value = stringResource(R.string.update_off),
+                    value = "",
                     shape = RowMiddleShape,
                     testTag = "settings_update_channel",
                     onClick = onUpdateChannelClick,
@@ -345,10 +346,11 @@ private fun SettingsRow(
     iconRes: Int,
     titleRes: Int,
     descRes: Int,
-    value: String,
+    value: String = "",
     shape: Shape,
     testTag: String,
     onClick: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -378,7 +380,11 @@ private fun SettingsRow(
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        ClickText(value, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+        if (trailing != null) {
+            trailing()
+        } else {
+            ClickText(value, 14.sp, MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
