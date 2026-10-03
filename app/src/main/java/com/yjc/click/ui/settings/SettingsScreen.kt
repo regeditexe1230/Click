@@ -97,6 +97,7 @@ fun SettingsScreen(
     colorExpanded: Boolean,
     backgroundExpanded: Boolean,
     dynamicColorChecked: Boolean,
+    autoCheckUpdates: Boolean,
     colorKey: String,
     presets: List<BackgroundStore.Preset>,
     selectedPresetId: String?,
@@ -118,7 +119,7 @@ fun SettingsScreen(
     onPresetImageAlpha: (String, Int) -> Unit,
     onPresetScrimAlpha: (String, Int) -> Unit,
     onPresetParamsCommit: () -> Unit,
-    onAutoCheckUpdatesClick: () -> Unit,
+    onAutoCheckUpdatesChange: (Boolean) -> Unit,
     onUpdateChannelClick: () -> Unit,
     onCheckUpdatesClick: () -> Unit,
 ) {
@@ -257,9 +258,10 @@ fun SettingsScreen(
                     descRes = R.string.auto_check_updates_desc,
                     shape = RowTopShape,
                     testTag = "settings_update_auto",
-                    onClick = onAutoCheckUpdatesClick,
+                    onClick = { onAutoCheckUpdatesChange(!autoCheckUpdates) },
                 ) {
-                    Switch(checked = false, onCheckedChange = null) // 占位开关，不做功能
+                    // 还没接更新逻辑，但开关本身要能动
+                    Switch(checked = autoCheckUpdates, onCheckedChange = onAutoCheckUpdatesChange)
                 }
                 Gap2dp()
                 SettingsRow(

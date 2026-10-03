@@ -38,6 +38,7 @@ class SettingsFragment : Fragment() {
     private var theme by mutableStateOf("follow_system")
     private var fontFamily by mutableStateOf<FontFamily?>(null)
     private var dynamicColorChecked by mutableStateOf(false)
+    private var autoCheckUpdates by mutableStateOf(false)
     private var colorSchemeExpanded by mutableStateOf(false)
     private var colorExpanded by mutableStateOf(false)
     private var backgroundExpanded by mutableStateOf(false)
@@ -93,6 +94,7 @@ class SettingsFragment : Fragment() {
                         colorExpanded = colorExpanded,
                         backgroundExpanded = backgroundExpanded,
                         dynamicColorChecked = dynamicColorChecked,
+                        autoCheckUpdates = autoCheckUpdates,
                         colorKey = AppTheme.colorKey,
                         onLanguageClick = { showLanguageDialog() },
                         onFontClick = { showFontDialog() },
@@ -125,8 +127,8 @@ class SettingsFragment : Fragment() {
                         onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
                         onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
                         onPresetParamsCommit = { persistPresets() },
-                        // 更新那三行暂时只是占位，点了不做任何事
-                        onAutoCheckUpdatesClick = {},
+                        // 更新那三行暂时只是占位，开关能拨动但不做任何事
+                        onAutoCheckUpdatesChange = { autoCheckUpdates = it },
                         onUpdateChannelClick = {},
                         onCheckUpdatesClick = {},
                     )
@@ -142,6 +144,7 @@ class SettingsFragment : Fragment() {
         colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
         colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
+        autoCheckUpdates = savedInstanceState?.getBoolean("auto_check_updates", false) ?: false
         // 二级面板的展开状态同样跟着 bundle 走：收起一级再展开时不会丢
         expandedPresetIds = savedInstanceState?.getStringArrayList("expanded_presets")?.toSet() ?: emptySet()
 
@@ -198,6 +201,7 @@ class SettingsFragment : Fragment() {
         outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
         outState.putBoolean("color_expanded", colorExpanded)
         outState.putBoolean("background_expanded", backgroundExpanded)
+        outState.putBoolean("auto_check_updates", autoCheckUpdates)
         outState.putStringArrayList("expanded_presets", ArrayList(expandedPresetIds))
     }
 
