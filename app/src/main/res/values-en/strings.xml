@@ -126,6 +126,16 @@
     <string name="image_invalid">Not a valid image file</string>
     <string name="image_read_error">Cannot read the image file</string>
 
+    <!-- Updates -->
+    <string name="update_section">Updates</string>
+    <string name="auto_check_updates">Check for updates automatically</string>
+    <string name="auto_check_updates_desc">Check for updates when the app starts</string>
+    <string name="update_channel">Beta update channel</string>
+    <string name="update_channel_desc">Try new features before they are released</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="check_updates_desc">Check and install the latest version</string>
+    <string name="update_off">Off</string>
+
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_program">Program</string>

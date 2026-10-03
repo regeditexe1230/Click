@@ -125,6 +125,10 @@ class SettingsFragment : Fragment() {
                         onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
                         onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
                         onPresetParamsCommit = { persistPresets() },
+                        // 更新那三行暂时只是占位，点了不做任何事
+                        onAutoCheckUpdatesClick = {},
+                        onUpdateChannelClick = {},
+                        onCheckUpdatesClick = {},
                     )
                 }
             }

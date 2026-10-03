@@ -116,6 +116,15 @@
     <string name="image_invalid">有効な画像ファイルではありません</string>
     <string name="image_read_error">画像ファイルを読み込めません</string>
 
+    <string name="update_section">アップデート</string>
+    <string name="auto_check_updates">自動で更新を確認</string>
+    <string name="auto_check_updates_desc">アプリ起動時に自動で更新を確認します</string>
+    <string name="update_channel">テスト更新チャンネル</string>
+    <string name="update_channel_desc">公開前の新機能をいち早く試せます</string>
+    <string name="check_updates">更新を確認</string>
+    <string name="check_updates_desc">最新版を確認してインストールします</string>
+    <string name="update_off">オフ</string>
+
     <string name="nav_home">ホーム</string>
     <string name="nav_program">プログラム</string>
     <string name="nav_settings">設定</string>

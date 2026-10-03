@@ -116,6 +116,15 @@
     <string name="image_invalid">유효한 이미지 파일이 아닙니다</string>
     <string name="image_read_error">이미지 파일을 읽을 수 없습니다</string>
 
+    <string name="update_section">업데이트</string>
+    <string name="auto_check_updates">자동 업데이트 확인</string>
+    <string name="auto_check_updates_desc">앱을 시작할 때 자동으로 업데이트를 확인합니다</string>
+    <string name="update_channel">테스트 업데이트 채널</string>
+    <string name="update_channel_desc">출시 전 새 기능을 미리 사용해 보세요</string>
+    <string name="check_updates">업데이트 확인</string>
+    <string name="check_updates_desc">최신 버전을 확인하고 설치합니다</string>
+    <string name="update_off">꺼짐</string>
+
     <string name="nav_home">홈</string>
     <string name="nav_program">프로그램</string>
     <string name="nav_settings">설정</string>

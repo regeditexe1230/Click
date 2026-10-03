@@ -118,6 +118,9 @@ fun SettingsScreen(
     onPresetImageAlpha: (String, Int) -> Unit,
     onPresetScrimAlpha: (String, Int) -> Unit,
     onPresetParamsCommit: () -> Unit,
+    onAutoCheckUpdatesClick: () -> Unit,
+    onUpdateChannelClick: () -> Unit,
+    onCheckUpdatesClick: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
@@ -242,6 +245,41 @@ fun SettingsScreen(
                         onParamsCommit = onPresetParamsCommit,
                     )
                 }
+            }
+
+            // ---------------- 更新 ----------------
+            SectionTitle(R.string.update_section)
+            SettingsCard {
+                // 三项先占位，还没接更新逻辑
+                SettingsRow(
+                    iconRes = R.drawable.ic_cloud_download,
+                    titleRes = R.string.auto_check_updates,
+                    descRes = R.string.auto_check_updates_desc,
+                    value = stringResource(R.string.update_off),
+                    shape = RowTopShape,
+                    testTag = "settings_update_auto",
+                    onClick = onAutoCheckUpdatesClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_swap_horiz,
+                    titleRes = R.string.update_channel,
+                    descRes = R.string.update_channel_desc,
+                    value = stringResource(R.string.update_off),
+                    shape = RowMiddleShape,
+                    testTag = "settings_update_channel",
+                    onClick = onUpdateChannelClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_update,
+                    titleRes = R.string.check_updates,
+                    descRes = R.string.check_updates_desc,
+                    value = "",
+                    shape = RowBottomShape,
+                    testTag = "settings_update_check",
+                    onClick = onCheckUpdatesClick,
+                )
             }
         }
     }
