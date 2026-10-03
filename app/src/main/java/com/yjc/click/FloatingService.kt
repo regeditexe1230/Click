@@ -56,12 +56,26 @@ class FloatingService : Service() {
     private var dynamicColorWatcher: Job? = null
     private var overlayOpWatcher: AppOpsManager.OnOpChangedListener? = null
     private var overlayRevoked = false
+    private var accessibilityLost = false
 
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
         watchOverlayPermission()
+        active = this
+    }
+
+    /** 无障碍服务被关掉时，球还留在屏幕上却没反应，这里提示一句并停掉正在执行的循环 */
+    private fun handleAccessibilityLost() {
+        if (accessibilityLost || !floatingViewReady) return
+        accessibilityLost = true
+        android.util.Log.w("FloatingService", "accessibility lost, stopping operation")
+        Toast.makeText(this, R.string.toast_accessibility_revoked, Toast.LENGTH_LONG).show()
+        AppConfig.running = false
+        AppConfig.operationActive = false
+        job?.cancel()
+        updateNotification()
     }
 
     /**
@@ -553,6 +567,7 @@ class FloatingService : Service() {
                 }
                 if (service == null) {
                     android.util.Log.w("FloatingService", "startOperation: accessibility service timed out")
+                    android.util.Log.w("FloatingService", "toast: need accessibility")
                     // 无障碍没开时点球不能毫无反应，给个提示（旧版这里是静默返回）
                     Toast.makeText(
                         this@FloatingService,
@@ -673,6 +688,7 @@ class FloatingService : Service() {
     override fun onDestroy() {
         job?.cancel()
         scope.cancel()
+        if (active === this) active = null
         overlayOpWatcher?.let {
             val appOps = getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
             try {
@@ -702,5 +718,18 @@ class FloatingService : Service() {
         private const val REQUEST_STOP_SERVICE = 1
         private const val ACTION_STOP = "com.yjc.click.action.STOP"
         private const val BALL_SIZE_DP = 60
+
+        @Volatile
+        private var active: FloatingService? = null
+
+        /** 无障碍服务被系统关掉时由 ClickAccessibilityService 回调 */
+        fun onAccessibilityLost() {
+            active?.handleAccessibilityLost()
+        }
+
+        /** 无障碍重新开启后允许下一次撤销再提示一次 */
+        fun onAccessibilityRestored() {
+            active?.accessibilityLost = false
+        }
     }
 }

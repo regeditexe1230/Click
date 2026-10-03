@@ -22,6 +22,7 @@ class ClickAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        FloatingService.onAccessibilityRestored()
         Log.d(TAG, "Accessibility service connected")
     }
 
@@ -110,6 +111,14 @@ class ClickAccessibilityService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "Accessibility service unbinding")
         instance = null
+        // 用户在系统设置里关掉无障碍时，悬浮球还在屏幕上却点不动，交给它提示
+        FloatingService.onAccessibilityLost()
         return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        instance = null
+        FloatingService.onAccessibilityLost()
+        super.onDestroy()
     }
 }
