@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.yjc.click.ui.settings.SettingsScreen
 import com.yjc.click.ui.theme.AppTheme
@@ -127,10 +128,29 @@ class SettingsFragment : Fragment() {
                         onPresetImageAlpha = { id, value -> setPresetAlpha(id, value, scrim = false) },
                         onPresetScrimAlpha = { id, value -> setPresetAlpha(id, value, scrim = true) },
                         onPresetParamsCommit = { persistPresets() },
-                        // 更新那三行暂时只是占位，开关能拨动但不做任何事
-                        onAutoCheckUpdatesChange = { autoCheckUpdates = it },
-                        onUpdateChannelClick = {},
-                        onCheckUpdatesClick = {},
+                        // 更新三行：状态都放在 UpdateStore 里，检查/下载由 UpdateManager 跑
+                        onAutoCheckUpdatesChange = { checked ->
+                            autoCheckUpdates = checked
+                            UpdateStore.setAutoCheck(requireContext(), checked)
+                            // 刚打开就先查一次，用户能立刻看到结果
+                            if (checked) UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
+                        },
+                        updateChannel = UpdateStore.channel,
+                        updateStatus = UpdateStore.status,
+                        updateRelease = UpdateStore.available,
+                        updateDialogVisible = UpdateStore.dialogVisible,
+                        updateDownloading = UpdateStore.downloading,
+                        updateProgress = UpdateStore.progress,
+                        onUpdateChannelSelected = { UpdateStore.setChannel(requireContext(), it) },
+                        onCheckUpdatesClick = {
+                            UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
+                        },
+                        onUpdateInstall = {
+                            UpdateStore.available?.let { release ->
+                                UpdateManager.install(requireContext(), viewLifecycleOwner.lifecycleScope, release)
+                            }
+                        },
+                        onUpdateLater = { UpdateStore.dismissDialog() },
                     )
                 }
             }
@@ -144,7 +164,7 @@ class SettingsFragment : Fragment() {
         colorSchemeExpanded = savedInstanceState?.getBoolean("color_scheme_expanded", false) ?: false
         colorExpanded = savedInstanceState?.getBoolean("color_expanded", false) ?: false
         backgroundExpanded = savedInstanceState?.getBoolean("background_expanded", false) ?: false
-        autoCheckUpdates = savedInstanceState?.getBoolean("auto_check_updates", false) ?: false
+        autoCheckUpdates = UpdateStore.autoCheck
         // 二级面板的展开状态同样跟着 bundle 走：收起一级再展开时不会丢
         expandedPresetIds = savedInstanceState?.getStringArrayList("expanded_presets")?.toSet() ?: emptySet()
 
@@ -201,7 +221,6 @@ class SettingsFragment : Fragment() {
         outState.putBoolean("color_scheme_expanded", colorSchemeExpanded)
         outState.putBoolean("color_expanded", colorExpanded)
         outState.putBoolean("background_expanded", backgroundExpanded)
-        outState.putBoolean("auto_check_updates", autoCheckUpdates)
         outState.putStringArrayList("expanded_presets", ArrayList(expandedPresetIds))
     }
 
