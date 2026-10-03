@@ -143,6 +143,9 @@
     <string name="update_available">Update available</string>
     <string name="update_downloading">Downloading %1$d%%</string>
     <string name="update_download_failed">Download failed, please try again</string>
+    <string name="update_error_network">Network unavailable, please check your connection</string>
+    <string name="update_error_timeout">Connection timed out, please try again later</string>
+    <string name="update_error_server">Server error, please try again later</string>
     <string name="update_install">Install update</string>
     <string name="update_later">Later</string>
     <string name="update_installing">Handed to the system installer</string>
