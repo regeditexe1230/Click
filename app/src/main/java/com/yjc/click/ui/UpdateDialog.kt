@@ -3,6 +3,7 @@ package com.yjc.click.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
@@ -43,6 +45,8 @@ internal fun UpdateDialog(
     downloading: Boolean,
     progress: Int,
     @StringRes errorRes: Int,
+    ignored: Boolean,
+    onIgnoreChange: (Boolean) -> Unit,
     onInstall: () -> Unit,
     onCancelDownload: () -> Unit,
     onLater: () -> Unit,
@@ -107,6 +111,23 @@ internal fun UpdateDialog(
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(top = 8.dp),
                     )
+                }
+                // 下载中不显示：这时候弹窗只管进度和取消
+                if (!downloading) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clickable { onIgnoreChange(!ignored) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = ignored, onCheckedChange = onIgnoreChange)
+                        ClickText(
+                            text = stringResource(R.string.update_ignore_version),
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         },
