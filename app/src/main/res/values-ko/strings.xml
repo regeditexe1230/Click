@@ -132,6 +132,10 @@
     <string name="update_available">새 버전이 있습니다</string>
     <string name="update_downloading">다운로드 중 %1$d%%</string>
     <string name="update_download_failed">다운로드에 실패했습니다. 다시 시도해 주세요</string>
+    <string name="update_error_network">네트워크를 사용할 수 없습니다. 연결을 확인해 주세요</string>
+    <string name="update_error_timeout">연결 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요</string>
+    <string name="update_error_server">서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요</string>
+    <string name="update_ignore_version">이 버전은 다시 알리지 않음</string>
     <string name="update_install">업데이트 설치</string>
     <string name="update_later">나중에</string>
     <string name="update_installing">시스템 설치 프로그램으로 전달했습니다</string>

@@ -141,6 +141,10 @@
     <string name="update_available">发现新版本</string>
     <string name="update_downloading">下载中 %1$d%%</string>
     <string name="update_download_failed">下载失败，请重试</string>
+    <string name="update_error_network">网络不可用，请检查网络连接</string>
+    <string name="update_error_timeout">连接超时，请稍后重试</string>
+    <string name="update_error_server">服务器返回错误，请稍后重试</string>
+    <string name="update_ignore_version">此版本不再提醒</string>
     <string name="update_install">安装更新</string>
     <string name="update_later">稍后</string>
     <string name="update_installing">已交给系统安装</string>

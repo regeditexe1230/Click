@@ -20,6 +20,9 @@ import java.security.MessageDigest
 /** 下载下来的安装包是否能用 */
 enum class VerifyResult { OK, PACKAGE, VERSION, SIGNATURE, BROKEN }
 
+/** 用户在下载途中点了「取消」：从进度回调里抛出，让阻塞的读循环立刻停下 */
+class DownloadCancelled : Exception("download cancelled")
+
 /**
  * 更新源 = 本仓库的 GitHub Releases（tag 里编码了通道与版本号，见 UpdateChannel）。
  *
@@ -228,6 +231,10 @@ object UpdateChecker {
             try {
                 fetchTo(candidate, target, expectedSize, onProgress)
                 return
+            } catch (e: DownloadCancelled) {
+                // 取消不算失败：删掉半截文件直接抛出去，别再去试下一个地址
+                target.delete()
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "download failed: $candidate (${e.javaClass.simpleName}: ${e.message})")
                 last = e
