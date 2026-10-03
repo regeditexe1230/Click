@@ -124,6 +124,16 @@
     <string name="image_invalid">不是有效的图片文件</string>
     <string name="image_read_error">无法读取图片文件</string>
 
+    <!-- 更新 -->
+    <string name="update_section">更新</string>
+    <string name="auto_check_updates">自动检查更新</string>
+    <string name="auto_check_updates_desc">应用启动后自动检查更新</string>
+    <string name="update_channel">测试更新渠道</string>
+    <string name="update_channel_desc">提前体验即将发布的新功能</string>
+    <string name="check_updates">检查更新</string>
+    <string name="check_updates_desc">检查并安装最新版本</string>
+    <string name="update_off">关闭</string>
+
     <!-- 导航栏 -->
     <string name="nav_home">主页</string>
     <string name="nav_program">程序</string>
