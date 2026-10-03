@@ -119,8 +119,8 @@
     <string name="update_section">アップデート</string>
     <string name="auto_check_updates">自動で更新を確認</string>
     <string name="auto_check_updates_desc">アプリ起動時に自動で更新を確認します</string>
-    <string name="update_channel">テスト更新チャンネル</string>
-    <string name="update_channel_desc">公開前の新機能をいち早く試せます</string>
+    <string name="update_channel">更新ブランチ</string>
+    <string name="update_channel_desc">アプリが更新を取得するブランチを変更します</string>
     <string name="check_updates">更新を確認</string>
     <string name="check_updates_desc">最新版を確認してインストールします</string>
     <string name="update_off">オフ</string>

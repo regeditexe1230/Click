@@ -130,8 +130,8 @@
     <string name="update_section">Updates</string>
     <string name="auto_check_updates">Check for updates automatically</string>
     <string name="auto_check_updates_desc">Check for updates when the app starts</string>
-    <string name="update_channel">Beta update channel</string>
-    <string name="update_channel_desc">Try new features before they are released</string>
+    <string name="update_channel">Update branch</string>
+    <string name="update_channel_desc">Change the branch the app gets updates from</string>
     <string name="check_updates">Check for updates</string>
     <string name="check_updates_desc">Check and install the latest version</string>
     <string name="update_off">Off</string>

@@ -128,8 +128,8 @@
     <string name="update_section">更新</string>
     <string name="auto_check_updates">自动检查更新</string>
     <string name="auto_check_updates_desc">应用启动后自动检查更新</string>
-    <string name="update_channel">测试更新渠道</string>
-    <string name="update_channel_desc">提前体验即将发布的新功能</string>
+    <string name="update_channel">更新分支</string>
+    <string name="update_channel_desc">更改软件获取更新的分支</string>
     <string name="check_updates">检查更新</string>
     <string name="check_updates_desc">检查并安装最新版本</string>
     <string name="update_off">关闭</string>
