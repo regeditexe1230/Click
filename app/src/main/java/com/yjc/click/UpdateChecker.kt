@@ -24,7 +24,7 @@ enum class VerifyResult { OK, PACKAGE, VERSION, SIGNATURE, BROKEN }
 class DownloadCancelled : Exception("download cancelled")
 
 /**
- * 更新源 = 本仓库的 GitHub Releases（tag 里编码了通道与版本号，见 UpdateChannel）。
+ * 更新源 = 本仓库的 GitHub Releases（tag 里是通道和"第几版"，versionCode 在正文的隐藏标记里，见 UpdateChannel）。
  *
  * 国内直连 api.github.com 经常不通，所以每个请求都先直连、失败再走 gh-proxy 镜像。
  * 只用 HttpURLConnection + org.json，不引第三方网络库。
@@ -38,6 +38,9 @@ object UpdateChecker {
     private const val CONNECT_TIMEOUT = 8_000
     private const val READ_TIMEOUT = 15_000
     private const val TAG = "UpdateChecker"
+
+    /** CI 写在 Release 正文末尾的隐藏标记，里面的数字才是 versionCode */
+    private val versionMarker = Regex("version-code:\\s*(\\d+)")
 
     private val certFlags: Int
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -71,7 +74,8 @@ object UpdateChecker {
                     val release = releases.optJSONObject(i) ?: continue
                     val tag = release.optString("tag_name")
                     if (!tag.startsWith(channel.tagPrefix)) continue
-                    val code = tag.removePrefix(channel.tagPrefix).toIntOrNull() ?: continue
+                    val body = release.optString("body")
+                    val code = versionCodeOf(tag, channel.tagPrefix, body) ?: continue
                     if (code <= installed) continue
                     if (best != null && code <= best.versionCode) continue
                     val asset = pickAsset(release.optJSONArray("assets")) ?: continue
@@ -79,7 +83,7 @@ object UpdateChecker {
                         versionCode = code,
                         tag = tag,
                         versionName = release.optString("name"),
-                        notes = release.optString("body"),
+                        notes = body,
                         downloadUrl = asset.first,
                         sizeBytes = asset.second,
                     )
@@ -178,6 +182,14 @@ object UpdateChecker {
         if (signatures.isNullOrEmpty()) return null
         return MessageDigest.getInstance("SHA-256").digest(signatures[0].toByteArray())
     }
+
+    /**
+     * 远端版本的 versionCode：优先读正文里的隐藏标记；
+     * 老 Release 没有标记（那时 tag 数字就是版本号）就退回 tag 后缀的数字。
+     */
+    private fun versionCodeOf(tag: String, prefix: String, body: String): Int? =
+        versionMarker.find(body)?.groupValues?.get(1)?.toIntOrNull()
+            ?: tag.removePrefix(prefix).toIntOrNull()
 
     private fun pickAsset(assets: JSONArray?): Pair<String, Long>? {
         if (assets == null) return null

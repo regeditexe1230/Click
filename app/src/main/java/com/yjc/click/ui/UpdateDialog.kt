@@ -173,10 +173,14 @@ internal fun UpdateDialog(
 private val markdownLink = Regex("\\[([^\\]]+)]\\([^)]+\\)")
 private val compareUrl = Regex("^https?://\\S*github\\.com/\\S*/compare/\\S*$")
 
+/** CI 写在正文里的 versionCode 标记，只给客户端读，别显示给用户 */
+private val versionMarker = Regex("<!--\\s*version-code:\\s*\\d+\\s*-->")
+
 private fun releaseNotes(raw: String): String = raw.lineSequence()
     .map { it.trim() }
     .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
     .filterNot { compareUrl.matches(it) }
+    .filterNot { versionMarker.containsMatchIn(it) }
     .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
     .map { markdownLink.replace(it, "$1").replace("**", "") }
     .joinToString("\n")

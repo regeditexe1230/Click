@@ -1,11 +1,13 @@
 name: Release
 
-# tag 规则：正式版 v<versionCode>（从 main 发），测试版 b<versionCode>（从 beta 发）
+# tag 规则：正式版 click-update<第几版>（从 main 发），测试版 click-beta<第几版>（从 beta 发）
+# 版本号与 tag 上的数字无关：真正的 versionCode 写进 Release 正文的隐藏标记 <!-- version-code: N -->，
+# 客户端读它来比大小（见 app/src/main/java/com/yjc/click/UpdateChecker.kt）
 on:
   push:
     tags:
-      - 'v*'
-      - 'b*'
+      - 'click-beta*'
+      - 'click-update*'
 
 permissions:
   contents: write
@@ -24,18 +26,30 @@ jobs:
           distribution: zulu
           java-version: '17'
 
-      - name: 校验 tag 与 versionCode
+      - name: 检查 tag 与分支、读出版本号
         run: |
           TAG="${GITHUB_REF_NAME}"
-          NUM="${TAG:1}"
+          case "$TAG" in
+            click-beta*) BRANCH=beta ;;
+            click-update*) BRANCH=main ;;
+            *) echo "::error::tag $TAG 不符合命名规则（click-beta / click-update）"; exit 1 ;;
+          esac
+          git fetch --quiet origin "$BRANCH"
+          if git merge-base --is-ancestor "$TAG" "origin/$BRANCH"; then
+            echo "tag $TAG 在 $BRANCH 上 ✓"
+          else
+            echo "::error::tag $TAG 不在 $BRANCH 上：正式版打 main、测试版打 beta"
+            exit 1
+          fi
           CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -1)
           NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "tag=$TAG versionCode=$CODE versionName=$NAME"
-          if [ "$NUM" != "$CODE" ]; then
-            echo "::error::tag $TAG 的数字($NUM) 与 versionCode($CODE) 不一致"
+          if [ -z "$CODE" ] || [ -z "$NAME" ]; then
+            echo "::error::app/build.gradle.kts 里读不到 versionCode / versionName"
             exit 1
           fi
           echo "VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
 
       - name: 构建 release 包
         run: |
@@ -59,7 +73,8 @@ jobs:
           fi
           echo "更新日志范围：$RANGE"
           git log --no-merges --pretty=format:'- %s' "$RANGE" > dist/notes.md
-          printf '\n' >> dist/notes.md
+          # 客户端靠这行隐藏标记拿 versionCode（tag 上的数字只是"第几版"）
+          printf '\n\n<!-- version-code: %s -->\n' "$VERSION_CODE" >> dist/notes.md
           cat dist/notes.md
 
       - name: 上传 APK 到 Release
@@ -67,6 +82,6 @@ jobs:
         with:
           files: dist/Click.apk
           name: ${{ env.VERSION_NAME }}
-          prerelease: ${{ startsWith(github.ref_name, 'b') }}
+          prerelease: ${{ startsWith(github.ref_name, 'click-beta') }}
           body_path: dist/notes.md
           fail_on_unmatched_files: true
