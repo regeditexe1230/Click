@@ -16,10 +16,13 @@
     <string name="toast_operation_paused">操作已暂停</string>
     <string name="toast_enable_overlay">请开启悬浮窗权限</string>
     <string name="toast_overlay_enabled">悬浮窗权限已开启</string>
+    <string name="toast_overlay_revoked">悬浮窗权限已关闭，已停止悬浮球</string>
     <string name="toast_fill_manual_params">请填写手动参数</string>
     <string name="toast_record_gesture_first">请先录制手势</string>
     <string name="toast_need_overlay_for_record">需要悬浮窗权限才能录制手势</string>
     <string name="toast_need_accessibility_for_record">需要无障碍服务才能录制手势</string>
+    <string name="toast_need_accessibility">需要无障碍服务才能执行</string>
+    <string name="toast_accessibility_revoked">无障碍服务已关闭，已停止执行</string>
     <string name="toast_swipe_to_record">请在屏幕上滑动手指录制手势</string>
     <string name="toast_floating_started">悬浮球已启动</string>
 
@@ -120,6 +123,30 @@
     <string name="image_scrim_dark">黑色遮罩</string>
     <string name="image_invalid">不是有效的图片文件</string>
     <string name="image_read_error">无法读取图片文件</string>
+
+    <!-- 更新 -->
+    <string name="update_section">更新</string>
+    <string name="auto_check_updates">自动检查更新</string>
+    <string name="auto_check_updates_desc">应用启动后自动检查更新</string>
+    <string name="update_channel">更新分支</string>
+    <string name="update_channel_desc">更改软件获取更新的分支</string>
+    <string name="check_updates">检查更新</string>
+    <string name="check_updates_desc">检查并安装最新版本</string>
+    <string name="update_channel_stable">正式版</string>
+    <string name="update_channel_beta">测试版</string>
+    <string name="update_checking">检查中…</string>
+    <string name="update_latest">已是最新</string>
+    <string name="update_found">发现新版本 %1$s</string>
+    <string name="update_failed">检查失败，请检查网络</string>
+    <string name="update_available">发现新版本</string>
+    <string name="update_downloading">下载中 %1$d%%</string>
+    <string name="update_download_failed">下载失败，请重试</string>
+    <string name="update_install">安装更新</string>
+    <string name="update_later">稍后</string>
+    <string name="update_installing">已交给系统安装</string>
+    <string name="update_verify_failed">安装包校验失败</string>
+    <string name="update_signature_mismatch">安装包签名与当前版本不一致，请先卸载已安装的版本</string>
+    <string name="update_need_install_permission">请先允许安装未知应用</string>
 
     <!-- 导航栏 -->
     <string name="nav_home">主页</string>

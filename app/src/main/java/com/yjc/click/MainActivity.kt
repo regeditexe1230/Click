@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.yjc.click.ui.home.HomeScreen
 import com.yjc.click.ui.shell.MainScaffold
 import com.yjc.click.ui.shell.MainTab
@@ -91,6 +92,10 @@ class MainActivity : AppCompatActivity() {
         AppTheme.loadFrom(this)
         // 应用背景（选中预设里的图片与透明度）也在这里读一次，冷启动时外壳就能画对
         AppBackground.refresh(this)
+
+        // 更新偏好读一次；开了"自动检查更新"就静默查一次，有新版才弹窗
+        UpdateStore.load(this)
+        if (UpdateStore.autoCheck) UpdateManager.check(this, lifecycleScope, silent = true)
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
@@ -175,13 +180,13 @@ class MainActivity : AppCompatActivity() {
                             updateStatus()
                         }
                     },
-                    onSwipeX1Change = { swipeX1 = it; afterInputChange() },
-                    onSwipeY1Change = { swipeY1 = it; afterInputChange() },
-                    onSwipeX2Change = { swipeX2 = it; afterInputChange() },
-                    onSwipeY2Change = { swipeY2 = it; afterInputChange() },
-                    onSwipeDurationChange = { swipeDuration = it; afterInputChange() },
-                    onDelayChange = { delayText = it; afterInputChange() },
-                    onRepeatChange = { repeatText = it; afterInputChange() },
+                    onSwipeX1Change = { swipeX1 = it.numericInput(true); afterInputChange() },
+                    onSwipeY1Change = { swipeY1 = it.numericInput(true); afterInputChange() },
+                    onSwipeX2Change = { swipeX2 = it.numericInput(true); afterInputChange() },
+                    onSwipeY2Change = { swipeY2 = it.numericInput(true); afterInputChange() },
+                    onSwipeDurationChange = { swipeDuration = it.numericInput(); afterInputChange() },
+                    onDelayChange = { delayText = it.numericInput(); afterInputChange() },
+                    onRepeatChange = { repeatText = it.numericInput(); afterInputChange() },
                     onInfiniteChange = { infinite = it; saveConfig() },
                     onStart = { handleStartButtonClick() },
                     onStop = {
@@ -400,6 +405,22 @@ class MainActivity : AppCompatActivity() {
     private fun afterInputChange() {
         saveConfig()
         updateStatus()
+    }
+
+    /** 数字输入框过滤：只留数字（坐标允许一个小数点）并限制长度，避免粘进一长串数字后原样存进偏好 */
+    private fun String.numericInput(allowDot: Boolean = false, maxLength: Int = 7): String {
+        val sb = StringBuilder()
+        var hasDot = false
+        for (ch in this) {
+            if (ch.isDigit()) {
+                sb.append(ch)
+            } else if (allowDot && ch == '.' && !hasDot) {
+                hasDot = true
+                sb.append(ch)
+            }
+            if (sb.length >= maxLength) break
+        }
+        return sb.toString()
     }
 
     /** 请求悬浮窗权限（旧版 btnEnableOverlay 的点击逻辑） */
