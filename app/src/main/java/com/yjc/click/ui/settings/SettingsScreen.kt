@@ -321,6 +321,7 @@ private fun UpdateDialog(
 ) {
     val context = LocalContext.current
     val currentVersion = remember { UpdateChecker.installedVersionName(context) }
+    val notes = remember(release.notes) { releaseNotes(release.notes) }
     AlertDialog(
         onDismissRequest = { if (!downloading) onLater() },
         title = {
@@ -354,9 +355,9 @@ private fun UpdateDialog(
                         MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                if (release.notes.isNotBlank()) {
+                if (notes.isNotBlank()) {
                     ClickText(
-                        text = release.notes.trim(),
+                        text = notes,
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
@@ -395,6 +396,22 @@ private fun UpdateDialog(
         },
     )
 }
+
+/**
+ * 更新日志正文：去掉 markdown 记号，丢掉 GitHub 自动生成的 compare 链接
+ * （只有那行链接时等于没写日志，不如不显示），剩下的按原样显示。
+ */
+private val markdownLink = Regex("\\[([^\\]]+)]\\([^)]+\\)")
+private val compareUrl = Regex("^https?://\\S*github\\.com/\\S*/compare/\\S*$")
+
+private fun releaseNotes(raw: String): String = raw.lineSequence()
+    .map { it.trim() }
+    .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
+    .filterNot { compareUrl.matches(it) }
+    .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
+    .map { markdownLink.replace(it, "$1").replace("**", "") }
+    .joinToString("\n")
+    .trim()
 
 @Composable
 private fun themeDisplayName(theme: String): String = when (theme) {

@@ -561,8 +561,12 @@ class SettingsFragment : Fragment() {
         val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
             .setTitle(R.string.update_channel)
             .setSingleChoiceItems(names, currentIndex) { dialog, which ->
-                UpdateStore.setChannel(ctx, channels[which])
+                val picked = channels[which]
+                val changed = picked != UpdateStore.channel
+                UpdateStore.setChannel(ctx, picked)
                 dialog.dismiss()
+                // 换了通道就按新通道查一次，省得用户再点一次「检查更新」
+                if (changed) UpdateManager.check(ctx, viewLifecycleOwner.lifecycleScope)
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
