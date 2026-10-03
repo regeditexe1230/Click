@@ -65,14 +65,25 @@ jobs:
       - name: 生成更新日志（上一个 tag 到本次 tag 的提交标题）
         run: |
           mkdir -p dist
-          PREV=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          TAG="${GITHUB_REF_NAME}"
+          # 上一个版本就是同前缀、编号减一的 tag（click-beta9 的上一个是 click-beta8）
+          PREFIX="${TAG%%[0-9]*}"
+          NUM="${TAG#$PREFIX}"
+          PREV=""
+          if [ -n "$NUM" ] && [ "$NUM" -gt 1 ]; then
+            CANDIDATE="$PREFIX$((NUM - 1))"
+            if git rev-parse -q --verify "refs/tags/$CANDIDATE" >/dev/null; then
+              PREV="$CANDIDATE"
+            fi
+          fi
           if [ -n "$PREV" ]; then
-            RANGE="$PREV..${GITHUB_REF_NAME}"
+            RANGE="$PREV..$TAG"
           else
-            RANGE="${GITHUB_REF_NAME}"
+            RANGE="$TAG"
           fi
           echo "更新日志范围：$RANGE"
-          git log --no-merges --pretty=format:'- %s' "$RANGE" > dist/notes.md
+          # 兜底时最多列 40 条，免得把一个 tag 都找不到时把整段历史贴出去
+          git log --no-merges --pretty=format:'- %s' -n 40 "$RANGE" > dist/notes.md
           # 客户端靠这行隐藏标记拿 versionCode（tag 上的数字只是"第几版"）
           printf '\n\n<!-- version-code: %s -->\n' "$VERSION_CODE" >> dist/notes.md
           cat dist/notes.md
