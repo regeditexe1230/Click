@@ -20,10 +20,9 @@ enum class UpdateChannel(
     val prefKey: String,
     val tagPrefix: String,
     @StringRes val labelRes: Int,
-    @StringRes val descRes: Int,
 ) {
-    STABLE("stable", "v", R.string.update_channel_stable, R.string.update_channel_stable_desc),
-    BETA("beta", "b", R.string.update_channel_beta, R.string.update_channel_beta_desc),
+    STABLE("stable", "v", R.string.update_channel_stable),
+    BETA("beta", "b", R.string.update_channel_beta),
 }
 
 /** 远端的一个可用版本 */

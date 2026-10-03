@@ -14,6 +14,9 @@
         <item name="colorOnSurfaceVariant">@color/theme_blue_onSurfaceVariant</item>
         <item name="colorOutline">@color/theme_blue_outline</item>
         <item name="colorOutlineVariant">@color/theme_blue_outlineVariant</item>
+        <!-- 单选圆点等 View 侧控件走 colorControlActivated / colorAccent，overlay 不覆盖就一直是默认紫 -->
+        <item name="colorAccent">@color/theme_blue_primary</item>
+        <item name="colorControlActivated">@color/theme_blue_primary</item>
     </style>
     <style name="ThemeOverlay.Click.Color.Red" parent="">
         <item name="colorPrimary">@color/theme_red_primary</item>
@@ -27,6 +30,9 @@
         <item name="colorOnSurfaceVariant">@color/theme_red_onSurfaceVariant</item>
         <item name="colorOutline">@color/theme_red_outline</item>
         <item name="colorOutlineVariant">@color/theme_red_outlineVariant</item>
+        <!-- 单选圆点等 View 侧控件走 colorControlActivated / colorAccent，overlay 不覆盖就一直是默认紫 -->
+        <item name="colorAccent">@color/theme_red_primary</item>
+        <item name="colorControlActivated">@color/theme_red_primary</item>
     </style>
     <style name="ThemeOverlay.Click.Color.Yellow" parent="">
         <item name="colorPrimary">@color/theme_yellow_primary</item>
@@ -40,6 +46,9 @@
         <item name="colorOnSurfaceVariant">@color/theme_yellow_onSurfaceVariant</item>
         <item name="colorOutline">@color/theme_yellow_outline</item>
         <item name="colorOutlineVariant">@color/theme_yellow_outlineVariant</item>
+        <!-- 单选圆点等 View 侧控件走 colorControlActivated / colorAccent，overlay 不覆盖就一直是默认紫 -->
+        <item name="colorAccent">@color/theme_yellow_primary</item>
+        <item name="colorControlActivated">@color/theme_yellow_primary</item>
     </style>
     <style name="ThemeOverlay.Click.Color.Green" parent="">
         <item name="colorPrimary">@color/theme_green_primary</item>
@@ -53,5 +62,8 @@
         <item name="colorOnSurfaceVariant">@color/theme_green_onSurfaceVariant</item>
         <item name="colorOutline">@color/theme_green_outline</item>
         <item name="colorOutlineVariant">@color/theme_green_outlineVariant</item>
+        <!-- 单选圆点等 View 侧控件走 colorControlActivated / colorAccent，overlay 不覆盖就一直是默认紫 -->
+        <item name="colorAccent">@color/theme_green_primary</item>
+        <item name="colorControlActivated">@color/theme_green_primary</item>
     </style>
 </resources>

@@ -133,7 +133,7 @@ fun SettingsScreen(
     updateDialogVisible: Boolean,
     updateDownloading: Boolean,
     updateProgress: Int,
-    onUpdateChannelSelected: (UpdateChannel) -> Unit,
+    onUpdateChannelClick: () -> Unit,
     onCheckUpdatesClick: () -> Unit,
     onUpdateInstall: () -> Unit,
     onUpdateLater: () -> Unit,
@@ -264,7 +264,6 @@ fun SettingsScreen(
             }
 
             // ---------------- 更新 ----------------
-            var channelDialogVisible by remember { mutableStateOf(false) }
             SectionTitle(R.string.update_section)
             SettingsCard {
                 SettingsRow(
@@ -285,7 +284,7 @@ fun SettingsScreen(
                     value = stringResource(updateChannel.labelRes),
                     shape = RowMiddleShape,
                     testTag = "settings_update_channel",
-                    onClick = { channelDialogVisible = true },
+                    onClick = onUpdateChannelClick,
                 )
                 Gap2dp()
                 SettingsRow(
@@ -296,16 +295,6 @@ fun SettingsScreen(
                     shape = RowBottomShape,
                     testTag = "settings_update_check",
                     onClick = onCheckUpdatesClick,
-                )
-            }
-            if (channelDialogVisible) {
-                UpdateChannelDialog(
-                    current = updateChannel,
-                    onDismiss = { channelDialogVisible = false },
-                    onSelect = { channel ->
-                        channelDialogVisible = false
-                        onUpdateChannelSelected(channel)
-                    },
                 )
             }
             if (updateDialogVisible && updateRelease != null) {
@@ -319,53 +308,6 @@ fun SettingsScreen(
             }
         }
     }
-}
-
-/** 选更新分支：正式版 / 测试版 */
-@Composable
-private fun UpdateChannelDialog(
-    current: UpdateChannel,
-    onDismiss: () -> Unit,
-    onSelect: (UpdateChannel) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            ClickText(stringResource(R.string.update_channel), 18.sp, MaterialTheme.colorScheme.onSurface)
-        },
-        text = {
-            Column {
-                UpdateChannel.entries.forEach { channel ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { onSelect(channel) }
-                            .testTag("update_channel_${channel.prefKey}")
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = channel == current, onClick = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            ClickText(stringResource(channel.labelRes), 16.sp, MaterialTheme.colorScheme.onSurface)
-                            ClickText(
-                                text = stringResource(channel.descRes),
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                ClickText(stringResource(R.string.cancel), 14.sp, MaterialTheme.colorScheme.primary)
-            }
-        },
-    )
 }
 
 /** 有可用更新：当前 → 最新 + 更新日志 + 安装/稍后 */

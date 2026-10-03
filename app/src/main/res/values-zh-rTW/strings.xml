@@ -124,9 +124,7 @@
     <string name="check_updates">檢查更新</string>
     <string name="check_updates_desc">檢查並安裝最新版本</string>
     <string name="update_channel_stable">正式版</string>
-    <string name="update_channel_stable_desc">穩定發行版本</string>
     <string name="update_channel_beta">測試版</string>
-    <string name="update_channel_beta_desc">提前體驗新功能，可能不穩定</string>
     <string name="update_checking">檢查中…</string>
     <string name="update_latest">已是最新</string>
     <string name="update_found">發現新版本 %1$s</string>

@@ -135,9 +135,7 @@
     <string name="check_updates">Check for updates</string>
     <string name="check_updates_desc">Check and install the latest version</string>
     <string name="update_channel_stable">Stable</string>
-    <string name="update_channel_stable_desc">Stable release</string>
     <string name="update_channel_beta">Beta</string>
-    <string name="update_channel_beta_desc">Try new features early, may be unstable</string>
     <string name="update_checking">Checking…</string>
     <string name="update_latest">Up to date</string>
     <string name="update_found">Update available %1$s</string>
