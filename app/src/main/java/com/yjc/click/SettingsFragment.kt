@@ -141,7 +141,7 @@ class SettingsFragment : Fragment() {
                         updateDialogVisible = UpdateStore.dialogVisible,
                         updateDownloading = UpdateStore.downloading,
                         updateProgress = UpdateStore.progress,
-                        onUpdateChannelSelected = { UpdateStore.setChannel(requireContext(), it) },
+                        onUpdateChannelClick = { showUpdateChannelDialog() },
                         onCheckUpdatesClick = {
                             UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
                         },
@@ -509,10 +509,9 @@ class SettingsFragment : Fragment() {
         // 弹窗显示后：1) 应用字体预览 2) "添加字体"项着色
         dialog.setOnShowListener {
             val listView = dialog.listView ?: return@setOnShowListener
-            val primaryColor = android.util.TypedValue().let {
-                ctx.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, it, true)
-                it.data
-            }
+            // 取当前配色的 primary：不能从 ctx.theme 解 colorPrimary，那是主题里写死的紫色，
+            // 换配色/开动态取色都不会变（"添加字体"一直是紫的）
+            val primaryColor = AppTheme.currentPrimaryArgb(ctx)
 
             for (i in 0 until listView.childCount) {
                 val child = listView.getChildAt(i)
@@ -546,6 +545,27 @@ class SettingsFragment : Fragment() {
             } else false
         }
 
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    // ==================== 更新 ====================
+
+    /** 选更新分支：正式版 / 测试版（和语言、字体弹窗同一套单选列表样式） */
+    private fun showUpdateChannelDialog() {
+        val ctx = requireContext()
+        val channels = UpdateChannel.entries
+        val names = channels.map { getString(it.labelRes) }.toTypedArray()
+        val currentIndex = channels.indexOf(UpdateStore.channel).coerceAtLeast(0)
+
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(R.string.update_channel)
+            .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+                UpdateStore.setChannel(ctx, channels[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
         dialog.show()
         FontManager.applyFontToDialog(dialog)
     }
