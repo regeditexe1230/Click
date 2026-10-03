@@ -45,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -68,6 +70,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.yjc.click.AppBackground
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
+import com.yjc.click.UpdateManager
+import com.yjc.click.UpdateStore
+import com.yjc.click.ui.UpdateDialog
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
@@ -122,8 +127,9 @@ fun MainScaffold(
         if (displayedTitle != title) {
             titleAlpha.animateTo(0f, tween(126, easing = LinearEasing))
             displayedTitle = title
-            titleAlpha.animateTo(1f, tween(162, easing = LinearEasing))
         }
+        // 连点底栏时上一次的淡入会被取消、alpha 停在半路，收尾的淡入放在判断外面保证一定淡回来
+        titleAlpha.animateTo(1f, tween(162, easing = LinearEasing))
     }
 
     // 设置页（Fragment 宿主）常驻，用 View 的显隐 + 自身滑动/淡入淡出与旧版三视图显隐等价
@@ -154,6 +160,10 @@ fun MainScaffold(
     // 顶栏/底栏底色：有背景图时**完全不画**（图从状态栏一路贯到导航栏），
     // 没背景图时保持原来的不透明底色（与旧版一致）
     val barAlpha = if (backgroundPath == null) 1f else 0f
+
+    // 更新弹窗用：作用域挂在外壳上，弹窗关掉（比如交给系统安装器）不会把下载的协程一起取消
+    val updateContext = LocalContext.current
+    val updateScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize().background(surface)) {
         if (backgroundImage != null) {
@@ -234,6 +244,27 @@ fun MainScaffold(
                 surface = surface,
                 barAlpha = barAlpha,
                 translationY = with(LocalDensity.current) { (entrance.value * 80.dp.toPx()).toInt() },
+            )
+        }
+
+        // 更新弹窗挂在外壳上：启动时的自动检查查到新版本、或在设置页点检查更新，都能弹
+        val updateRelease = UpdateStore.available
+        if (UpdateStore.dialogVisible && updateRelease != null) {
+            UpdateDialog(
+                release = updateRelease,
+                downloading = UpdateStore.downloading,
+                progress = UpdateStore.progress,
+                errorRes = UpdateStore.error,
+                ignored = UpdateStore.ignoredVersion == updateRelease.versionCode,
+                onIgnoreChange = { ignore ->
+                    UpdateStore.setIgnoredVersion(
+                        updateContext,
+                        if (ignore) updateRelease.versionCode else 0,
+                    )
+                },
+                onInstall = { UpdateManager.install(updateContext, updateScope, updateRelease) },
+                onCancelDownload = { UpdateManager.cancelDownload(updateContext) },
+                onLater = { UpdateStore.dismissDialog() },
             )
         }
     }

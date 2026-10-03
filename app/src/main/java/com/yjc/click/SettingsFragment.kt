@@ -137,20 +137,10 @@ class SettingsFragment : Fragment() {
                         },
                         updateChannel = UpdateStore.channel,
                         updateStatus = UpdateStore.status,
-                        updateRelease = UpdateStore.available,
-                        updateDialogVisible = UpdateStore.dialogVisible,
-                        updateDownloading = UpdateStore.downloading,
-                        updateProgress = UpdateStore.progress,
                         onUpdateChannelClick = { showUpdateChannelDialog() },
                         onCheckUpdatesClick = {
                             UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
                         },
-                        onUpdateInstall = {
-                            UpdateStore.available?.let { release ->
-                                UpdateManager.install(requireContext(), viewLifecycleOwner.lifecycleScope, release)
-                            }
-                        },
-                        onUpdateLater = { UpdateStore.dismissDialog() },
                     )
                 }
             }

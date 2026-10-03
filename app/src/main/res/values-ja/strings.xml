@@ -132,6 +132,10 @@
     <string name="update_available">新しいバージョンがあります</string>
     <string name="update_downloading">ダウンロード中 %1$d%%</string>
     <string name="update_download_failed">ダウンロードに失敗しました。もう一度お試しください</string>
+    <string name="update_error_network">ネットワークに接続できません。接続をご確認ください</string>
+    <string name="update_error_timeout">接続がタイムアウトしました。しばらくしてからお試しください</string>
+    <string name="update_error_server">サーバーエラーが発生しました。しばらくしてからお試しください</string>
+    <string name="update_ignore_version">このバージョンでは通知しない</string>
     <string name="update_install">更新をインストール</string>
     <string name="update_later">後で</string>
     <string name="update_installing">システムのインストーラーに渡しました</string>

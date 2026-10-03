@@ -93,9 +93,9 @@ class MainActivity : AppCompatActivity() {
         // 应用背景（选中预设里的图片与透明度）也在这里读一次，冷启动时外壳就能画对
         AppBackground.refresh(this)
 
-        // 更新偏好读一次；开了"自动检查更新"就静默查一次，有新版才弹窗
+        // 更新偏好读一次；开了"自动检查更新"就自动查一次，查到新版本自动弹窗（一次进程只弹一次）
         UpdateStore.load(this)
-        if (UpdateStore.autoCheck) UpdateManager.check(this, lifecycleScope, silent = true)
+        if (UpdateStore.autoCheck) UpdateManager.check(this, lifecycleScope, auto = true)
 
         // 外壳（顶栏 + 页面 + 底部导航）全部为 Compose；
         // 设置页仍是 Fragment（内部弹窗依然是 View），由 AndroidView 承载。
