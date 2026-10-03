@@ -1,6 +1,7 @@
 package com.yjc.click
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -11,6 +12,7 @@ import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -265,20 +267,33 @@ class SettingsFragment : Fragment() {
 
     // ==================== 背景图片 ====================
 
-    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
-    private fun handleImageSelected(presetId: String, uri: Uri) {
+    /**
+     * 耗时操作的加载弹窗（字体、背景图两处共用）。
+     *
+     * 转圈必须自己上色：`ProgressBar` 是用**原始 context** new 出来的，走的不是
+     * [AppTheme.viewContext] 那套 overlay，默认会是中性灰，跟当前主题色对不上。
+     */
+    private fun showLoadingDialog(titleRes: Int): AlertDialog {
         val ctx = requireContext()
+        val dp48 = (48 * resources.displayMetrics.density).toInt()
         val progress = android.widget.ProgressBar(ctx).apply {
             isIndeterminate = true
-            val dp48 = (48 * resources.displayMetrics.density).toInt()
+            indeterminateTintList = ColorStateList.valueOf(AppTheme.currentPrimaryArgb(ctx))
             setPadding(dp48, dp48, dp48, dp48)
         }
-        val loading = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
-            .setTitle(R.string.font_checking)
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(titleRes)
             .setView(progress)
             .setCancelable(false)
             .create()
-        loading.show()
+        dialog.show()
+        return dialog
+    }
+
+    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
+    private fun handleImageSelected(presetId: String, uri: Uri) {
+        val ctx = requireContext()
+        val loading = showLoadingDialog(R.string.background_checking)
 
         Thread {
             val name = getFileNameFromUri(uri) ?: "background"
@@ -590,17 +605,7 @@ class SettingsFragment : Fragment() {
         val ctx = requireContext()
 
         // 立即显示加载弹窗（主线程）
-        val progressBar = android.widget.ProgressBar(ctx).apply {
-            isIndeterminate = true
-            val dp48 = (48 * resources.displayMetrics.density).toInt()
-            setPadding(dp48, dp48, dp48, dp48)
-        }
-        val loadingDialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
-            .setTitle(R.string.font_checking)
-            .setView(progressBar)
-            .setCancelable(false)
-            .create()
-        loadingDialog.show()
+        val loadingDialog = showLoadingDialog(R.string.font_checking)
 
         // 后台线程处理所有耗时操作
         Thread {
