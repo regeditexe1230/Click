@@ -175,13 +175,13 @@ class MainActivity : AppCompatActivity() {
                             updateStatus()
                         }
                     },
-                    onSwipeX1Change = { swipeX1 = it; afterInputChange() },
-                    onSwipeY1Change = { swipeY1 = it; afterInputChange() },
-                    onSwipeX2Change = { swipeX2 = it; afterInputChange() },
-                    onSwipeY2Change = { swipeY2 = it; afterInputChange() },
-                    onSwipeDurationChange = { swipeDuration = it; afterInputChange() },
-                    onDelayChange = { delayText = it; afterInputChange() },
-                    onRepeatChange = { repeatText = it; afterInputChange() },
+                    onSwipeX1Change = { swipeX1 = it.numericInput(true); afterInputChange() },
+                    onSwipeY1Change = { swipeY1 = it.numericInput(true); afterInputChange() },
+                    onSwipeX2Change = { swipeX2 = it.numericInput(true); afterInputChange() },
+                    onSwipeY2Change = { swipeY2 = it.numericInput(true); afterInputChange() },
+                    onSwipeDurationChange = { swipeDuration = it.numericInput(); afterInputChange() },
+                    onDelayChange = { delayText = it.numericInput(); afterInputChange() },
+                    onRepeatChange = { repeatText = it.numericInput(); afterInputChange() },
                     onInfiniteChange = { infinite = it; saveConfig() },
                     onStart = { handleStartButtonClick() },
                     onStop = {
@@ -400,6 +400,22 @@ class MainActivity : AppCompatActivity() {
     private fun afterInputChange() {
         saveConfig()
         updateStatus()
+    }
+
+    /** 数字输入框过滤：只留数字（坐标允许一个小数点）并限制长度，避免粘进一长串数字后原样存进偏好 */
+    private fun String.numericInput(allowDot: Boolean = false, maxLength: Int = 7): String {
+        val sb = StringBuilder()
+        var hasDot = false
+        for (ch in this) {
+            if (ch.isDigit()) {
+                sb.append(ch)
+            } else if (allowDot && ch == '.' && !hasDot) {
+                hasDot = true
+                sb.append(ch)
+            }
+            if (sb.length >= maxLength) break
+        }
+        return sb.toString()
     }
 
     /** 请求悬浮窗权限（旧版 btnEnableOverlay 的点击逻辑） */

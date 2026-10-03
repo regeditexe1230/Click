@@ -16,10 +16,12 @@
     <string name="toast_operation_paused">操作が一時停止されました</string>
     <string name="toast_enable_overlay">オーバーレイ権限を有効にしてください</string>
     <string name="toast_overlay_enabled">オーバーレイ権限が有効になりました</string>
+    <string name="toast_overlay_revoked">オーバーレイ権限が無効になったため、フローティングボールを停止しました</string>
     <string name="toast_fill_manual_params">手動パラメータを入力してください</string>
     <string name="toast_record_gesture_first">まずジェスチャーを録画してください</string>
     <string name="toast_need_overlay_for_record">ジェスチャー録画にはオーバーレイ権限が必要です</string>
     <string name="toast_need_accessibility_for_record">ジェスチャー録画にはユーザー補助サービスが必要です</string>
+    <string name="toast_need_accessibility">実行にはユーザー補助サービスが必要です</string>
     <string name="toast_swipe_to_record">画面をスワイプしてジェスチャーを録画</string>
     <string name="toast_floating_started">フローティングボールが開始されました</string>
 
@@ -91,6 +93,12 @@
     <string name="color_desc">アプリのテーマカラーを変更</string>
     <string name="dynamic_color">ダイナミックカラー</string>
     <string name="dynamic_color_desc">システム壁紙からカラーを適用</string>
+    <string name="theme_color">テーマカラー</string>
+    <string name="color_purple">紫</string>
+    <string name="color_blue">青</string>
+    <string name="color_red">赤</string>
+    <string name="color_yellow">黄</string>
+    <string name="color_green">緑</string>
     <string name="app_background">アプリ背景</string>
     <string name="app_background_desc">アプリの背景をカスタマイズ</string>
     <string name="default_value">デフォルト</string>
