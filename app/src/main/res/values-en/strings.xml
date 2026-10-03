@@ -22,6 +22,7 @@
     <string name="toast_need_overlay_for_record">Overlay permission required to record gesture</string>
     <string name="toast_need_accessibility_for_record">Accessibility service required to record gesture</string>
     <string name="toast_need_accessibility">Accessibility service required to run</string>
+    <string name="toast_accessibility_revoked">Accessibility service turned off, execution stopped</string>
     <string name="toast_swipe_to_record">Swipe on screen to record gesture</string>
     <string name="toast_floating_started">Floating ball started</string>
 

@@ -22,6 +22,7 @@
     <string name="toast_need_overlay_for_record">需要悬浮窗权限才能录制手势</string>
     <string name="toast_need_accessibility_for_record">需要无障碍服务才能录制手势</string>
     <string name="toast_need_accessibility">需要无障碍服务才能执行</string>
+    <string name="toast_accessibility_revoked">无障碍服务已关闭，已停止执行</string>
     <string name="toast_swipe_to_record">请在屏幕上滑动手指录制手势</string>
     <string name="toast_floating_started">悬浮球已启动</string>
 

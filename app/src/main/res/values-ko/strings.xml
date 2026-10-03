@@ -22,6 +22,7 @@
     <string name="toast_need_overlay_for_record">제스처 녹화에는 오버레이 권한이 필요합니다</string>
     <string name="toast_need_accessibility_for_record">제스처 녹화에는 접근성 서비스가 필요합니다</string>
     <string name="toast_need_accessibility">실행하려면 접근성 서비스가 필요합니다</string>
+    <string name="toast_accessibility_revoked">접근성 서비스가 꺼져 실행을 중지했습니다</string>
     <string name="toast_swipe_to_record">화면을 스와이프하여 제스처 녹화</string>
     <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>
 
