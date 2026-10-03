@@ -122,8 +122,9 @@ fun MainScaffold(
         if (displayedTitle != title) {
             titleAlpha.animateTo(0f, tween(126, easing = LinearEasing))
             displayedTitle = title
-            titleAlpha.animateTo(1f, tween(162, easing = LinearEasing))
         }
+        // 连点底栏时上一次的淡入会被取消、alpha 停在半路，收尾的淡入放在判断外面保证一定淡回来
+        titleAlpha.animateTo(1f, tween(162, easing = LinearEasing))
     }
 
     // 设置页（Fragment 宿主）常驻，用 View 的显隐 + 自身滑动/淡入淡出与旧版三视图显隐等价
