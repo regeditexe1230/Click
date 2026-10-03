@@ -258,9 +258,8 @@ fun SettingsScreen(
                     descRes = R.string.auto_check_updates_desc,
                     shape = RowTopShape,
                     testTag = "settings_update_auto",
-                    onClick = { onAutoCheckUpdatesChange(!autoCheckUpdates) },
                 ) {
-                    // 还没接更新逻辑，但开关本身要能动
+                    // 点击范围只有开关本身，整行不响应
                     Switch(checked = autoCheckUpdates, onCheckedChange = onAutoCheckUpdatesChange)
                 }
                 Gap2dp()
@@ -351,7 +350,7 @@ private fun SettingsRow(
     value: String = "",
     shape: Shape,
     testTag: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
@@ -359,7 +358,7 @@ private fun SettingsRow(
             .fillMaxWidth()
             .clip(shape)
             .background(LocalSectionBackground.current)
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .testTag(testTag)
             .padding(horizontal = 22.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
