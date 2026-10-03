@@ -125,6 +125,8 @@
     <string name="check_updates_desc">最新版を確認してインストールします</string>
     <string name="update_channel_stable">安定版</string>
     <string name="update_channel_beta">ベータ版</string>
+    <string name="update_channel_stable_desc">安定したリリース版</string>
+    <string name="update_channel_beta_desc">新機能をいち早く試せます。不安定な場合があります</string>
     <string name="update_checking">確認中…</string>
     <string name="update_latest">最新版です</string>
     <string name="update_found">新しいバージョンがあります %1$s</string>
@@ -135,7 +137,7 @@
     <string name="update_error_network">ネットワークに接続できません。接続をご確認ください</string>
     <string name="update_error_timeout">接続がタイムアウトしました。しばらくしてからお試しください</string>
     <string name="update_error_server">サーバーエラーが発生しました。しばらくしてからお試しください</string>
-    <string name="update_ignore_version">このバージョンでは通知しない</string>
+    <string name="update_ignore_version">通知しない</string>
     <string name="update_install">更新をインストール</string>
     <string name="update_later">後で</string>
     <string name="update_installing">システムのインストーラーに渡しました</string>

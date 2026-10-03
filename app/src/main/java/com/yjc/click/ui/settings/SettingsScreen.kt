@@ -284,7 +284,7 @@ fun SettingsScreen(
                 )
                 Gap2dp()
                 SettingsRow(
-                    iconRes = R.drawable.ic_update,
+                    iconRes = R.drawable.ic_search,
                     titleRes = R.string.check_updates,
                     descRes = R.string.check_updates_desc,
                     value = updateStatus,

@@ -25,9 +25,10 @@ enum class UpdateChannel(
     val prefKey: String,
     val tagPrefix: String,
     @StringRes val labelRes: Int,
+    @StringRes val descRes: Int,
 ) {
-    STABLE("stable", "click-update", R.string.update_channel_stable),
-    BETA("beta", "click-beta", R.string.update_channel_beta),
+    STABLE("stable", "click-update", R.string.update_channel_stable, R.string.update_channel_stable_desc),
+    BETA("beta", "click-beta", R.string.update_channel_beta, R.string.update_channel_beta_desc),
 }
 
 /** 远端的一个可用版本 */
