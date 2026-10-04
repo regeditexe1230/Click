@@ -19,6 +19,7 @@ object FontManager {
     private const val PREFS_NAME = "font_settings"
     private const val KEY_FONTS = "custom_fonts"
     private const val KEY_SELECTED = "selected_font"
+    private const val KEY_ADD_FONT_TIP = "add_font_tip_seen"
 
     private val fontTypefaceCache = mutableMapOf<String, Typeface>()
 
@@ -40,6 +41,16 @@ object FontManager {
     fun init(context: Context) {
         loadSelectedFont(context)
         notifyFontChanged()
+    }
+
+    /** 「添加字体」的使用说明是否已经看过：和首次启动的使用说明一样，只弹一次 */
+    fun hasSeenAddFontTip(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_ADD_FONT_TIP, false)
+
+    fun markAddFontTipSeen(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_ADD_FONT_TIP, true).apply()
     }
 
     fun getCustomFonts(context: Context): List<FontParser.FontInfo> {
