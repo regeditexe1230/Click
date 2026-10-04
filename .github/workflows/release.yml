@@ -1,11 +1,13 @@
 name: Release
 
-# tag 规则：正式版 v<versionCode>（从 main 发），测试版 b<versionCode>（从 beta 发）
+# tag 规则：正式版 click-update<第几版>（从 main 发），测试版 click-beta<第几版>（从 beta 发）
+# 版本号与 tag 上的数字无关：真正的 versionCode 写进 Release 正文的隐藏标记 <!-- version-code: N -->，
+# 客户端读它来比大小（见 app/src/main/java/com/yjc/click/UpdateChecker.kt）
 on:
   push:
     tags:
-      - 'v*'
-      - 'b*'
+      - 'click-beta*'
+      - 'click-update*'
 
 permissions:
   contents: write
@@ -24,18 +26,30 @@ jobs:
           distribution: zulu
           java-version: '17'
 
-      - name: 校验 tag 与 versionCode
+      - name: 检查 tag 与分支、读出版本号
         run: |
           TAG="${GITHUB_REF_NAME}"
-          NUM="${TAG:1}"
+          case "$TAG" in
+            click-beta*) BRANCH=beta ;;
+            click-update*) BRANCH=main ;;
+            *) echo "::error::tag $TAG 不符合命名规则（click-beta / click-update）"; exit 1 ;;
+          esac
+          git fetch --quiet origin "$BRANCH"
+          if git merge-base --is-ancestor "$TAG" "origin/$BRANCH"; then
+            echo "tag $TAG 在 $BRANCH 上 ✓"
+          else
+            echo "::error::tag $TAG 不在 $BRANCH 上：正式版打 main、测试版打 beta"
+            exit 1
+          fi
           CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -1)
           NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "tag=$TAG versionCode=$CODE versionName=$NAME"
-          if [ "$NUM" != "$CODE" ]; then
-            echo "::error::tag $TAG 的数字($NUM) 与 versionCode($CODE) 不一致"
+          if [ -z "$CODE" ] || [ -z "$NAME" ]; then
+            echo "::error::app/build.gradle.kts 里读不到 versionCode / versionName"
             exit 1
           fi
           echo "VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
 
       - name: 构建 release 包
         run: |
@@ -48,18 +62,35 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk dist/Click.apk
           ls -l dist
 
+      # 正文格式：CI 先生成中文提交列表兜底，发版后再 PATCH 成双语（参考 click-beta2 / click-update2）：
+      #   Fix：  / Update：  下面 18 个 =，之后是英文条目
+      #   修复： / 更新：    下面 21 个 =，之后是中文条目
+      # 客户端按当前界面语言只显示对应那一段（中文→中文段，其它语言→英文段），
+      # 末尾的 <!-- version-code: N --> 必须保留，客户端靠它读 versionCode
       - name: 生成更新日志（上一个 tag 到本次 tag 的提交标题）
         run: |
           mkdir -p dist
-          PREV=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          TAG="${GITHUB_REF_NAME}"
+          # 上一个版本就是同前缀、编号减一的 tag（click-beta9 的上一个是 click-beta8）
+          PREFIX="${TAG%%[0-9]*}"
+          NUM="${TAG#$PREFIX}"
+          PREV=""
+          if [ -n "$NUM" ] && [ "$NUM" -gt 1 ]; then
+            CANDIDATE="$PREFIX$((NUM - 1))"
+            if git rev-parse -q --verify "refs/tags/$CANDIDATE" >/dev/null; then
+              PREV="$CANDIDATE"
+            fi
+          fi
           if [ -n "$PREV" ]; then
-            RANGE="$PREV..${GITHUB_REF_NAME}"
+            RANGE="$PREV..$TAG"
           else
-            RANGE="${GITHUB_REF_NAME}"
+            RANGE="$TAG"
           fi
           echo "更新日志范围：$RANGE"
-          git log --no-merges --pretty=format:'- %s' "$RANGE" > dist/notes.md
-          printf '\n' >> dist/notes.md
+          # 兜底时最多列 40 条，免得把一个 tag 都找不到时把整段历史贴出去
+          git log --no-merges --pretty=format:'- %s' -n 40 "$RANGE" > dist/notes.md
+          # 客户端靠这行隐藏标记拿 versionCode（tag 上的数字只是"第几版"）
+          printf '\n\n<!-- version-code: %s -->\n' "$VERSION_CODE" >> dist/notes.md
           cat dist/notes.md
 
       - name: 上传 APK 到 Release
@@ -67,6 +98,6 @@ jobs:
         with:
           files: dist/Click.apk
           name: ${{ env.VERSION_NAME }}
-          prerelease: ${{ startsWith(github.ref_name, 'b') }}
+          prerelease: ${{ startsWith(github.ref_name, 'click-beta') }}
           body_path: dist/notes.md
           fail_on_unmatched_files: true

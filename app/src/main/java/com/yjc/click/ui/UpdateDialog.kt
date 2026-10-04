@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -17,17 +18,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.R
@@ -53,7 +58,10 @@ internal fun UpdateDialog(
 ) {
     val context = LocalContext.current
     val currentVersion = remember { UpdateChecker.installedVersionName(context) }
-    val notes = remember(release.notes) { releaseNotes(release.notes) }
+    // 更新日志是双语的（英文段 + 中文段），按当前界面语言只显示一段
+    val locales = LocalConfiguration.current.locales
+    val chinese = !locales.isEmpty && locales[0].language == "zh"
+    val notes = remember(release.notes, chinese) { releaseNotes(release.notes, chinese) }
     AlertDialog(
         onDismissRequest = { if (!downloading) onLater() },
         title = {
@@ -112,53 +120,62 @@ internal fun UpdateDialog(
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-                // 下载中不显示：这时候弹窗只管进度和取消
+            }
+        },
+        // 底栏一行：左边「此版本不再提醒」，右边「稍后 / 安装更新」
+        // 下载中左边不显示，右边换成「取消 / 下载中 x%」，所以两个按钮都塞在这一行里排
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 if (!downloading) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
                             .clickable { onIgnoreChange(!ignored) },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Checkbox(checked = ignored, onCheckedChange = onIgnoreChange)
+                        // 勾选框不要 48dp 最小触摸区，否则把这一行挤宽、文字折行
+                        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                            Checkbox(checked = ignored, onCheckedChange = onIgnoreChange)
+                        }
                         ClickText(
                             text = stringResource(R.string.update_ignore_version),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                } else {
+                    Spacer(Modifier.weight(1f))
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onInstall, enabled = !downloading) {
-                ClickText(
-                    text = if (downloading) {
-                        stringResource(R.string.update_downloading, progress)
-                    } else {
-                        stringResource(R.string.update_install)
-                    },
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        },
-        dismissButton = {
-            if (downloading) {
-                TextButton(onClick = onCancelDownload) {
-                    ClickText(
-                        stringResource(R.string.cancel),
-                        14.sp,
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                if (downloading) {
+                    TextButton(onClick = onCancelDownload) {
+                        ClickText(
+                            stringResource(R.string.cancel),
+                            14.sp,
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    TextButton(onClick = onLater) {
+                        ClickText(
+                            stringResource(R.string.update_later),
+                            14.sp,
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-            } else {
-                TextButton(onClick = onLater) {
+                TextButton(onClick = onInstall, enabled = !downloading) {
                     ClickText(
-                        stringResource(R.string.update_later),
-                        14.sp,
-                        MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = if (downloading) {
+                            stringResource(R.string.update_downloading, progress)
+                        } else {
+                            stringResource(R.string.update_install)
+                        },
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -173,11 +190,35 @@ internal fun UpdateDialog(
 private val markdownLink = Regex("\\[([^\\]]+)]\\([^)]+\\)")
 private val compareUrl = Regex("^https?://\\S*github\\.com/\\S*/compare/\\S*$")
 
-private fun releaseNotes(raw: String): String = raw.lineSequence()
-    .map { it.trim() }
-    .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
-    .filterNot { compareUrl.matches(it) }
-    .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
-    .map { markdownLink.replace(it, "$1").replace("**", "") }
-    .joinToString("\n")
-    .trim()
+/** CI 写在正文里的 versionCode 标记，只给客户端读，别显示给用户 */
+private val versionMarker = Regex("<!--\\s*version-code:\\s*\\d+\\s*-->")
+
+/** 正文是双语的：英文段在前，中文段从「修复：/更新：」这行开始 */
+private val chineseSection = Regex("^\\s*(修复|更新)\\s*[:：]")
+
+/** 标题下面那行 ===== 是给 GitHub 纯文本看的，弹窗里不显示 */
+private val underline = Regex("^=+$")
+
+private fun releaseNotes(raw: String, chinese: Boolean): String {
+    val lines = raw.lineSequence()
+        .map { it.trim() }
+        .filterNot { it.startsWith("**Full Changelog**") || it.startsWith("Full Changelog") }
+        .filterNot { compareUrl.matches(it) }
+        .filterNot { versionMarker.containsMatchIn(it) }
+        .map { it.removePrefix("### ").removePrefix("## ").removePrefix("# ") }
+        .map { markdownLink.replace(it, "$1").replace("**", "") }
+        .toList()
+
+    // 按语言取段；老版本正文没有中文标题，切不开就整段原样显示
+    val cut = lines.indexOfFirst { chineseSection.containsMatchIn(it) }
+    val picked = when {
+        cut < 0 -> lines
+        chinese -> lines.subList(cut, lines.size)
+        else -> lines.subList(0, cut)
+    }
+    return picked
+        .filterNot { underline.matches(it) }
+        .dropWhile { it.isEmpty() }
+        .dropLastWhile { it.isEmpty() }
+        .joinToString("\n")
+}

@@ -1,14 +1,24 @@
 package com.yjc.click
 
 import android.content.Context
+import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.CheckedTextView
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,7 +30,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.yjc.click.ui.licenses.LicensesPage
 import com.yjc.click.ui.settings.SettingsScreen
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickTheme
@@ -141,6 +153,11 @@ class SettingsFragment : Fragment() {
                         onCheckUpdatesClick = {
                             UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
                         },
+                        // 关于：标题就是应用名，右侧显示当前版本
+                        aboutVersion = UpdateChecker.installedVersionName(requireContext()).orEmpty(),
+                        onAboutClick = { showAboutDialog() },
+                        onDonateClick = { openUrl(getString(R.string.app_donate)) },
+                        onLicensesClick = { LicensesPage.open() },
                     )
                 }
             }
@@ -222,28 +239,32 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * 选中/取消选中一个预设。
-     * 再点一次已经选中的圆圈就取消（回到「默认」）—— 列表里没有「默认」这一项，
-     * 不给这条退路的话就只能靠删预设才能回到默认状态。
+     * 选中一个预设。
+     * 再点一次同一项不再取消选中：列表里内置的「默认」就是那条退路，
+     * 之前"点两次回到默认"的写法配上「默认」这一行会出现"没选中任何一行、头部却写着默认"的怪状态。
      */
     private fun selectPreset(id: String) {
-        selectedPresetId = if (selectedPresetId == id) null else id
+        if (presets.none { it.id == id }) return
+        selectedPresetId = id
         persistPresets()
     }
 
-    /** 展开/收起某个预设的二级面板（多个可以同时展开） */
+    /** 展开/收起某个预设的二级面板（多个可以同时展开）；内置「默认」没有面板 */
     private fun togglePresetExpanded(id: String) {
+        if (presets.firstOrNull { it.id == id }?.isDefault == true) return
         expandedPresetIds =
             if (id in expandedPresetIds) expandedPresetIds - id else expandedPresetIds + id
     }
 
     private fun confirmDeletePreset(id: String) {
         val preset = presets.firstOrNull { it.id == id } ?: return
+        // 内置「默认」删不掉（列表里那一行也不显示删除图标，这里再兜一层）
+        if (preset.isDefault) return
         val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
             .setTitle(R.string.delete_preset)
             .setMessage(getString(
                 R.string.delete_preset_confirm,
-                BackgroundStore.displayName(requireContext(), preset.seq),
+                BackgroundStore.displayName(requireContext(), preset),
             ))
             .setPositiveButton(R.string.delete) { _, _ -> deletePreset(id) }
             .setNegativeButton(R.string.cancel, null)
@@ -253,30 +274,45 @@ class SettingsFragment : Fragment() {
     }
 
     private fun deletePreset(id: String) {
-        presets.firstOrNull { it.id == id }?.imagePath?.let { File(it).delete() }
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        if (preset.isDefault) return
+        preset.imagePath?.let { File(it).delete() }
         presets = presets.filterNot { it.id == id }
         // 删掉的正好是选中的那个 → 回到「默认」
-        if (selectedPresetId == id) selectedPresetId = null
+        if (selectedPresetId == id) selectedPresetId = BackgroundStore.DEFAULT_PRESET_ID
         expandedPresetIds = expandedPresetIds - id
         persistPresets()
     }
 
     // ==================== 背景图片 ====================
 
-    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
-    private fun handleImageSelected(presetId: String, uri: Uri) {
+    /**
+     * 耗时操作的加载弹窗（字体、背景图两处共用）。
+     *
+     * 转圈必须自己上色：`ProgressBar` 是用**原始 context** new 出来的，走的不是
+     * [AppTheme.viewContext] 那套 overlay，默认会是中性灰，跟当前主题色对不上。
+     */
+    private fun showLoadingDialog(titleRes: Int): AlertDialog {
         val ctx = requireContext()
+        val dp48 = (48 * resources.displayMetrics.density).toInt()
         val progress = android.widget.ProgressBar(ctx).apply {
             isIndeterminate = true
-            val dp48 = (48 * resources.displayMetrics.density).toInt()
+            indeterminateTintList = ColorStateList.valueOf(AppTheme.currentPrimaryArgb(ctx))
             setPadding(dp48, dp48, dp48, dp48)
         }
-        val loading = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
-            .setTitle(R.string.font_checking)
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(titleRes)
             .setView(progress)
             .setCancelable(false)
             .create()
-        loading.show()
+        dialog.show()
+        return dialog
+    }
+
+    /** 选完图片：拷进私有目录 → 校验能解码 → 写进预设 → 立刻生效 */
+    private fun handleImageSelected(presetId: String, uri: Uri) {
+        val ctx = requireContext()
+        val loading = showLoadingDialog(R.string.background_checking)
 
         Thread {
             val name = getFileNameFromUri(uri) ?: "background"
@@ -355,6 +391,10 @@ class SettingsFragment : Fragment() {
     }
 
     private fun persistPresets() {
+        // 选中项必须指向一个真实存在的预设：无效/为空就落到内置的「默认」
+        if (presets.none { it.id == selectedPresetId }) {
+            selectedPresetId = BackgroundStore.DEFAULT_PRESET_ID
+        }
         BackgroundStore.save(
             requireContext(),
             BackgroundStore.Snapshot(presets = presets, selectedId = selectedPresetId),
@@ -433,6 +473,32 @@ class SettingsFragment : Fragment() {
 
     // ==================== 字体 ====================
 
+    /** 打开系统的字体文件选择器（添加字体最后一步） */
+    private fun launchFontPicker() {
+        fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+    }
+
+    /**
+     * 第一次点「添加字体」时的使用说明：样式与首次启动的使用说明弹窗一致，
+     * 点确定后才进文件选择；看过一次就不再弹（标记在 FontManager 的字体偏好里）。
+     */
+    private fun showAddFontTip(ctx: Context) {
+        // 不覆盖窗口动画：用 MaterialAlertDialog 默认的动画，与设置页其他弹窗
+        // （字体/语言/更新分支/删除确认）完全一致。
+        // 用 Theme.Click.AlertDialog 覆盖标题样式：标题偏长时 AppCompat 的 DialogTitle
+        // 会走「省略号回退」把标题字号降到 18sp，和设置页其它弹窗的标题（24sp）对不上；
+        // 该主题让标题允许多行且不省略，回退不触发，字号与其它弹窗一致。
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx), R.style.Theme_Click_AlertDialog)
+            .setTitle(R.string.add_font_tip_title)
+            .setMessage(R.string.add_font_tip_message)
+            .setPositiveButton(R.string.ok) { _, _ -> launchFontPicker() }
+            .setCancelable(false)
+            .create()
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+        FontManager.markAddFontTipSeen(ctx)
+    }
+
     private fun showFontDialog() {
         val ctx = requireContext()
         val customFonts = FontManager.getCustomFonts(ctx)
@@ -465,7 +531,12 @@ class SettingsFragment : Fragment() {
                 val path = paths[which]
                 dialog.dismiss()
                 if (path == "__add__") {
-                    fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+                    // 第一次点「添加字体」先看一遍使用说明（和首次启动的使用说明弹窗同一套样式）
+                    if (FontManager.hasSeenAddFontTip(ctx)) {
+                        launchFontPicker()
+                    } else {
+                        showAddFontTip(ctx)
+                    }
                 } else if (path.isEmpty()) {
                     // 系统默认，直接应用
                     FontManager.setSelectedFont(ctx, null)
@@ -541,16 +612,36 @@ class SettingsFragment : Fragment() {
 
     // ==================== 更新 ====================
 
-    /** 选更新分支：正式版 / 测试版（和语言、字体弹窗同一套单选列表样式） */
+    /** 选更新分支：正式版 / 测试版，每项下面一行小字说明（和语言、字体弹窗同一套单选样式） */
     private fun showUpdateChannelDialog() {
         val ctx = requireContext()
         val channels = UpdateChannel.entries
-        val names = channels.map { getString(it.labelRes) }.toTypedArray()
         val currentIndex = channels.indexOf(UpdateStore.channel).coerceAtLeast(0)
+        var selected = currentIndex
+
+        // 系统单选项只显示一行字，这里换成两行的自定义行：标题 + 小字说明
+        val adapter = object : ArrayAdapter<UpdateChannel>(
+            ctx,
+            R.layout.dialog_single_choice_item,
+            channels,
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                // 用弹窗自己的 context 渲染这一行，圆点/文字色才跟系统单选行一致
+                val view = convertView
+                    ?: LayoutInflater.from(parent.context)
+                        .inflate(R.layout.dialog_single_choice_item, parent, false)
+                val channel = channels[position]
+                view.findViewById<TextView>(R.id.choice_title).setText(channel.labelRes)
+                view.findViewById<TextView>(R.id.choice_desc).setText(channel.descRes)
+                view.findViewById<CheckedTextView>(R.id.choice_mark).isChecked = position == selected
+                return view
+            }
+        }
 
         val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
             .setTitle(R.string.update_channel)
-            .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+            .setSingleChoiceItems(adapter, currentIndex) { dialog, which ->
+                selected = which
                 val picked = channels[which]
                 val changed = picked != UpdateStore.channel
                 UpdateStore.setChannel(ctx, picked)
@@ -568,17 +659,7 @@ class SettingsFragment : Fragment() {
         val ctx = requireContext()
 
         // 立即显示加载弹窗（主线程）
-        val progressBar = android.widget.ProgressBar(ctx).apply {
-            isIndeterminate = true
-            val dp48 = (48 * resources.displayMetrics.density).toInt()
-            setPadding(dp48, dp48, dp48, dp48)
-        }
-        val loadingDialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
-            .setTitle(R.string.font_checking)
-            .setView(progressBar)
-            .setCancelable(false)
-            .create()
-        loadingDialog.show()
+        val loadingDialog = showLoadingDialog(R.string.font_checking)
 
         // 后台线程处理所有耗时操作
         Thread {
@@ -791,6 +872,131 @@ class SettingsFragment : Fragment() {
             "ko" -> getString(R.string.lang_korean)
             "en" -> getString(R.string.lang_english)
             else -> getCurrentLanguageTag()
+        }
+    }
+
+    // ---------------- 关于 ----------------
+
+    /**
+     * 「关于」弹窗：应用图标 + 名称放在最上面（不另外要弹窗标题），
+     * 下面开源仓库 / 问题反馈两个入口，最后是版本信息。
+     *
+     * 正文是程序化拼的 Android 视图而不是 Compose：弹窗的生命周期只占 Fragment 的一小段，
+     * 这里跟其它弹窗保持同一种写法，字体最后统一由 FontManager 套上去。
+     */
+    private fun showAboutDialog() {
+        val ctx = requireContext()
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setView(buildAboutContent(ctx))
+            .setPositiveButton(R.string.ok, null)
+            .create()
+        dialog.show()
+        dialog.window?.let { FontManager.applyFont(it.decorView) }
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun buildAboutContent(ctx: Context): View {
+        val density = ctx.resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val onSurface = MaterialColors.getColor(
+            ctx, com.google.android.material.R.attr.colorOnSurface, 0xFF1D1B20.toInt()
+        )
+        val onSurfaceVariant = MaterialColors.getColor(
+            ctx, com.google.android.material.R.attr.colorOnSurfaceVariant, 0xFF49454F.toInt()
+        )
+
+        fun textView(value: String, sizeSp: Float, color: Int) = TextView(ctx).apply {
+            text = value
+            textSize = sizeSp
+            setTextColor(color)
+        }
+
+        fun gap(heightDp: Int) = View(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(heightDp)
+            )
+        }
+
+        /** 「标签 —— 值」一行，排法与设置页的行一致（标签靠左、值靠右） */
+        fun infoRow(label: String, value: String) = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(
+                textView(label, 14f, onSurface),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            addView(textView(value, 14f, onSurfaceVariant))
+        }
+
+        /** 外链行：文字 + 右箭头，点一下用浏览器打开 */
+        fun linkRow(label: String, url: String) = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val ripple = TypedValue()
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, ripple, true)
+            setBackgroundResource(ripple.resourceId)
+            isClickable = true
+            setPadding(0, dp(10), 0, dp(10))
+            addView(
+                textView(label, 15f, onSurface),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            addView(
+                ImageView(ctx).apply {
+                    setImageResource(R.drawable.ic_arrow_right)
+                    setColorFilter(onSurfaceVariant)
+                },
+                LinearLayout.LayoutParams(dp(20), dp(20))
+            )
+            setOnClickListener { openUrl(url) }
+        }
+
+        val header = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(
+                ImageView(ctx).apply { setImageResource(R.mipmap.ic_launcher_round) },
+                LinearLayout.LayoutParams(dp(44), dp(44))
+            )
+            addView(
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(textView(ctx.getString(R.string.app_name), 18f, onSurface))
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                    .apply { marginStart = dp(14) }
+            )
+        }
+
+        val versionName = UpdateChecker.installedVersionName(ctx).orEmpty()
+        val versionCode = UpdateChecker.installedVersionCode(ctx)
+        val repoUrl = ctx.getString(R.string.app_website)
+
+        return LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            // 自定义视图的容器（@id/custom）自己不带内边距，这里补上弹窗默认的边距；
+            // 现在没有弹窗标题了，顶部也要自己留出来
+            setPadding(dp(24), dp(24), dp(24), 0)
+            addView(header)
+            addView(gap(20))
+            addView(textView(ctx.getString(R.string.about_open_source), 12f, onSurfaceVariant))
+            addView(linkRow(ctx.getString(R.string.about_github), repoUrl))
+            addView(linkRow(ctx.getString(R.string.about_issues), "$repoUrl/issues"))
+            addView(gap(18))
+            addView(
+                infoRow(
+                    ctx.getString(R.string.about_version),
+                    if (versionName.isEmpty()) versionCode.toString() else "$versionName [$versionCode]"
+                )
+            )
+        }
+    }
+
+    /** 用浏览器打开外链；没有可用应用时只提示一下，不让弹窗崩掉 */
+    private fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT).show()
         }
     }
 }

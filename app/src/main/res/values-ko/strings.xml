@@ -38,6 +38,7 @@
     <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <string name="permission_status">권한 상태</string>
     <string name="enable_accessibility_service">접근성 서비스 활성화</string>
@@ -106,6 +107,7 @@
 
     <string name="add_preset">프리셋 추가</string>
     <string name="preset_name">프리셋 %1$s</string>
+    <string name="preset_default">기본</string>
     <string name="delete_preset">프리셋 삭제</string>
     <string name="delete_preset_confirm">\"%s\"을(를) 삭제할까요?</string>
     <string name="add_image">이미지 추가</string>
@@ -125,6 +127,8 @@
     <string name="check_updates_desc">최신 버전을 확인하고 설치합니다</string>
     <string name="update_channel_stable">정식 버전</string>
     <string name="update_channel_beta">베타 버전</string>
+    <string name="update_channel_stable_desc">안정 버전</string>
+    <string name="update_channel_beta_desc">새 기능을 먼저 써 볼 수 있지만 불안정할 수 있습니다</string>
     <string name="update_checking">확인 중…</string>
     <string name="update_latest">최신 버전입니다</string>
     <string name="update_found">새 버전이 있습니다 %1$s</string>
@@ -135,7 +139,7 @@
     <string name="update_error_network">네트워크를 사용할 수 없습니다. 연결을 확인해 주세요</string>
     <string name="update_error_timeout">연결 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요</string>
     <string name="update_error_server">서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요</string>
-    <string name="update_ignore_version">이 버전은 다시 알리지 않음</string>
+    <string name="update_ignore_version">다시 알리지 않음</string>
     <string name="update_install">업데이트 설치</string>
     <string name="update_later">나중에</string>
     <string name="update_installing">시스템 설치 프로그램으로 전달했습니다</string>
@@ -169,6 +173,8 @@
     <string name="select_font">글꼴 선택</string>
     <string name="font_default">시스템 기본값</string>
     <string name="add_font">글꼴 추가</string>
+    <string name="add_font_tip_title">사용자 글꼴 사용 방법</string>
+    <string name="add_font_tip_message">1.사용자 지정할 글꼴 파일을 선택하세요. 현재 언어와 맞는 글꼴 파일을 선택해야 합니다.\n\n2.선택 후 현재 언어를 지원하고 파일이 손상되지 않았다면 글꼴 목록에 나타납니다. 지원하지 않으면 알림창이 표시됩니다.\n\n3.추가한 글꼴을 누르면 목록에 미리보기가 표시되고, 누르면 선택됩니다.\n\n4.글꼴 삭제는 길게 누른 뒤 알림창에서 확인을 누르면 됩니다.</string>
     <string name="delete_font">글꼴 삭제</string>
     <string name="delete_font_confirm">글꼴 \"%s\"을(를) 삭제하시겠습니까?</string>
     <string name="delete">삭제</string>
@@ -178,5 +184,21 @@
     <string name="font_no_language_support">이 글꼴은 %s 문자를 지원하지 않습니다</string>
     <string name="font_unsupported_format">지원되지 않는 파일 형식입니다. .ttf 및 .otf 글꼴 파일만 지원됩니다.</string>
     <string name="font_checking">글꼴 파일 확인 중…</string>
+    <string name="background_checking">배경 이미지 처리 중…</string>
     <string name="font_already_added">이 글꼴은 이미 추가되었습니다</string>
+    <!-- 정보 -->
+    <string name="about">정보</string>
+    <string name="about_desc">앱 정보</string>
+    <string name="about_open_source">오픈 소스</string>
+    <string name="about_github">GitHub 저장소</string>
+    <string name="about_issues">문제 신고</string>
+    <string name="about_donate">후원</string>
+    <string name="about_donate_desc">개발 지원</string>
+    <string name="about_version">버전</string>
+    <string name="about_licenses">오픈소스 라이선스</string>
+    <string name="about_licenses_desc">앱에서 사용하는 오픈소스</string>
+    <string name="licenses_own">이 앱</string>
+    <string name="licenses_third_party">서드파티 구성 요소</string>
+    <!-- 라이선스 페이지의 뒤로 버튼 -->
+    <string name="action_back">뒤로</string>
 </resources>

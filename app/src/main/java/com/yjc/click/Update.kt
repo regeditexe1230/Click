@@ -17,16 +17,18 @@ import java.net.UnknownHostException
  * 更新通道。
  *
  * 发布约定（.github/workflows/release.yml 会照这个打标签发 Release）：
- * 版本号写进 tag —— 正式版 `v<versionCode>`（从 main 发），测试版 `b<versionCode>`（从 beta 发）。
- * 客户端只靠 tag 就能知道通道和版本号，不用再去拉代码文件解析。
+ * tag 只表示通道和第几版 —— 正式版 `click-update<第几版>`（从 main 发），
+ * 测试版 `click-beta<第几版>`（从 beta 发）。真正的 versionCode 写在 Release 正文的
+ * 隐藏标记 `<!-- version-code: N -->` 里，客户端读它来比大小（见 UpdateChecker.check）。
  */
 enum class UpdateChannel(
     val prefKey: String,
     val tagPrefix: String,
     @StringRes val labelRes: Int,
+    @StringRes val descRes: Int,
 ) {
-    STABLE("stable", "v", R.string.update_channel_stable),
-    BETA("beta", "b", R.string.update_channel_beta),
+    STABLE("stable", "click-update", R.string.update_channel_stable, R.string.update_channel_stable_desc),
+    BETA("beta", "click-beta", R.string.update_channel_beta, R.string.update_channel_beta_desc),
 }
 
 /** 远端的一个可用版本 */
