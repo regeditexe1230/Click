@@ -461,6 +461,14 @@ private fun BottomBar(
             onClick = { onSelectTab(MainTab.HOME) },
         )
         BottomBarItem(
+            label = stringResource(R.string.nav_program),
+            iconRes = R.drawable.ic_program,
+            selected = selectedTab == MainTab.PROGRAM,
+            modifier = Modifier.weight(1f).testTag("nav_program"),
+            popScale = selectedTab == MainTab.PROGRAM,
+            onClick = { onSelectTab(MainTab.PROGRAM) },
+        )
+        BottomBarItem(
             label = stringResource(R.string.nav_settings),
             iconRes = R.drawable.animated_settings_icon,
             selected = selectedTab == MainTab.SETTINGS,
