@@ -226,7 +226,7 @@ fun SettingsScreen(
                     descRes = R.string.app_background_desc,
                     // 没选中任何预设时是「默认」，否则显示当前选中的那一个
                     value = presets.firstOrNull { it.id == selectedPresetId }
-                        ?.let { BackgroundStore.displayName(context, it.seq) }
+                        ?.let { BackgroundStore.displayName(context, it) }
                         ?: stringResource(R.string.default_value),
                     shape = if (backgroundExpanded) RowMiddleShape else RowBottomShape,
                     testTag = "settings_background_header",
@@ -635,9 +635,10 @@ private fun BackgroundPresets(
             if (index > 0) InnerDivider()
             PresetRow(
                 id = preset.id,
-                name = BackgroundStore.displayName(context, preset.seq),
+                name = BackgroundStore.displayName(context, preset),
                 selected = preset.id == selectedId,
                 expanded = expanded,
+                deletable = !preset.isDefault,
                 onSelect = { onSelect(preset.id) },
                 onToggle = { onToggle(preset.id) },
                 onDelete = { onDelete(preset.id) },
@@ -826,6 +827,7 @@ private fun PresetRow(
     name: String,
     selected: Boolean,
     expanded: Boolean,
+    deletable: Boolean,
     onSelect: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
@@ -855,7 +857,12 @@ private fun PresetRow(
                 .testTag("settings_bg_name_$id"),
         )
         RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
-        RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
+        if (deletable) {
+            RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
+        } else {
+            // 内置「默认」没有删除按钮：留同样宽度的空位，箭头跟其它行对齐
+            Spacer(modifier = Modifier.size(40.dp))
+        }
     }
 }
 

@@ -14,12 +14,16 @@ import java.util.UUID
  *
  * 只存 [Preset.seq]（1、2、3…）不存名字：名字由 [displayName] 按当前语言现场拼，
  * 换语言时列表里的「预设一」会跟着变成「Preset 1」，也不用处理重名。
+ * 内置的「默认」预设（[DEFAULT_PRESET_ID]）例外：它排在最前面、名字固定，且删不掉。
  */
 object BackgroundStore {
 
     private const val PREFS_NAME = "background_settings"
     private const val KEY_PRESETS = "presets"
     private const val KEY_SELECTED = "selected_preset"
+
+    /** 内置「默认」预设的 id：列表里永远有它兜底，用户删不掉（没有它就没法退回默认背景） */
+    const val DEFAULT_PRESET_ID = "default"
 
     /**
      * 一个预设。目前只携带一张背景图 + 两个透明度：
@@ -33,7 +37,13 @@ object BackgroundStore {
         val imagePath: String? = null,
         val imageAlpha: Int = DEFAULT_IMAGE_ALPHA,
         val scrimAlpha: Int = DEFAULT_SCRIM_ALPHA,
-    )
+    ) {
+        /** 内置「默认」预设：不可删除 */
+        val isDefault: Boolean get() = id == DEFAULT_PRESET_ID
+    }
+
+    /** 全新的「默认」预设（seq 固定 0，不参与「预设一/二/三」的编号） */
+    private fun newDefaultPreset() = Preset(DEFAULT_PRESET_ID, seq = 0)
 
     const val DEFAULT_IMAGE_ALPHA = 80
     const val DEFAULT_SCRIM_ALPHA = 0
@@ -67,17 +77,27 @@ object BackgroundStore {
                 ),
             )
         }
+        // 内置的「默认」永远排在最前面：老版本存下来的列表里没有它，这里补一个
+        val all = if (presets.any { it.isDefault }) presets else listOf(newDefaultPreset()) + presets
         val selected = prefs.getString(KEY_SELECTED, "") ?: ""
         return Snapshot(
-            presets = presets,
-            // 选中的预设被删掉后，偏好里可能还留着旧 id，这里对齐一次
-            selectedId = selected.takeIf { it.isNotEmpty() && presets.any { p -> p.id == it } },
+            presets = all,
+            // 选中的预设被删掉后，偏好里可能还留着旧 id，这里对齐一次；
+            // 没得选（或 id 无效）就落到「默认」
+            selectedId = selected.takeIf { it.isNotEmpty() && all.any { p -> p.id == it } }
+                ?: DEFAULT_PRESET_ID,
         )
     }
 
     fun save(context: Context, snapshot: Snapshot) {
+        // 同样保证「默认」在列表里、选中项有效，免得某个调用点漏了这两条
+        val presets =
+            if (snapshot.presets.any { it.isDefault }) snapshot.presets
+            else listOf(newDefaultPreset()) + snapshot.presets
+        val selectedId =
+            snapshot.selectedId?.takeIf { id -> presets.any { it.id == id } } ?: DEFAULT_PRESET_ID
         val arr = JSONArray()
-        snapshot.presets.forEach { preset ->
+        presets.forEach { preset ->
             arr.put(JSONObject().apply {
                 put("id", preset.id)
                 put("seq", preset.seq)
@@ -89,7 +109,7 @@ object BackgroundStore {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_PRESETS, arr.toString())
-            .putString(KEY_SELECTED, snapshot.selectedId ?: "")
+            .putString(KEY_SELECTED, selectedId)
             .apply()
     }
 
@@ -106,12 +126,13 @@ object BackgroundStore {
     }
 
     /**
-     * 预设显示名：`预设%1$s`，序号取自 [R.array.preset_numerals]
+     * 预设显示名：内置「默认」用固定文案，其余是 `预设%1$s`，序号取自 [R.array.preset_numerals]
      *（中文是「一、二、三…」，其它语言是「1、2、3…」；超出数组长度回落到阿拉伯数字）。
      */
-    fun displayName(context: Context, seq: Int): String {
+    fun displayName(context: Context, preset: Preset): String {
+        if (preset.isDefault) return context.getString(R.string.preset_default)
         val numerals = context.resources.getStringArray(R.array.preset_numerals)
-        val numeral = numerals.getOrNull(seq - 1) ?: seq.toString()
+        val numeral = numerals.getOrNull(preset.seq - 1) ?: preset.seq.toString()
         return context.getString(R.string.preset_name, numeral)
     }
 

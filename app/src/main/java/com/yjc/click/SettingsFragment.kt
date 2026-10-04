@@ -226,12 +226,13 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * 选中/取消选中一个预设。
-     * 再点一次已经选中的圆圈就取消（回到「默认」）—— 列表里没有「默认」这一项，
-     * 不给这条退路的话就只能靠删预设才能回到默认状态。
+     * 选中一个预设。
+     * 再点一次同一项不再取消选中：列表里内置的「默认」就是那条退路，
+     * 之前"点两次回到默认"的写法配上「默认」这一行会出现"没选中任何一行、头部却写着默认"的怪状态。
      */
     private fun selectPreset(id: String) {
-        selectedPresetId = if (selectedPresetId == id) null else id
+        if (presets.none { it.id == id }) return
+        selectedPresetId = id
         persistPresets()
     }
 
@@ -243,11 +244,13 @@ class SettingsFragment : Fragment() {
 
     private fun confirmDeletePreset(id: String) {
         val preset = presets.firstOrNull { it.id == id } ?: return
+        // 内置「默认」删不掉（列表里那一行也不显示删除图标，这里再兜一层）
+        if (preset.isDefault) return
         val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(requireContext()))
             .setTitle(R.string.delete_preset)
             .setMessage(getString(
                 R.string.delete_preset_confirm,
-                BackgroundStore.displayName(requireContext(), preset.seq),
+                BackgroundStore.displayName(requireContext(), preset),
             ))
             .setPositiveButton(R.string.delete) { _, _ -> deletePreset(id) }
             .setNegativeButton(R.string.cancel, null)
@@ -257,10 +260,12 @@ class SettingsFragment : Fragment() {
     }
 
     private fun deletePreset(id: String) {
-        presets.firstOrNull { it.id == id }?.imagePath?.let { File(it).delete() }
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        if (preset.isDefault) return
+        preset.imagePath?.let { File(it).delete() }
         presets = presets.filterNot { it.id == id }
         // 删掉的正好是选中的那个 → 回到「默认」
-        if (selectedPresetId == id) selectedPresetId = null
+        if (selectedPresetId == id) selectedPresetId = BackgroundStore.DEFAULT_PRESET_ID
         expandedPresetIds = expandedPresetIds - id
         persistPresets()
     }
@@ -372,6 +377,10 @@ class SettingsFragment : Fragment() {
     }
 
     private fun persistPresets() {
+        // 选中项必须指向一个真实存在的预设：无效/为空就落到内置的「默认」
+        if (presets.none { it.id == selectedPresetId }) {
+            selectedPresetId = BackgroundStore.DEFAULT_PRESET_ID
+        }
         BackgroundStore.save(
             requireContext(),
             BackgroundStore.Snapshot(presets = presets, selectedId = selectedPresetId),
