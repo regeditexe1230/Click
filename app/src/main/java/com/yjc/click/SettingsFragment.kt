@@ -236,8 +236,9 @@ class SettingsFragment : Fragment() {
         persistPresets()
     }
 
-    /** 展开/收起某个预设的二级面板（多个可以同时展开） */
+    /** 展开/收起某个预设的二级面板（多个可以同时展开）；内置「默认」没有面板 */
     private fun togglePresetExpanded(id: String) {
+        if (presets.firstOrNull { it.id == id }?.isDefault == true) return
         expandedPresetIds =
             if (id in expandedPresetIds) expandedPresetIds - id else expandedPresetIds + id
     }
