@@ -470,14 +470,17 @@ class SettingsFragment : Fragment() {
      * 点确定后才进文件选择；看过一次就不再弹（标记在 FontManager 的字体偏好里）。
      */
     private fun showAddFontTip(ctx: Context) {
-        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+        // 不覆盖窗口动画：用 MaterialAlertDialog 默认的动画，与设置页其他弹窗
+        // （字体/语言/更新分支/删除确认）完全一致。
+        // 用 Theme.Click.AlertDialog 覆盖标题样式：标题偏长时 AppCompat 的 DialogTitle
+        // 会走「省略号回退」把标题字号降到 18sp，和设置页其它弹窗的标题（24sp）对不上；
+        // 该主题让标题允许多行且不省略，回退不触发，字号与其它弹窗一致。
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx), R.style.Theme_Click_AlertDialog)
             .setTitle(R.string.add_font_tip_title)
             .setMessage(R.string.add_font_tip_message)
             .setPositiveButton(R.string.ok) { _, _ -> launchFontPicker() }
             .setCancelable(false)
             .create()
-        // 不覆盖窗口动画：用 MaterialAlertDialog 默认的动画，与设置页其他弹窗
-        // （字体/语言/更新分支/删除确认）完全一致
         dialog.show()
         FontManager.applyFontToDialog(dialog)
         FontManager.markAddFontTipSeen(ctx)
