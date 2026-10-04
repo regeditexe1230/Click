@@ -3,7 +3,9 @@ package com.yjc.click.ui.shell
 import android.content.res.ColorStateList
 import android.widget.ImageView
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,7 +56,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -73,14 +77,20 @@ import com.yjc.click.R
 import com.yjc.click.UpdateManager
 import com.yjc.click.UpdateStore
 import com.yjc.click.ui.UpdateDialog
+import com.yjc.click.ui.licenses.LicensesPage
+import com.yjc.click.ui.licenses.LicensesPageContent
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** 底部导航项（与旧 menu/bottom_nav_menu.xml 一致） */
 enum class MainTab { HOME, PROGRAM, SETTINGS }
+
+/** 整页过渡用的缓动：cubic-bezier(0.2, 0, 0, 1)（进入快、收尾缓） */
+private val ExpandEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
 /**
  * 应用外壳：旧 activity_main.xml（顶栏 + 页面 + BottomNavigationView）的 Compose 版本。
@@ -96,6 +106,8 @@ enum class MainTab { HOME, PROGRAM, SETTINGS }
  * - 顶栏标题淡出 126ms → 换字 → 淡入 162ms
  * - 选中图标沿用旧 drawable（animated-selector），形变动画由系统 drawable 播放
  * - 程序图标 1 → 0.7 → 1.1 → 1（每段 100ms）
+ * - 开放源代码许可整页：许可页从右侧 10% 滑入、外壳向左滑出 10%（都是 360ms cubic-bezier(0.2,0,0,1)），
+ *   两者前后交错淡入/淡出（126ms / 延迟 126ms 的 162ms），底栏同时向下收起 380ms（返回时 420ms 升回）
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -145,6 +157,27 @@ fun MainScaffold(
         } else {
             launch { settingsSlide.animateTo(1f, tween(360, easing = FastOutSlowInEasing)) }
             settingsAlpha.animateTo(0f, tween(126, easing = LinearEasing))
+        }
+    }
+
+    // 开放源代码许可整页的过渡（参照另一套「expand」节奏）：
+    // 打开：许可页从右侧 10% 滑入 + 延迟 126ms 的 162ms 淡入；外壳（顶栏+页面）向左滑出 10% + 126ms 淡出；
+    //       底栏向下收起 380ms，把整屏让给许可页。
+    // 返回：整体反向——外壳从左侧 10% 滑回 + 延迟 126ms 的 162ms 淡入，底栏 420ms 升回。
+    val licensesVisible = LicensesPage.visible
+    val shellSlide = remember { Animatable(if (licensesVisible) 1f else 0f) }
+    val shellAlpha = remember { Animatable(if (licensesVisible) 0f else 1f) }
+    val barRetract = remember { Animatable(if (licensesVisible) 1f else 0f) }
+    LaunchedEffect(licensesVisible) {
+        if (licensesVisible) {
+            launch { shellSlide.animateTo(1f, tween(360, easing = ExpandEasing)) }
+            launch { barRetract.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
+            shellAlpha.animateTo(0f, tween(126, easing = LinearEasing))
+        } else {
+            launch { shellSlide.animateTo(0f, tween(360, easing = ExpandEasing)) }
+            launch { barRetract.animateTo(0f, tween(420, easing = FastOutSlowInEasing)) }
+            delay(126)
+            shellAlpha.animateTo(1f, tween(162, easing = LinearEasing))
         }
     }
 
@@ -202,9 +235,23 @@ fun MainScaffold(
                 alpha = titleAlpha.value,
                 surface = surface,
                 barAlpha = barAlpha,
+                // 许可页打开时顶栏跟着页面一起左移 + 淡出
+                modifier = Modifier.graphicsLayer {
+                    translationX = -0.1f * size.width * shellSlide.value
+                    alpha = shellAlpha.value
+                },
             )
 
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    // 许可页打开时页面左移 10% + 淡出（底栏单独做向下收起）
+                    .graphicsLayer {
+                        translationX = -0.1f * size.width * shellSlide.value
+                        alpha = shellAlpha.value
+                    },
+            ) {
                 SettingsHost(
                     visible = selectedTab == MainTab.SETTINGS,
                     modifier = Modifier
@@ -244,7 +291,41 @@ fun MainScaffold(
                 surface = surface,
                 barAlpha = barAlpha,
                 translationY = with(LocalDensity.current) { (entrance.value * 80.dp.toPx()).toInt() },
+                retract = barRetract.value,
             )
+        }
+
+        // 开放源代码许可：整页盖在外壳上（不是弹窗）。过渡照「expand」节奏——
+        // 从右侧 10% 处滑入（360ms cubic-bezier(0.2,0,0,1)）+ 延迟 126ms 的 162ms 淡入；
+        // 返回时向右滑出 10% + 126ms 淡出。外壳位移/淡出与底栏收起见上面的 shellSlide/shellAlpha/barRetract。
+        AnimatedVisibility(
+            visible = licensesVisible,
+            enter = slideInHorizontally(
+                animationSpec = tween(360, easing = ExpandEasing)
+            ) { width -> (0.1f * width).roundToInt() } + fadeIn(
+                animationSpec = tween(162, delayMillis = 126, easing = LinearEasing)
+            ),
+            exit = slideOutHorizontally(
+                animationSpec = tween(360, easing = ExpandEasing)
+            ) { width -> (0.1f * width).roundToInt() } + fadeOut(
+                animationSpec = tween(126, easing = LinearEasing)
+            ),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 许可页只是「盖」在外壳上，空白处的点击/拖动要吃掉，否则会穿透到底下的设置页
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent().changes.forEach { it.consume() }
+                                }
+                            }
+                        },
+                )
+                LicensesPageContent(onBack = { LicensesPage.close() })
+            }
         }
 
         // 更新弹窗挂在外壳上：启动时的自动检查查到新版本、或在设置页点检查更新，都能弹
@@ -317,13 +398,20 @@ private fun Modifier.settingsSlideOffset(progress: Float): Modifier = layout { m
 }
 
 @Composable
-private fun TopBar(title: String, alpha: Float, surface: Color, barAlpha: Float = 1f) {
+private fun TopBar(
+    title: String,
+    alpha: Float,
+    surface: Color,
+    barAlpha: Float = 1f,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(96.dp)
             // 有背景图时这里是半透明的（不透明度跟黑色遮罩联动），图从状态栏一路透上来
-            .background(surface.copy(alpha = barAlpha)),
+            .background(surface.copy(alpha = barAlpha))
+            .then(modifier),
     ) {
         // 旧布局：96dp 容器内居中一个 MaterialToolbar（64dp，顶部再补状态栏 padding），
         // 实测标题块 bounds = [42,118][167,196]，即距容器顶 118px（44.95dp）
@@ -346,6 +434,7 @@ private fun BottomBar(
     surface: Color,
     translationY: Int,
     barAlpha: Float = 1f,
+    retract: Float = 0f,
 ) {
     // 旧版 BottomNavigationView 是带 3dp tonalElevation 的 Material 组件：
     // 实测底栏底色 = 表面色叠加 8% primary（浅色 [241,233,247]、深色 [35,32,43]），
@@ -358,7 +447,9 @@ private fun BottomBar(
             .background(barColor.copy(alpha = barAlpha))
             .windowInsetsPadding(WindowInsets.navigationBars)
             .height(80.dp)
-            .offsetY(translationY),
+            .offsetY(translationY)
+            // 许可页打开时整条向下收起（滑出自己的高度，含系统导航栏内边距）
+            .graphicsLayer { this.translationY = retract * size.height },
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start,
     ) {

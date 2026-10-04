@@ -128,6 +128,10 @@ fun SettingsScreen(
     updateStatus: String,
     onUpdateChannelClick: () -> Unit,
     onCheckUpdatesClick: () -> Unit,
+    aboutVersion: String,
+    onAboutClick: () -> Unit,
+    onDonateClick: () -> Unit,
+    onLicensesClick: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
@@ -291,6 +295,38 @@ fun SettingsScreen(
                     shape = RowBottomShape,
                     testTag = "settings_update_check",
                     onClick = onCheckUpdatesClick,
+                )
+            }
+
+            // ---------------- 关于 ----------------
+            SectionTitle(R.string.about)
+            SettingsCard {
+                SettingsRow(
+                    iconRes = R.drawable.ic_info,
+                    titleRes = R.string.app_name,
+                    descRes = R.string.about_desc,
+                    value = aboutVersion,
+                    shape = RowTopShape,
+                    testTag = "settings_about",
+                    onClick = onAboutClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_donate,
+                    titleRes = R.string.about_donate,
+                    descRes = R.string.about_donate_desc,
+                    shape = RowMiddleShape,
+                    testTag = "settings_donate",
+                    onClick = onDonateClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_license,
+                    titleRes = R.string.about_licenses,
+                    descRes = R.string.about_licenses_desc,
+                    shape = RowBottomShape,
+                    testTag = "settings_licenses",
+                    onClick = onLicensesClick,
                 )
             }
         }

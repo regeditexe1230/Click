@@ -38,6 +38,7 @@
     <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <string name="permission_status">권한 상태</string>
     <string name="enable_accessibility_service">접근성 서비스 활성화</string>
@@ -185,4 +186,19 @@
     <string name="font_checking">글꼴 파일 확인 중…</string>
     <string name="background_checking">배경 이미지 처리 중…</string>
     <string name="font_already_added">이 글꼴은 이미 추가되었습니다</string>
+    <!-- 정보 -->
+    <string name="about">정보</string>
+    <string name="about_desc">앱 정보</string>
+    <string name="about_open_source">오픈 소스</string>
+    <string name="about_github">GitHub 저장소</string>
+    <string name="about_issues">문제 신고</string>
+    <string name="about_donate">후원</string>
+    <string name="about_donate_desc">개발 지원</string>
+    <string name="about_version">버전</string>
+    <string name="about_licenses">오픈소스 라이선스</string>
+    <string name="about_licenses_desc">앱에서 사용하는 오픈소스</string>
+    <string name="licenses_own">이 앱</string>
+    <string name="licenses_third_party">서드파티 구성 요소</string>
+    <!-- 라이선스 페이지의 뒤로 버튼 -->
+    <string name="action_back">뒤로</string>
 </resources>

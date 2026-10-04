@@ -38,6 +38,7 @@
     <string name="accessibility_service_description">Simulated click assist service for screen clicks and swipe operations</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <!-- Permission Status -->
     <string name="permission_status">Permission Status</string>
@@ -199,4 +200,19 @@
     <string name="font_checking">Checking font file…</string>
     <string name="background_checking">Processing background image…</string>
     <string name="font_already_added">This font has already been added</string>
+    <!-- About -->
+    <string name="about">About</string>
+    <string name="about_desc">App info</string>
+    <string name="about_open_source">Open source</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_issues">Report an issue</string>
+    <string name="about_donate">Donate</string>
+    <string name="about_donate_desc">Support the developer</string>
+    <string name="about_version">Version</string>
+    <string name="about_licenses">Open source licenses</string>
+    <string name="about_licenses_desc">Open-source components used</string>
+    <string name="licenses_own">This app</string>
+    <string name="licenses_third_party">Third-party components</string>
+    <!-- Back button of the licenses page -->
+    <string name="action_back">Back</string>
 </resources>
