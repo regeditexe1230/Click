@@ -173,7 +173,7 @@
     <string name="font_default">システムデフォルト</string>
     <string name="add_font">フォントを追加</string>
     <string name="add_font_tip_title">カスタムフォントの使い方</string>
-    <string name="add_font_tip_message">1.カスタマイズしたいフォントファイルを選択してください。現在の言語に合ったフォントファイルを選んでください。\n2.選択後、現在の言語に対応していてファイルが壊れていなければフォント一覧に表示されます。対応していない場合はダイアログが表示されます。\n3.追加したフォントをタップすると一覧にプレビューが表示され、タップで選択できます。\n4.フォントの削除は長押しして、ダイアログの確認を押すだけです。</string>
+    <string name="add_font_tip_message">1.カスタマイズしたいフォントファイルを選択してください。現在の言語に合ったフォントファイルを選んでください。\n\n2.選択後、現在の言語に対応していてファイルが壊れていなければフォント一覧に表示されます。対応していない場合はダイアログが表示されます。\n\n3.追加したフォントをタップすると一覧にプレビューが表示され、タップで選択できます。\n\n4.フォントの削除は長押しして、ダイアログの確認を押すだけです。</string>
     <string name="delete_font">フォントを削除</string>
     <string name="delete_font_confirm">フォント「%s」を削除しますか？</string>
     <string name="delete">削除</string>

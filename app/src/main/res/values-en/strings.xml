@@ -187,7 +187,7 @@
     <string name="font_default">System Default</string>
     <string name="add_font">Add Font</string>
     <string name="add_font_tip_title">How to use custom fonts</string>
-    <string name="add_font_tip_message">1. Choose the font file you want to use. Make sure it matches the current language.\n2. If it matches the current language and is not damaged, it will show up in the font list; otherwise a message will pop up.\n3. The list shows a preview of each added font - just tap one to select it.\n4. To delete a font, long-press it and confirm in the dialog.</string>
+    <string name="add_font_tip_message">1. Choose the font file you want to use. Make sure it matches the current language.\n\n2. If it matches the current language and is not damaged, it will show up in the font list; otherwise a message will pop up.\n\n3. The list shows a preview of each added font - just tap one to select it.\n\n4. To delete a font, long-press it and confirm in the dialog.</string>
     <string name="delete_font">Delete Font</string>
     <string name="delete_font_confirm">Delete font \"%s\"?</string>
     <string name="delete">Delete</string>
