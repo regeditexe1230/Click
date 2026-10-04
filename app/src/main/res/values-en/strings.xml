@@ -116,6 +116,7 @@
     <!-- App background presets -->
     <string name="add_preset">Add preset</string>
     <string name="preset_name">Preset %1$s</string>
+    <string name="preset_default">Default</string>
     <string name="delete_preset">Delete preset</string>
     <string name="delete_preset_confirm">Delete \"%s\"?</string>
     <string name="add_image">Add image</string>

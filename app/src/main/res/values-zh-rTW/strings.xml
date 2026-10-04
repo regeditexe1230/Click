@@ -106,6 +106,7 @@
 
     <string name="add_preset">新增預設</string>
     <string name="preset_name">預設%1$s</string>
+    <string name="preset_default">預設值</string>
     <string name="delete_preset">刪除預設</string>
     <string name="delete_preset_confirm">確定要刪除「%s」嗎？</string>
     <string name="add_image">新增圖片</string>

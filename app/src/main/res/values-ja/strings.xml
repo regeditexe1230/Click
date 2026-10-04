@@ -106,6 +106,7 @@
 
     <string name="add_preset">プリセットを追加</string>
     <string name="preset_name">プリセット%1$s</string>
+    <string name="preset_default">デフォルト</string>
     <string name="delete_preset">プリセットを削除</string>
     <string name="delete_preset_confirm">「%s」を削除しますか？</string>
     <string name="add_image">画像を追加</string>

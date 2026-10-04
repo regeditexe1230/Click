@@ -114,6 +114,7 @@
     <!-- 应用背景预设 -->
     <string name="add_preset">添加预设</string>
     <string name="preset_name">预设%1$s</string>
+    <string name="preset_default">默认</string>
     <string name="delete_preset">删除预设</string>
     <string name="delete_preset_confirm">确定要删除\"%s\"吗？</string>
     <string name="add_image">添加图片</string>
