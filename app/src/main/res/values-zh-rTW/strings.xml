@@ -173,7 +173,7 @@
     <string name="font_default">系統預設</string>
     <string name="add_font">新增字型</string>
     <string name="add_font_tip_title">自訂文字使用方法</string>
-    <string name="add_font_tip_message">1.選擇要自訂的字型檔案，注意，應該選擇符合目前語言的字型檔案。\n2.選擇後，如果符合目前語言且字型未損壞就會出現在字型選擇清單中，如果不符合就會彈窗。\n3.點擊新增的字型，清單中顯示的是字型預覽，點擊即可選擇。\n4.刪除字型只要長按後點彈窗上的確認即可。</string>
+    <string name="add_font_tip_message">1.選擇要自訂的字型檔案，注意，應該選擇符合目前語言的字型檔案。\n\n2.選擇後，如果符合目前語言且字型未損壞就會出現在字型選擇清單中，如果不符合就會彈窗。\n\n3.點擊新增的字型，清單中顯示的是字型預覽，點擊即可選擇。\n\n4.刪除字型只要長按後點彈窗上的確認即可。</string>
     <string name="delete_font">刪除字型</string>
     <string name="delete_font_confirm">確定要刪除字型「%s」嗎？</string>
     <string name="delete">刪除</string>
