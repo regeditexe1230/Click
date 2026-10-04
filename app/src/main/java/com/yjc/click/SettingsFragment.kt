@@ -476,8 +476,8 @@ class SettingsFragment : Fragment() {
             .setPositiveButton(R.string.ok) { _, _ -> launchFontPicker() }
             .setCancelable(false)
             .create()
-        // 平滑显示，避免闪烁（和首次启动的使用说明一致）
-        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        // 不覆盖窗口动画：用 MaterialAlertDialog 默认的动画，与设置页其他弹窗
+        // （字体/语言/更新分支/删除确认）完全一致
         dialog.show()
         FontManager.applyFontToDialog(dialog)
         FontManager.markAddFontTipSeen(ctx)
