@@ -10,11 +10,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,7 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -57,7 +58,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yjc.click.R
@@ -69,6 +69,19 @@ import kotlinx.coroutines.launch
 
 /** ±10% 滑入滑出用的曲线，和外壳的过渡（以及旧布局那一版）保持一致。 */
 private val ExpandEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+/**
+ * 行形状与行间距，逐个照搬设置页（SettingsScreen 的 RowTopShape / RowMiddleShape /
+ * RowBottomShape / Gap2dp）：一组里首行只圆上角、末行只圆下角、中间行直角，
+ * 行与行之间垫 2dp 的页面底色；只有一行的组四个角都圆。
+ */
+private val RowTopShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+private val RowBottomShape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+private val RowMiddleShape = RoundedCornerShape(0.dp)
+private val RowSingleShape = RoundedCornerShape(12.dp)
+
+/** 组与组之间：设置页是卡片自己的 padding(bottom = 16.dp)，这里用同样高的间隔项。 */
+private val GroupGap = 16.dp
 
 /**
  * 「开放源代码许可」整页的开关 + 正在看的组件。
@@ -167,16 +180,18 @@ fun LicensesPageContent(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .navigationBarsPadding(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
                     SectionTitle(stringResource(R.string.licenses_own))
                 }
                 item {
-                    LibraryCard(
-                        name = appName,
-                        author = appAuthor,
-                        license = LicenseId.GPL_3_0,
+                    LicenseRow(
+                        iconRes = R.drawable.ic_info,
+                        title = appName,
+                        desc = appAuthor,
+                        value = LicenseId.GPL_3_0.label,
+                        shape = RowSingleShape,
+                        testTag = "licenses_row_app",
                         onClick = {
                             LicensesPage.openDetail(
                                 LicenseLibrary(appName, appAuthor, LicenseId.GPL_3_0),
@@ -185,18 +200,31 @@ fun LicensesPageContent(onBack: () -> Unit) {
                     )
                 }
                 item {
-                    SectionTitle(
-                        text = stringResource(R.string.licenses_third_party),
-                        topPadding = 12.dp,
-                    )
+                    Spacer(modifier = Modifier.height(GroupGap))
                 }
-                items(thirdPartyLibraries, key = { it.name }) { library ->
-                    LibraryCard(
-                        name = library.name,
-                        author = library.author,
-                        license = library.license,
+                item {
+                    SectionTitle(stringResource(R.string.licenses_third_party))
+                }
+                itemsIndexed(thirdPartyLibraries, key = { _, library -> library.name }) { index, library ->
+                    if (index > 0) {
+                        Gap2dp()
+                    }
+                    LicenseRow(
+                        iconRes = R.drawable.ic_license,
+                        title = library.name,
+                        desc = library.author,
+                        value = library.license.label,
+                        shape = when (index) {
+                            0 -> RowTopShape
+                            thirdPartyLibraries.lastIndex -> RowBottomShape
+                            else -> RowMiddleShape
+                        },
+                        testTag = "license_row_$index",
                         onClick = { LicensesPage.openDetail(library) },
                     )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(GroupGap))
                 }
             }
         }
@@ -311,59 +339,76 @@ private fun LicenseDetailPage(library: LicenseLibrary, onBack: () -> Unit) {
     }
 }
 
+/** 分组标题：与设置页 SectionTitle 同一套（14sp 主色、左缩进 14dp、下留 10dp）。 */
 @Composable
-private fun SectionTitle(text: String, topPadding: Dp = 0.dp) {
+private fun SectionTitle(text: String) {
     ClickText(
         text = text,
         fontSize = 14.sp,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 14.dp, top = topPadding, bottom = 10.dp),
+        modifier = Modifier.padding(start = 14.dp, bottom = 10.dp),
     )
 }
 
+/** 行与行之间 2dp 的页面底色分隔，和设置页的 Gap2dp 一模一样。 */
 @Composable
-private fun LibraryCard(
-    name: String,
-    author: String,
-    license: LicenseId,
+private fun Gap2dp() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(2.dp)
+            .background(MaterialTheme.colorScheme.background),
+    )
+}
+
+/**
+ * 组件行：完全照设置页 SettingsRow 的样式——24dp 图标（onSurfaceVariant 着色）、
+ * 22dp 间距、标题 16sp、说明 14sp、右侧一列 14sp 的浅色值（这里放协议名）。
+ */
+@Composable
+private fun LicenseRow(
+    iconRes: Int,
+    title: String,
+    desc: String,
+    value: String,
+    shape: Shape,
+    testTag: String,
     onClick: () -> Unit,
 ) {
-    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(shape)
             .background(LocalSectionBackground.current)
             .clickable(onClick = onClick)
+            .testTag(testTag)
             .padding(horizontal = 22.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+        )
+        Spacer(modifier = Modifier.width(22.dp))
         Column(modifier = Modifier.weight(1f)) {
             ClickText(
-                text = name,
+                text = title,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             ClickText(
-                text = author,
-                fontSize = 12.sp,
+                text = desc,
+                fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        // 协议小标签：只标协议名，协议全文点开看
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .border(1.dp, outlineVariant, RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-        ) {
-            ClickText(
-                text = license.label,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        ClickText(
+            text = value,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
