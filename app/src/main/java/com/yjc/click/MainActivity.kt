@@ -87,6 +87,8 @@ class MainActivity : AppCompatActivity() {
         // 恢复选中的底部导航项
         val savedTabIndex = savedInstanceState?.getInt("selected_nav_item", 0) ?: 0
         selectedTab = MainTab.entries.getOrElse(savedTabIndex) { MainTab.HOME }
+        // 「程序」页已下线：从旧状态恢复过来时落到首页，避免停在无入口的空页
+        if (selectedTab == MainTab.PROGRAM) selectedTab = MainTab.HOME
         playBottomBarEntrance = savedInstanceState == null
         // 主题/深浅色状态从偏好读入（同一份逻辑服务侧也在用）
         AppTheme.loadFrom(this)
