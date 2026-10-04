@@ -1,16 +1,22 @@
 package com.yjc.click
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
@@ -24,7 +30,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.yjc.click.ui.licenses.LicensesPage
 import com.yjc.click.ui.settings.SettingsScreen
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickTheme
@@ -145,6 +153,11 @@ class SettingsFragment : Fragment() {
                         onCheckUpdatesClick = {
                             UpdateManager.check(requireContext(), viewLifecycleOwner.lifecycleScope)
                         },
+                        // 关于：标题就是应用名，右侧显示当前版本
+                        aboutVersion = UpdateChecker.installedVersionName(requireContext()).orEmpty(),
+                        onAboutClick = { showAboutDialog() },
+                        onDonateClick = { openUrl(getString(R.string.app_donate)) },
+                        onLicensesClick = { LicensesPage.open() },
                     )
                 }
             }
@@ -859,6 +872,131 @@ class SettingsFragment : Fragment() {
             "ko" -> getString(R.string.lang_korean)
             "en" -> getString(R.string.lang_english)
             else -> getCurrentLanguageTag()
+        }
+    }
+
+    // ---------------- 关于 ----------------
+
+    /**
+     * 「关于」弹窗：应用图标 + 名称放在最上面（不另外要弹窗标题），
+     * 下面开源仓库 / 问题反馈两个入口，最后是版本信息。
+     *
+     * 正文是程序化拼的 Android 视图而不是 Compose：弹窗的生命周期只占 Fragment 的一小段，
+     * 这里跟其它弹窗保持同一种写法，字体最后统一由 FontManager 套上去。
+     */
+    private fun showAboutDialog() {
+        val ctx = requireContext()
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setView(buildAboutContent(ctx))
+            .setPositiveButton(R.string.ok, null)
+            .create()
+        dialog.show()
+        dialog.window?.let { FontManager.applyFont(it.decorView) }
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun buildAboutContent(ctx: Context): View {
+        val density = ctx.resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val onSurface = MaterialColors.getColor(
+            ctx, com.google.android.material.R.attr.colorOnSurface, 0xFF1D1B20.toInt()
+        )
+        val onSurfaceVariant = MaterialColors.getColor(
+            ctx, com.google.android.material.R.attr.colorOnSurfaceVariant, 0xFF49454F.toInt()
+        )
+
+        fun textView(value: String, sizeSp: Float, color: Int) = TextView(ctx).apply {
+            text = value
+            textSize = sizeSp
+            setTextColor(color)
+        }
+
+        fun gap(heightDp: Int) = View(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(heightDp)
+            )
+        }
+
+        /** 「标签 —— 值」一行，排法与设置页的行一致（标签靠左、值靠右） */
+        fun infoRow(label: String, value: String) = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(
+                textView(label, 14f, onSurface),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            addView(textView(value, 14f, onSurfaceVariant))
+        }
+
+        /** 外链行：文字 + 右箭头，点一下用浏览器打开 */
+        fun linkRow(label: String, url: String) = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val ripple = TypedValue()
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, ripple, true)
+            setBackgroundResource(ripple.resourceId)
+            isClickable = true
+            setPadding(0, dp(10), 0, dp(10))
+            addView(
+                textView(label, 15f, onSurface),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            addView(
+                ImageView(ctx).apply {
+                    setImageResource(R.drawable.ic_arrow_right)
+                    setColorFilter(onSurfaceVariant)
+                },
+                LinearLayout.LayoutParams(dp(20), dp(20))
+            )
+            setOnClickListener { openUrl(url) }
+        }
+
+        val header = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(
+                ImageView(ctx).apply { setImageResource(R.mipmap.ic_launcher_round) },
+                LinearLayout.LayoutParams(dp(44), dp(44))
+            )
+            addView(
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(textView(ctx.getString(R.string.app_name), 18f, onSurface))
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                    .apply { marginStart = dp(14) }
+            )
+        }
+
+        val versionName = UpdateChecker.installedVersionName(ctx).orEmpty()
+        val versionCode = UpdateChecker.installedVersionCode(ctx)
+        val repoUrl = ctx.getString(R.string.app_website)
+
+        return LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            // 自定义视图的容器（@id/custom）自己不带内边距，这里补上弹窗默认的边距；
+            // 现在没有弹窗标题了，顶部也要自己留出来
+            setPadding(dp(24), dp(24), dp(24), 0)
+            addView(header)
+            addView(gap(20))
+            addView(textView(ctx.getString(R.string.about_open_source), 12f, onSurfaceVariant))
+            addView(linkRow(ctx.getString(R.string.about_github), repoUrl))
+            addView(linkRow(ctx.getString(R.string.about_issues), "$repoUrl/issues"))
+            addView(gap(18))
+            addView(
+                infoRow(
+                    ctx.getString(R.string.about_version),
+                    if (versionName.isEmpty()) versionCode.toString() else "$versionName [$versionCode]"
+                )
+            )
+        }
+    }
+
+    /** 用浏览器打开外链；没有可用应用时只提示一下，不让弹窗崩掉 */
+    private fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT).show()
         }
     }
 }

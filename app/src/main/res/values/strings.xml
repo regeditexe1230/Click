@@ -36,6 +36,7 @@
     <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <!-- 权限状态 -->
     <string name="permission_status">权限状态</string>
@@ -195,4 +196,19 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+    <!-- 关于 -->
+    <string name="about">关于</string>
+    <string name="about_desc">应用信息</string>
+    <string name="about_open_source">开源</string>
+    <string name="about_github">GitHub 仓库</string>
+    <string name="about_issues">问题反馈</string>
+    <string name="about_donate">捐赠</string>
+    <string name="about_donate_desc">支持开发者</string>
+    <string name="about_version">版本</string>
+    <string name="about_licenses">开放源代码许可</string>
+    <string name="about_licenses_desc">应用使用的开源组件</string>
+    <string name="licenses_own">本应用</string>
+    <string name="licenses_third_party">第三方组件</string>
+    <!-- 许可整页的返回按钮 -->
+    <string name="action_back">返回</string>
 </resources>

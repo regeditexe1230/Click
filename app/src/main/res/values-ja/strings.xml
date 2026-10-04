@@ -38,6 +38,7 @@
     <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <string name="permission_status">権限状態</string>
     <string name="enable_accessibility_service">ユーザー補助サービスを有効化</string>
@@ -185,4 +186,19 @@
     <string name="font_checking">フォントファイルを確認中…</string>
     <string name="background_checking">背景画像を処理中…</string>
     <string name="font_already_added">このフォントは既に追加されています</string>
+    <!-- 情報 -->
+    <string name="about">情報</string>
+    <string name="about_desc">アプリ情報</string>
+    <string name="about_open_source">オープンソース</string>
+    <string name="about_github">GitHub リポジトリ</string>
+    <string name="about_issues">問題を報告</string>
+    <string name="about_donate">寄付</string>
+    <string name="about_donate_desc">開発を支援</string>
+    <string name="about_version">バージョン</string>
+    <string name="about_licenses">オープンソースライセンス</string>
+    <string name="about_licenses_desc">アプリが使用しているオープンソース</string>
+    <string name="licenses_own">本アプリ</string>
+    <string name="licenses_third_party">サードパーティ製コンポーネント</string>
+    <!-- ライセンスページの戻るボタン -->
+    <string name="action_back">戻る</string>
 </resources>
