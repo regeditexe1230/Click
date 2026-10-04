@@ -77,8 +77,12 @@ object BackgroundStore {
                 ),
             )
         }
-        // 内置的「默认」永远排在最前面：老版本存下来的列表里没有它，这里补一个
-        val all = if (presets.any { it.isDefault }) presets else listOf(newDefaultPreset()) + presets
+        // 内置的「默认」代表纯软件默认背景、不存任何东西：偏好里万一带了图/透明度，这里一律丢掉
+        val normalized = presets.map { if (it.isDefault) newDefaultPreset() else it }
+        // 老版本存下来的列表里没有它，补一个到最前面（永远排第一）
+        val all =
+            if (normalized.any { it.isDefault }) normalized
+            else listOf(newDefaultPreset()) + normalized
         val selected = prefs.getString(KEY_SELECTED, "") ?: ""
         return Snapshot(
             presets = all,
@@ -90,10 +94,11 @@ object BackgroundStore {
     }
 
     fun save(context: Context, snapshot: Snapshot) {
-        // 同样保证「默认」在列表里、选中项有效，免得某个调用点漏了这两条
+        // 同样保证「默认」不存东西、在列表里，且选中项有效，免得某个调用点漏了这几条
+        val normalized = snapshot.presets.map { if (it.isDefault) newDefaultPreset() else it }
         val presets =
-            if (snapshot.presets.any { it.isDefault }) snapshot.presets
-            else listOf(newDefaultPreset()) + snapshot.presets
+            if (normalized.any { it.isDefault }) normalized
+            else listOf(newDefaultPreset()) + normalized
         val selectedId =
             snapshot.selectedId?.takeIf { id -> presets.any { it.id == id } } ?: DEFAULT_PRESET_ID
         val arr = JSONArray()

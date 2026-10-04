@@ -610,6 +610,9 @@ private val ImageThumbHeight = 140.dp
  * 每行 = 选中圆圈 + 名字 + 展开箭头 + 删除图标；点名字/箭头会在该行**下面**再展开它的面板：
  * 还没图时是「添加图片」，有图时是缩略图（右上角 × 删除）+ 文件名 + 两个透明度滑块。
  * 多个预设可以同时展开。最下面是「添加预设」，样式与字体弹窗里的「添加字体」一致。
+ *
+ * 例外是内置的「默认」（[BackgroundStore.DEFAULT_PRESET_ID]）：它代表纯软件默认背景、
+ * 不存任何东西，所以没有箭头也没有垃圾桶，点名字/圆圈就是选中它。
  */
 @Composable
 private fun BackgroundPresets(
@@ -638,13 +641,14 @@ private fun BackgroundPresets(
                 name = BackgroundStore.displayName(context, preset),
                 selected = preset.id == selectedId,
                 expanded = expanded,
-                deletable = !preset.isDefault,
+                customizable = !preset.isDefault,
                 onSelect = { onSelect(preset.id) },
                 onToggle = { onToggle(preset.id) },
                 onDelete = { onDelete(preset.id) },
             )
+            // 「默认」没有二级面板（它不存图、也没有透明度）
             AnimatedVisibility(
-                visible = expanded,
+                visible = expanded && !preset.isDefault,
                 enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                 exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
             ) {
@@ -827,7 +831,7 @@ private fun PresetRow(
     name: String,
     selected: Boolean,
     expanded: Boolean,
-    deletable: Boolean,
+    customizable: Boolean,
     onSelect: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
@@ -852,16 +856,15 @@ private fun PresetRow(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .weight(1f)
-                .clickable(onClick = onToggle)
+                // 能自定义的预设点名字是展开面板；「默认」没什么可展开的，点名字就等于选中
+                .clickable(onClick = if (customizable) onToggle else onSelect)
                 .padding(vertical = 12.dp)
                 .testTag("settings_bg_name_$id"),
         )
-        RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
-        if (deletable) {
+        // 「默认」既不能展开、也不能删，右边就留空（名字占满剩下的宽度）
+        if (customizable) {
+            RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
             RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
-        } else {
-            // 内置「默认」没有删除按钮：留同样宽度的空位，箭头跟其它行对齐
-            Spacer(modifier = Modifier.size(40.dp))
         }
     }
 }
