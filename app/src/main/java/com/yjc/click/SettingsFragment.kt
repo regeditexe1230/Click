@@ -460,6 +460,29 @@ class SettingsFragment : Fragment() {
 
     // ==================== 字体 ====================
 
+    /** 打开系统的字体文件选择器（添加字体最后一步） */
+    private fun launchFontPicker() {
+        fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+    }
+
+    /**
+     * 第一次点「添加字体」时的使用说明：样式与首次启动的使用说明弹窗一致，
+     * 点确定后才进文件选择；看过一次就不再弹（标记在 FontManager 的字体偏好里）。
+     */
+    private fun showAddFontTip(ctx: Context) {
+        val dialog = MaterialAlertDialogBuilder(AppTheme.viewContext(ctx))
+            .setTitle(R.string.add_font_tip_title)
+            .setMessage(R.string.add_font_tip_message)
+            .setPositiveButton(R.string.ok) { _, _ -> launchFontPicker() }
+            .setCancelable(false)
+            .create()
+        // 平滑显示，避免闪烁（和首次启动的使用说明一致）
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+        FontManager.markAddFontTipSeen(ctx)
+    }
+
     private fun showFontDialog() {
         val ctx = requireContext()
         val customFonts = FontManager.getCustomFonts(ctx)
@@ -492,7 +515,12 @@ class SettingsFragment : Fragment() {
                 val path = paths[which]
                 dialog.dismiss()
                 if (path == "__add__") {
-                    fontPickerLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream"))
+                    // 第一次点「添加字体」先看一遍使用说明（和首次启动的使用说明弹窗同一套样式）
+                    if (FontManager.hasSeenAddFontTip(ctx)) {
+                        launchFontPicker()
+                    } else {
+                        showAddFontTip(ctx)
+                    }
                 } else if (path.isEmpty()) {
                     // 系统默认，直接应用
                     FontManager.setSelectedFont(ctx, null)
