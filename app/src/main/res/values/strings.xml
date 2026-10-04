@@ -36,6 +36,7 @@
     <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <!-- 权限状态 -->
     <string name="permission_status">权限状态</string>
@@ -114,6 +115,7 @@
     <!-- 应用背景预设 -->
     <string name="add_preset">添加预设</string>
     <string name="preset_name">预设%1$s</string>
+    <string name="preset_default">默认</string>
     <string name="delete_preset">删除预设</string>
     <string name="delete_preset_confirm">确定要删除\"%s\"吗？</string>
     <string name="add_image">添加图片</string>
@@ -134,6 +136,8 @@
     <string name="check_updates_desc">检查并安装最新版本</string>
     <string name="update_channel_stable">正式版</string>
     <string name="update_channel_beta">测试版</string>
+    <string name="update_channel_stable_desc">稳定发布版本</string>
+    <string name="update_channel_beta_desc">提前体验新功能，可能不稳定</string>
     <string name="update_checking">检查中…</string>
     <string name="update_latest">已是最新</string>
     <string name="update_found">发现新版本 %1$s</string>
@@ -144,7 +148,7 @@
     <string name="update_error_network">网络不可用，请检查网络连接</string>
     <string name="update_error_timeout">连接超时，请稍后重试</string>
     <string name="update_error_server">服务器返回错误，请稍后重试</string>
-    <string name="update_ignore_version">此版本不再提醒</string>
+    <string name="update_ignore_version">不再提醒</string>
     <string name="update_install">安装更新</string>
     <string name="update_later">稍后</string>
     <string name="update_installing">已交给系统安装</string>
@@ -171,6 +175,8 @@
     <string name="select_font">选择字体</string>
     <string name="font_default">系统默认</string>
     <string name="add_font">添加字体</string>
+    <string name="add_font_tip_title">自定义文字使用方法</string>
+    <string name="add_font_tip_message">1.选择要自定义的字体文件，注意，应该选择匹配当前语言的字体文件。\n\n2.选择后，如果符合当前语言且字体未损坏则会出现在字体选择列表中，如果不符合就会弹窗。\n\n3.点击添加的字体，列表中显示的是字体预览，点击即可选择。\n\n4.删除字体只要长按后点弹窗上的确认即可。</string>
     <string name="delete_font">删除字体</string>
     <string name="delete_font_confirm">确定要删除字体\"%s\"吗？</string>
     <string name="delete">删除</string>
@@ -180,6 +186,7 @@
     <string name="font_no_language_support">该字体不支持当前语言（%s）的字符</string>
     <string name="font_unsupported_format">不支持的文件格式，仅支持 .ttf 和 .otf 字体文件</string>
     <string name="font_checking">正在检查字体文件…</string>
+    <string name="background_checking">正在处理背景图片…</string>
     <string name="font_already_added">该字体已添加</string>
 
     <!-- 语言选项 -->
@@ -189,4 +196,19 @@
     <string name="lang_english">English</string>
     <string name="lang_japanese">日本語</string>
     <string name="lang_korean">한국어</string>
+    <!-- 关于 -->
+    <string name="about">关于</string>
+    <string name="about_desc">应用信息</string>
+    <string name="about_open_source">开源</string>
+    <string name="about_github">GitHub 仓库</string>
+    <string name="about_issues">问题反馈</string>
+    <string name="about_donate">捐赠</string>
+    <string name="about_donate_desc">支持开发者</string>
+    <string name="about_version">版本</string>
+    <string name="about_licenses">开放源代码许可</string>
+    <string name="about_licenses_desc">应用使用的开源组件</string>
+    <string name="licenses_own">本应用</string>
+    <string name="licenses_third_party">第三方组件</string>
+    <!-- 许可整页的返回按钮 -->
+    <string name="action_back">返回</string>
 </resources>

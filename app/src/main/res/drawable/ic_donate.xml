@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 捐赠：托着钱袋的手（Material Symbols 的手 + 钱袋两个图形拼成一个） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <group android:translateY="960">
+        <!-- 手 -->
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M255-200l307 90 248-78q0-20-15.5-33.5T758-235H549q-16 0-31.5-2.5T487-245l-96-29 19-61 94 32q11 4 22.5 6t22.5 2h56q0-21-14-36.5T557-355l-218-83h-84v238ZM40-80v-418h298q5.33 0 10.67 1 5.33 1 10.33 3l218 82q38 14 64.5 45t26.5 72h90q50.83 0 86.42 37Q880-221 880-170v26L567-48l-312-89v57H40ZM100-140h94v-298h-94v298Z" />
+        <!-- 钱袋：缩小后放到手上面 -->
+        <group
+            android:pivotX="480"
+            android:pivotY="-480"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            android:translateX="156"
+            android:translateY="-158">
+            <path
+                android:fillColor="#FF000000"
+                android:pathData="M332-120q-88 0-150-62t-62-150q0-38 13-72.5t36-63.5l152-182-95-190h509l-95 190 151 182q24 29 36.5 63.5T841-332q0 88-62 150t-150 62H332Zm148-218q-25 0-42-17.5T421-398q0-25 17-42.5t42-17.5q26 0 43.5 17.5T541-398q0 25-17.5 42.5T480-338ZM375-675h210l53-105H323l52 105Zm-43 495h296q63 0 107.5-44.5T780-332q0-27-9-52t-26-45L590-615H370L216-429q-17 20-26.5 45t-9.5 52q0 63 44.5 107.5T332-180Z" />
+        </group>
+    </group>
+</vector>

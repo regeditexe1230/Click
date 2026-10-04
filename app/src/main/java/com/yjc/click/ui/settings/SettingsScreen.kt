@@ -128,6 +128,10 @@ fun SettingsScreen(
     updateStatus: String,
     onUpdateChannelClick: () -> Unit,
     onCheckUpdatesClick: () -> Unit,
+    aboutVersion: String,
+    onAboutClick: () -> Unit,
+    onDonateClick: () -> Unit,
+    onLicensesClick: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(
@@ -226,7 +230,7 @@ fun SettingsScreen(
                     descRes = R.string.app_background_desc,
                     // 没选中任何预设时是「默认」，否则显示当前选中的那一个
                     value = presets.firstOrNull { it.id == selectedPresetId }
-                        ?.let { BackgroundStore.displayName(context, it.seq) }
+                        ?.let { BackgroundStore.displayName(context, it) }
                         ?: stringResource(R.string.default_value),
                     shape = if (backgroundExpanded) RowMiddleShape else RowBottomShape,
                     testTag = "settings_background_header",
@@ -284,13 +288,45 @@ fun SettingsScreen(
                 )
                 Gap2dp()
                 SettingsRow(
-                    iconRes = R.drawable.ic_update,
+                    iconRes = R.drawable.ic_search,
                     titleRes = R.string.check_updates,
                     descRes = R.string.check_updates_desc,
                     value = updateStatus,
                     shape = RowBottomShape,
                     testTag = "settings_update_check",
                     onClick = onCheckUpdatesClick,
+                )
+            }
+
+            // ---------------- 关于 ----------------
+            SectionTitle(R.string.about)
+            SettingsCard {
+                SettingsRow(
+                    iconRes = R.drawable.ic_info,
+                    titleRes = R.string.app_name,
+                    descRes = R.string.about_desc,
+                    value = aboutVersion,
+                    shape = RowTopShape,
+                    testTag = "settings_about",
+                    onClick = onAboutClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_donate,
+                    titleRes = R.string.about_donate,
+                    descRes = R.string.about_donate_desc,
+                    shape = RowMiddleShape,
+                    testTag = "settings_donate",
+                    onClick = onDonateClick,
+                )
+                Gap2dp()
+                SettingsRow(
+                    iconRes = R.drawable.ic_license,
+                    titleRes = R.string.about_licenses,
+                    descRes = R.string.about_licenses_desc,
+                    shape = RowBottomShape,
+                    testTag = "settings_licenses",
+                    onClick = onLicensesClick,
                 )
             }
         }
@@ -610,6 +646,9 @@ private val ImageThumbHeight = 140.dp
  * 每行 = 选中圆圈 + 名字 + 展开箭头 + 删除图标；点名字/箭头会在该行**下面**再展开它的面板：
  * 还没图时是「添加图片」，有图时是缩略图（右上角 × 删除）+ 文件名 + 两个透明度滑块。
  * 多个预设可以同时展开。最下面是「添加预设」，样式与字体弹窗里的「添加字体」一致。
+ *
+ * 例外是内置的「默认」（[BackgroundStore.DEFAULT_PRESET_ID]）：它代表纯软件默认背景、
+ * 不存任何东西，所以没有箭头也没有垃圾桶，点名字/圆圈就是选中它。
  */
 @Composable
 private fun BackgroundPresets(
@@ -635,15 +674,17 @@ private fun BackgroundPresets(
             if (index > 0) InnerDivider()
             PresetRow(
                 id = preset.id,
-                name = BackgroundStore.displayName(context, preset.seq),
+                name = BackgroundStore.displayName(context, preset),
                 selected = preset.id == selectedId,
                 expanded = expanded,
+                customizable = !preset.isDefault,
                 onSelect = { onSelect(preset.id) },
                 onToggle = { onToggle(preset.id) },
                 onDelete = { onDelete(preset.id) },
             )
+            // 「默认」没有二级面板（它不存图、也没有透明度）
             AnimatedVisibility(
-                visible = expanded,
+                visible = expanded && !preset.isDefault,
                 enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
                 exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
             ) {
@@ -826,6 +867,7 @@ private fun PresetRow(
     name: String,
     selected: Boolean,
     expanded: Boolean,
+    customizable: Boolean,
     onSelect: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
@@ -850,12 +892,16 @@ private fun PresetRow(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .weight(1f)
-                .clickable(onClick = onToggle)
+                // 能自定义的预设点名字是展开面板；「默认」没什么可展开的，点名字就等于选中
+                .clickable(onClick = if (customizable) onToggle else onSelect)
                 .padding(vertical = 12.dp)
                 .testTag("settings_bg_name_$id"),
         )
-        RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
-        RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
+        // 「默认」既不能展开、也不能删，右边就留空（名字占满剩下的宽度）
+        if (customizable) {
+            RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
+            RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
+        }
     }
 }
 

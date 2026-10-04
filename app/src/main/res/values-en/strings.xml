@@ -38,6 +38,7 @@
     <string name="accessibility_service_description">Simulated click assist service for screen clicks and swipe operations</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
+    <string name="app_donate">https://afdian.com/a/regeditexe</string>
 
     <!-- Permission Status -->
     <string name="permission_status">Permission Status</string>
@@ -116,6 +117,7 @@
     <!-- App background presets -->
     <string name="add_preset">Add preset</string>
     <string name="preset_name">Preset %1$s</string>
+    <string name="preset_default">Default</string>
     <string name="delete_preset">Delete preset</string>
     <string name="delete_preset_confirm">Delete \"%s\"?</string>
     <string name="add_image">Add image</string>
@@ -136,6 +138,8 @@
     <string name="check_updates_desc">Check and install the latest version</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_beta">Beta</string>
+    <string name="update_channel_stable_desc">Stable releases</string>
+    <string name="update_channel_beta_desc">Try new features early, may be unstable</string>
     <string name="update_checking">Checking…</string>
     <string name="update_latest">Up to date</string>
     <string name="update_found">Update available %1$s</string>
@@ -146,7 +150,7 @@
     <string name="update_error_network">Network unavailable, please check your connection</string>
     <string name="update_error_timeout">Connection timed out, please try again later</string>
     <string name="update_error_server">Server error, please try again later</string>
-    <string name="update_ignore_version">Don\'t remind me about this version</string>
+    <string name="update_ignore_version">Don\'t remind</string>
     <string name="update_install">Install update</string>
     <string name="update_later">Later</string>
     <string name="update_installing">Handed to the system installer</string>
@@ -183,6 +187,8 @@
     <string name="select_font">Select Font</string>
     <string name="font_default">System Default</string>
     <string name="add_font">Add Font</string>
+    <string name="add_font_tip_title">How to use custom fonts</string>
+    <string name="add_font_tip_message">1. Choose the font file you want to use. Make sure it matches the current language.\n\n2. If it matches the current language and is not damaged, it will show up in the font list; otherwise a message will pop up.\n\n3. The list shows a preview of each added font - just tap one to select it.\n\n4. To delete a font, long-press it and confirm in the dialog.</string>
     <string name="delete_font">Delete Font</string>
     <string name="delete_font_confirm">Delete font \"%s\"?</string>
     <string name="delete">Delete</string>
@@ -192,5 +198,21 @@
     <string name="font_no_language_support">This font does not support %s characters</string>
     <string name="font_unsupported_format">Unsupported file format. Only .ttf and .otf files are supported.</string>
     <string name="font_checking">Checking font file…</string>
+    <string name="background_checking">Processing background image…</string>
     <string name="font_already_added">This font has already been added</string>
+    <!-- About -->
+    <string name="about">About</string>
+    <string name="about_desc">App info</string>
+    <string name="about_open_source">Open source</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_issues">Report an issue</string>
+    <string name="about_donate">Donate</string>
+    <string name="about_donate_desc">Support the developer</string>
+    <string name="about_version">Version</string>
+    <string name="about_licenses">Open source licenses</string>
+    <string name="about_licenses_desc">Open-source components used</string>
+    <string name="licenses_own">This app</string>
+    <string name="licenses_third_party">Third-party components</string>
+    <!-- Back button of the licenses page -->
+    <string name="action_back">Back</string>
 </resources>

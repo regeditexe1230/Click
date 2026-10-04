@@ -14,4 +14,23 @@
         <item name="android:padding">2dp</item>
         <item name="android:background">@drawable/settings_card_bg</item>
     </style>
+
+    <!--
+        弹窗标题样式覆盖。
+        标题视图是 androidx.appcompat.widget.DialogTitle，它在标题一行放不下时会走
+        「省略号回退」：setSingleLine(false) + setMaxLines(2) + 把字号改成
+        ?android:attr/textAppearanceMedium（18sp），此后不会恢复。标题稍长的弹窗
+        （「自定义文字使用方法」的英文/日文/韩文）因此比其它弹窗的 24sp 小一号。
+        这里继承 Material3 的标题样式，只把行数放开到 2 行并关掉省略号，
+        省略号计数恒为 0，回退逻辑不触发，字号保持主题里的 24sp。
+    -->
+    <style name="Theme.Click.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="materialAlertDialogTitleTextStyle">@style/Theme.Click.DialogTitle</item>
+    </style>
+
+    <style name="Theme.Click.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:singleLine">false</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">none</item>
+    </style>
 </resources>
