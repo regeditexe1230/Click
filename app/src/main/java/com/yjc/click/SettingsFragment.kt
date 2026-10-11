@@ -131,6 +131,7 @@ class SettingsFragment : Fragment() {
                         onAddPreset = { addPreset() },
                         onPresetSelect = { id -> selectPreset(id) },
                         onPresetToggleExpand = { id -> togglePresetExpanded(id) },
+                        onPresetRename = { id -> showRenamePresetDialog(id) },
                         onPresetDelete = { id -> confirmDeletePreset(id) },
                         onPresetAddImage = { id ->
                             pendingImagePresetId = id
@@ -254,6 +255,21 @@ class SettingsFragment : Fragment() {
         if (presets.firstOrNull { it.id == id }?.isDefault == true) return
         expandedPresetIds =
             if (id in expandedPresetIds) expandedPresetIds - id else expandedPresetIds + id
+    }
+
+    /** 重命名背景预设：清空后确定 = 回到「预设一 / 预设二」这种自动编号名 */
+    private fun showRenamePresetDialog(id: String) {
+        val preset = presets.firstOrNull { it.id == id } ?: return
+        // 内置「默认」名字固定、那一行也不显示编辑图标，这里再兜一层
+        if (preset.isDefault) return
+        RenameDialog.show(
+            requireContext(),
+            R.string.rename_preset,
+            BackgroundStore.displayName(requireContext(), preset),
+        ) { newName ->
+            presets = presets.map { if (it.id == id) it.copy(name = newName) else it }
+            persistPresets()
+        }
     }
 
     private fun confirmDeletePreset(id: String) {

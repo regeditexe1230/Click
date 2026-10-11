@@ -31,8 +31,6 @@
     <string name="status_overlay">懸浮窗權限：%s</string>
     <string name="status_enabled">✅ 已開啟</string>
     <string name="status_disabled">❌ 未開啟</string>
-    <string name="status_gesture_recorded">已錄製手勢：%d個點，%dms</string>
-    <string name="status_gesture_not_recorded">尚未錄製手勢</string>
 
     <!-- 對話框 -->
     <string name="accessibility_service_description">螢幕點擊和滑動操作的模擬點擊輔助服務</string>
@@ -112,6 +110,15 @@
     <string name="delete_preset_confirm">確定要刪除「%s」嗎？</string>
     <string name="add_image">新增圖片</string>
     <string name="remove_image">刪除圖片</string>
+
+    <string name="add_gesture">新增手勢</string>
+    <string name="gesture_name">手勢%1$s</string>
+    <string name="gesture_points_duration">%1$d 個點 · %2$d 毫秒</string>
+    <string name="delete_gesture">刪除手勢</string>
+    <string name="delete_gesture_confirm">確定要刪除「%1$s」嗎？</string>
+    <string name="rename_gesture">重新命名手勢</string>
+    <string name="rename_preset">重新命名預設</string>
+    <string name="rename_field">名稱</string>
     <string name="image_alpha">圖片透明度</string>
     <string name="image_scrim_light">白色遮罩</string>
     <string name="image_scrim_dark">黑色遮罩</string>

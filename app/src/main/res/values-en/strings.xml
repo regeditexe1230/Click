@@ -31,8 +31,6 @@
     <string name="status_overlay">Overlay: %s</string>
     <string name="status_enabled">✅ Enabled</string>
     <string name="status_disabled">❌ Disabled</string>
-    <string name="status_gesture_recorded">Gesture recorded: %d points, %dms</string>
-    <string name="status_gesture_not_recorded">No gesture recorded</string>
 
     <!-- Dialogs -->
     <string name="accessibility_service_description">Simulated click assist service for screen clicks and swipe operations</string>
@@ -122,6 +120,16 @@
     <string name="delete_preset_confirm">Delete \"%s\"?</string>
     <string name="add_image">Add image</string>
     <string name="remove_image">Remove image</string>
+
+    <!-- Gesture presets (Swipe → Gesture Recording) -->
+    <string name="add_gesture">Add gesture</string>
+    <string name="gesture_name">Gesture %1$s</string>
+    <string name="gesture_points_duration">%1$d points · %2$d ms</string>
+    <string name="delete_gesture">Delete gesture</string>
+    <string name="delete_gesture_confirm">Delete \"%1$s\"?</string>
+    <string name="rename_gesture">Rename gesture</string>
+    <string name="rename_preset">Rename preset</string>
+    <string name="rename_field">Name</string>
     <string name="image_alpha">Image opacity</string>
     <string name="image_scrim_light">White overlay</string>
     <string name="image_scrim_dark">Black overlay</string>

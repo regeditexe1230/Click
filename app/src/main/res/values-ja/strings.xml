@@ -31,8 +31,6 @@
     <string name="status_overlay">オーバーレイ：%s</string>
     <string name="status_enabled">✅ 有効</string>
     <string name="status_disabled">❌ 無効</string>
-    <string name="status_gesture_recorded">ジェスチャー録画済み：%dポイント、%dms</string>
-    <string name="status_gesture_not_recorded">ジェスチャー未録画</string>
 
     <!-- Dialogs -->
     <string name="accessibility_service_description">画面クリック・スワイプ操作のシミュレーション支援サービス</string>
@@ -112,6 +110,15 @@
     <string name="delete_preset_confirm">「%s」を削除しますか？</string>
     <string name="add_image">画像を追加</string>
     <string name="remove_image">画像を削除</string>
+
+    <string name="add_gesture">ジェスチャーを追加</string>
+    <string name="gesture_name">ジェスチャー%1$s</string>
+    <string name="gesture_points_duration">%1$d点 · %2$d ms</string>
+    <string name="delete_gesture">ジェスチャーを削除</string>
+    <string name="delete_gesture_confirm">「%1$s」を削除しますか？</string>
+    <string name="rename_gesture">ジェスチャー名を変更</string>
+    <string name="rename_preset">プリセット名を変更</string>
+    <string name="rename_field">名前</string>
     <string name="image_alpha">画像の不透明度</string>
     <string name="image_scrim_light">白いオーバーレイ</string>
     <string name="image_scrim_dark">黒いオーバーレイ</string>

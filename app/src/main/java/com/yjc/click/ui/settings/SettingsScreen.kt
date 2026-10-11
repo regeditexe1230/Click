@@ -117,6 +117,7 @@ fun SettingsScreen(
     onAddPreset: () -> Unit,
     onPresetSelect: (String) -> Unit,
     onPresetToggleExpand: (String) -> Unit,
+    onPresetRename: (String) -> Unit,
     onPresetDelete: (String) -> Unit,
     onPresetAddImage: (String) -> Unit,
     onPresetRemoveImage: (String) -> Unit,
@@ -247,6 +248,7 @@ fun SettingsScreen(
                         expandedIds = expandedPresetIds,
                         onSelect = onPresetSelect,
                         onToggle = onPresetToggleExpand,
+                        onRename = onPresetRename,
                         onDelete = onPresetDelete,
                         onAdd = onAddPreset,
                         onAddImage = onPresetAddImage,
@@ -657,6 +659,7 @@ private fun BackgroundPresets(
     expandedIds: Set<String>,
     onSelect: (String) -> Unit,
     onToggle: (String) -> Unit,
+    onRename: (String) -> Unit,
     onDelete: (String) -> Unit,
     onAdd: () -> Unit,
     onAddImage: (String) -> Unit,
@@ -680,6 +683,7 @@ private fun BackgroundPresets(
                 customizable = !preset.isDefault,
                 onSelect = { onSelect(preset.id) },
                 onToggle = { onToggle(preset.id) },
+                onRename = { onRename(preset.id) },
                 onDelete = { onDelete(preset.id) },
             )
             // 「默认」没有二级面板（它不存图、也没有透明度）
@@ -870,6 +874,7 @@ private fun PresetRow(
     customizable: Boolean,
     onSelect: () -> Unit,
     onToggle: () -> Unit,
+    onRename: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val arrowRotation by animateFloatAsState(
@@ -897,9 +902,10 @@ private fun PresetRow(
                 .padding(vertical = 12.dp)
                 .testTag("settings_bg_name_$id"),
         )
-        // 「默认」既不能展开、也不能删，右边就留空（名字占满剩下的宽度）
+        // 「默认」既不能展开、也不能改名/删除，右边就留空（名字占满剩下的宽度）
         if (customizable) {
             RowIcon(R.drawable.ic_expand_more, "settings_bg_arrow_$id", Modifier.rotate(arrowRotation), onToggle)
+            RowIcon(R.drawable.ic_edit, "settings_bg_rename_$id", Modifier, onRename)
             RowIcon(R.drawable.ic_delete, "settings_bg_delete_$id", Modifier, onDelete)
         }
     }

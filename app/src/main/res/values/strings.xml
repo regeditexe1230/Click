@@ -31,8 +31,6 @@
     <string name="status_overlay">悬浮窗权限：%s</string>
     <string name="status_enabled">✅ 已开启</string>
     <string name="status_disabled">❌ 未开启</string>
-    <string name="status_gesture_recorded">已录制手势：%d个点，%dms</string>
-    <string name="status_gesture_not_recorded">尚未录制手势</string>
     <string name="accessibility_service_description">模拟点击辅助服务，用于执行屏幕点击和滑动操作</string>
     <string name="app_developer">yjc</string>
     <string name="app_website">https://github.com/regeditexe1230/Click</string>
@@ -120,6 +118,16 @@
     <string name="delete_preset_confirm">确定要删除\"%s\"吗？</string>
     <string name="add_image">添加图片</string>
     <string name="remove_image">删除图片</string>
+
+    <!-- 手势预设（滑动 → 手势录制） -->
+    <string name="add_gesture">添加手势</string>
+    <string name="gesture_name">手势%1$s</string>
+    <string name="gesture_points_duration">%1$d 个点 · %2$d 毫秒</string>
+    <string name="delete_gesture">删除手势</string>
+    <string name="delete_gesture_confirm">确定要删除\"%1$s\"吗？</string>
+    <string name="rename_gesture">重命名手势</string>
+    <string name="rename_preset">重命名预设</string>
+    <string name="rename_field">名称</string>
     <string name="image_alpha">图片透明度</string>
     <string name="image_scrim_light">白色遮罩</string>
     <string name="image_scrim_dark">黑色遮罩</string>

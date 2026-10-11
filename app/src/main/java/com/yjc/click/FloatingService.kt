@@ -8,10 +8,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.os.LocaleList
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -20,6 +22,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +140,21 @@ class FloatingService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /**
+     * Service 的上下文默认跟**系统语言**走，这里按 App 的 per-app 语言再包一层，
+     * 让录制浮层提示语、前台通知和 Toast 的文字跟 App 内选择的语言一致。
+     */
+    override fun attachBaseContext(newBase: Context) {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (locales.isEmpty) {
+            super.attachBaseContext(newBase)
+            return
+        }
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocales(LocaleList.forLanguageTags(locales.toLanguageTags()))
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -474,29 +492,35 @@ class FloatingService : Service() {
         }
         recordingOverlay = null
 
-        if (recordingPoints.size < 2) {
-            showFloatingView()
-            return
+        if (recordingPoints.size >= 2) {
+            val totalDuration = System.currentTimeMillis() - recordingStartTime
+            val points = recordingPoints.toList()
+            AppConfig.recordedGesture = RecordedGesture(
+                points = points,
+                totalDuration = totalDuration
+            )
+            // 同时落盘成一条预设并选中它：主页「手势录制」里就是这条列表，重启也不会丢
+            GestureStore.appendRecorded(this, points, totalDuration)
         }
-
-        val totalDuration = System.currentTimeMillis() - recordingStartTime
-        AppConfig.recordedGesture = RecordedGesture(
-            points = recordingPoints.toList(),
-            totalDuration = totalDuration
-        )
-
         recordingPoints.clear()
 
-        if (com.yjc.click.MainActivity.floatTutorialPending) {
-            com.yjc.click.MainActivity.floatTutorialPending = false
-            val launch = packageManager.getLaunchIntentForPackage(packageName)
-            launch?.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            launch?.putExtra("show_float_tutorial", true)
-            startActivity(launch)
-            return
-        }
+        // 录完不再把悬浮球留在屏幕上：撤掉这次录制会话，把 App 拉回前台
+        //（想用悬浮球时用户在主页点「启动悬浮球」）
+        returnToApp()
+    }
 
-        showFloatingView()
+    /** 结束录制会话：关掉悬浮球服务并把 App 叫回前台 */
+    private fun returnToApp() {
+        AppConfig.recordRequested = false
+        AppConfig.preventExecution = true
+        AppConfig.running = false
+        AppConfig.operationActive = false
+        val launch = packageManager.getLaunchIntentForPackage(packageName)
+        if (launch != null) {
+            launch.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(launch)
+        }
+        stopSelf()
     }
 
     private fun executeAction() {

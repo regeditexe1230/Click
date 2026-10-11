@@ -29,10 +29,6 @@ import com.yjc.click.ui.theme.ThemeReveal
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        var floatTutorialPending = false
-    }
-
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
 
@@ -49,8 +45,8 @@ class MainActivity : AppCompatActivity() {
     private var delayText by mutableStateOf("0")
     private var repeatText by mutableStateOf("1")
     private var infinite by mutableStateOf(false)
-    private var recordedStatus by mutableStateOf("")
-    private var recordedVisible by mutableStateOf(false)
+    private var gesturePresets by mutableStateOf<List<GestureStore.Preset>>(emptyList())
+    private var selectedGestureId by mutableStateOf<String?>(null)
     private var canStart by mutableStateOf(false)
     private var showStartOverlay by mutableStateOf(false)
     private var canStop by mutableStateOf(false)
@@ -146,8 +142,8 @@ class MainActivity : AppCompatActivity() {
                     delay = delayText,
                     repeat = repeatText,
                     infinite = infinite,
-                    recordedStatus = recordedStatus,
-                    recordedVisible = recordedVisible,
+                    gesturePresets = gesturePresets,
+                    selectedGestureId = selectedGestureId,
                     canStart = canStart,
                     showStartOverlay = showStartOverlay,
                     canStop = canStop,
@@ -194,7 +190,10 @@ class MainActivity : AppCompatActivity() {
                         stopService(Intent(this, FloatingService::class.java))
                         updateStatus()
                     },
-                    onRecord = { startGestureRecording() },
+                    onAddGesture = { startGestureRecording() },
+                    onGestureSelect = { id -> selectGesturePreset(id) },
+                    onGestureRename = { id -> showGestureRenameDialog(id) },
+                    onGestureDelete = { id -> confirmDeleteGesturePreset(id) },
                     )
                     },
                 )
@@ -225,6 +224,8 @@ class MainActivity : AppCompatActivity() {
             infinite = snapshot.infinite
             // 同步一次内存中的运行时配置，避免启动后未改动控件时界面与参数不一致
             saveConfig()
+            // 手势预设也要从磁盘恢复：录好的轨迹不再只活在内存里
+            syncGesturePresets()
         }
 
         // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
@@ -306,17 +307,6 @@ class MainActivity : AppCompatActivity() {
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
 
-        if (intent.getBooleanExtra("show_float_tutorial", false)) {
-            intent.removeExtra("show_float_tutorial")
-            showFloatTutorialDialog {
-                AppConfig.running = true
-                AppConfig.preventExecution = false
-                startFloatingService()
-            }
-            updateStatus()
-            return
-        }
-
         if (pendingPermissionStep == PermissionStep.ACCESSIBILITY) {
             if (isServiceEnabled()) {
                 pendingPermissionStep = PermissionStep.NONE
@@ -355,6 +345,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateStatus() {
+        // 手势列表先跟磁盘对齐：服务里刚录完的那条会在这里冒出来，并成为当前手势
+        syncGesturePresets()
+
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
 
@@ -373,17 +366,61 @@ class MainActivity : AppCompatActivity() {
         showStartOverlay = !startable
         canStop = AppConfig.running
         canRecord = !AppConfig.running
+    }
 
-        val gesture = AppConfig.recordedGesture
-        if (gesture.points.size >= 2) {
-            recordedStatus = getString(R.string.status_gesture_recorded, gesture.points.size, gesture.totalDuration)
-            recordedVisible = true
-        } else if (isSwipeMode && isGestureMode) {
-            recordedStatus = getString(R.string.status_gesture_not_recorded)
-            recordedVisible = true
-        } else {
-            recordedVisible = false
+    /** 从磁盘读手势预设列表，并把选中的那条交给运行时配置（执行滑动时用的就是它；没得选就是空手势） */
+    private fun syncGesturePresets() {
+        val snapshot = GestureStore.load(this)
+        gesturePresets = snapshot.presets
+        selectedGestureId = snapshot.selectedId
+        AppConfig.recordedGesture = snapshot.gesture()
+    }
+
+    /** 选中某条手势预设 */
+    private fun selectGesturePreset(id: String) {
+        val snapshot = GestureStore.load(this)
+        if (snapshot.selectedId == id) return
+        GestureStore.save(this, GestureStore.Snapshot(snapshot.presets, id))
+        updateStatus()
+    }
+
+    /** 重命名手势预设：弹窗预填当前名字，清空后确定 = 回到「手势一 / 手势二」这种自动编号名 */
+    private fun showGestureRenameDialog(id: String) {
+        val preset = gesturePresets.firstOrNull { it.id == id } ?: return
+        RenameDialog.show(this, R.string.rename_gesture, GestureStore.displayName(this, preset)) { newName ->
+            val snapshot = GestureStore.load(this)
+            val updated = snapshot.presets.map { if (it.id == id) it.copy(name = newName) else it }
+            GestureStore.save(this, GestureStore.Snapshot(updated, snapshot.selectedId))
+            updateStatus()
         }
+    }
+
+    /** 删除手势预设前先确认（与设置页删背景预设同一套弹窗） */
+    private fun confirmDeleteGesturePreset(id: String) {
+        val preset = gesturePresets.firstOrNull { it.id == id } ?: return
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.delete_gesture)
+            .setMessage(getString(
+                R.string.delete_gesture_confirm,
+                GestureStore.displayName(this, preset),
+            ))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteGesturePreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deleteGesturePreset(id: String) {
+        val snapshot = GestureStore.load(this)
+        val remaining = snapshot.presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那条 → 落到剩下的第一条（都删完了就是没有）
+        val selected = snapshot.selectedId
+            ?.takeIf { it != id && remaining.any { p -> p.id == it } }
+            ?: remaining.firstOrNull()?.id
+        GestureStore.save(this, GestureStore.Snapshot(remaining, selected))
+        updateStatus()
     }
 
     private fun isSwipeConfigValid(): Boolean {
@@ -449,11 +486,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
         saveConfig()
-        val floatPrefs = getPreferences(Context.MODE_PRIVATE)
-        if (floatPrefs.getBoolean("float_tutorial_done", false).not()) {
-            floatPrefs.edit().putBoolean("float_tutorial_done", true).apply()
-            floatTutorialPending = true
-        }
         AppConfig.recordRequested = true
         AppConfig.preventExecution = false
         if (!AppConfig.running) {

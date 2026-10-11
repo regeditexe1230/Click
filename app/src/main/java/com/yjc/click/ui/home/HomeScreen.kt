@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,8 +24,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +46,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -51,6 +58,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yjc.click.GestureStore
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.LocalSectionBackground
@@ -95,8 +103,8 @@ fun HomeScreen(
     delay: String,
     repeat: String,
     infinite: Boolean,
-    recordedStatus: String,
-    recordedVisible: Boolean,
+    gesturePresets: List<GestureStore.Preset>,
+    selectedGestureId: String?,
     canStart: Boolean,
     showStartOverlay: Boolean,
     canStop: Boolean,
@@ -115,7 +123,10 @@ fun HomeScreen(
     onInfiniteChange: (Boolean) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onRecord: () -> Unit,
+    onAddGesture: () -> Unit,
+    onGestureSelect: (String) -> Unit,
+    onGestureRename: (String) -> Unit,
+    onGestureDelete: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -169,13 +180,17 @@ fun HomeScreen(
                     isGestureMode = isGestureMode,
                     swipeX1 = swipeX1, swipeY1 = swipeY1, swipeX2 = swipeX2, swipeY2 = swipeY2,
                     swipeDuration = swipeDuration,
-                    recordedStatus = recordedStatus, recordedVisible = recordedVisible,
+                    gesturePresets = gesturePresets,
+                    selectedGestureId = selectedGestureId,
                     canRecord = canRecord,
                     onSwipeMethodSelected = onSwipeMethodSelected,
                     onSwipeX1Change = onSwipeX1Change, onSwipeY1Change = onSwipeY1Change,
                     onSwipeX2Change = onSwipeX2Change, onSwipeY2Change = onSwipeY2Change,
                     onSwipeDurationChange = onSwipeDurationChange,
-                    onRecord = onRecord,
+                    onAddGesture = onAddGesture,
+                    onGestureSelect = onGestureSelect,
+                    onGestureRename = onGestureRename,
+                    onGestureDelete = onGestureDelete,
                 )
             }
         }
@@ -388,8 +403,8 @@ private fun SegmentControl(
 private fun ColumnScope.SwipeParamsSection(
     isGestureMode: Boolean,
     swipeX1: String, swipeY1: String, swipeX2: String, swipeY2: String, swipeDuration: String,
-    recordedStatus: String,
-    recordedVisible: Boolean,
+    gesturePresets: List<GestureStore.Preset>,
+    selectedGestureId: String?,
     canRecord: Boolean,
     onSwipeMethodSelected: (Boolean) -> Unit,
     onSwipeX1Change: (String) -> Unit,
@@ -397,7 +412,10 @@ private fun ColumnScope.SwipeParamsSection(
     onSwipeX2Change: (String) -> Unit,
     onSwipeY2Change: (String) -> Unit,
     onSwipeDurationChange: (String) -> Unit,
-    onRecord: () -> Unit,
+    onAddGesture: () -> Unit,
+    onGestureSelect: (String) -> Unit,
+    onGestureRename: (String) -> Unit,
+    onGestureDelete: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Box(
@@ -475,24 +493,144 @@ private fun ColumnScope.SwipeParamsSection(
                     fadeOut(animationSpec = tween(250, easing = CollapseEasing)),
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                if (recordedVisible) {
-                    ClickText(
-                        text = recordedStatus,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.testTag("lblRecordedStatus"),
+                val context = LocalContext.current
+                gesturePresets.forEachIndexed { index, preset ->
+                    // 预设之间用分割线隔开（与设置页的应用背景预设一致）
+                    if (index > 0) GestureDivider()
+                    GesturePresetRow(
+                        preset = preset,
+                        name = GestureStore.displayName(context, preset),
+                        selected = preset.id == selectedGestureId,
+                        onSelect = { onGestureSelect(preset.id) },
+                        onRename = { onGestureRename(preset.id) },
+                        onDelete = { onGestureDelete(preset.id) },
                     )
                 }
-                Button(
-                    onClick = onRecord,
-                    enabled = canRecord,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .testTag("btnRecordGesture"),
-                ) { ButtonLabel(R.string.record_gesture) }
+                // 有预设时，最后一条下面也来一条：把列表和「添加手势」分开
+                if (gesturePresets.isNotEmpty()) GestureDivider()
+                GestureAddRow(enabled = canRecord, onClick = onAddGesture)
             }
         }
+    }
+}
+
+/** 1dp 分隔线，颜色 colorOutlineVariant（与设置页 InnerDivider 一致） */
+@Composable
+private fun GestureDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant),
+    )
+}
+
+/**
+ * 手势预设行：[◉] [手势名] … [12 个点 · 850 毫秒] [✏️] [🗑]
+ *
+ * 没有二级菜单：行下面不展开任何面板，点数/毫秒直接摆在这两个按钮左边；
+ * 点圆圈和点名字都是选中（与设置页的应用背景预设同一套交互）。
+ */
+@Composable
+private fun GesturePresetRow(
+    preset: GestureStore.Preset,
+    name: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            modifier = Modifier.testTag("gesture_radio_${preset.id}"),
+        )
+        ClickText(
+            text = name,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onSelect)
+                .padding(vertical = 12.dp)
+                .testTag("gesture_name_${preset.id}"),
+        )
+        ClickText(
+            text = stringResource(
+                R.string.gesture_points_duration,
+                preset.points.size,
+                preset.totalDuration,
+            ),
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag("gesture_info_${preset.id}"),
+        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onRename)
+                .testTag("gesture_rename_${preset.id}"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_edit),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onDelete)
+                .testTag("gesture_delete_${preset.id}"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_delete),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+/** 「＋ 添加手势」：与设置页「添加预设」同款（主色加号 + 主色文字），点一下直接进录制 */
+@Composable
+private fun GestureAddRow(enabled: Boolean, onClick: () -> Unit) {
+    val tint = if (enabled) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .testTag("gesture_add"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_add),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(tint),
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        ClickText(
+            text = stringResource(R.string.add_gesture),
+            fontSize = 16.sp,
+            color = tint,
+        )
     }
 }
 
