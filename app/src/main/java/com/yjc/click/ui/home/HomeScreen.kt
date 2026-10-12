@@ -487,13 +487,24 @@ private fun ColumnScope.SwipeParamsSection(
                     // 预设之间用分割线隔开（与设置页的应用背景预设一致）
                     if (index > 0) GestureDivider()
                     val draft = manualDrafts[preset.id] ?: preset
+                    val unset = stringResource(R.string.manual_preset_unset)
+                    // 没填的项显示「未设置」，五项目全空时整行就只显示「未设置」
+                    val summary = if (preset.x1.isBlank() && preset.y1.isBlank() && preset.x2.isBlank() &&
+                        preset.y2.isBlank() && preset.duration.isBlank()
+                    ) {
+                        unset
+                    } else {
+                        stringResource(
+                            R.string.manual_preset_summary,
+                            preset.x1.ifBlank { unset }, preset.y1.ifBlank { unset },
+                            preset.x2.ifBlank { unset }, preset.y2.ifBlank { unset },
+                            preset.duration.ifBlank { unset },
+                        )
+                    }
                     ManualPresetRow(
                         preset = preset,
                         name = ManualStore.displayName(context, preset),
-                        summary = stringResource(
-                            R.string.manual_preset_summary,
-                            preset.x1, preset.y1, preset.x2, preset.y2, preset.duration,
-                        ),
+                        summary = summary,
                         selected = preset.id == selectedManualId,
                         expanded = preset.id in expandedManualIds,
                         onSelect = { onManualSelect(preset.id) },

@@ -120,6 +120,7 @@
     <string name="rename_preset">重新命名預設</string>
     <string name="rename_field">名稱</string>
     <string name="manual_preset_summary">(%1$s,%2$s) → (%3$s,%4$s) · %5$s 毫秒</string>
+    <string name="manual_preset_unset">未設定</string>
     <string name="save">儲存</string>
     <string name="undo">復原</string>
     <string name="redo">重做</string>
@@ -169,7 +170,7 @@
     <string name="security_warning">安全警告</string>
     <string name="security_warning_message">請確認此軟體是從github下載獲得，從其他地方下載此軟體可能會含有惡意程式碼，請謹慎授予無障礙服務權限</string>
     <string name="usage_instructions">使用說明</string>
-    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動，然後點擊新增預設，即可開始設定\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
     <string name="floating_ball_instructions">懸浮球使用說明</string>
     <string name="floating_ball_instructions_message">1.切到想執行操作的應用\n\n2.按住懸浮球拖動即可拖動懸浮球，可拖動到想執行操作的位置，拖動時懸浮球會半透明，以便定位\n\n3.拖動完畢後點擊一下懸浮球即可開始操作\n\n4.雙擊懸浮球可暫停操作\n\n注意：從一個應用切回本軟體時懸浮球會自動停止，恢復可以再點擊啟動懸浮球按鈕</string>
 
