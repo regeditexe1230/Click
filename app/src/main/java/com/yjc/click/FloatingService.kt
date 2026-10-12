@@ -662,12 +662,17 @@ class FloatingService : Service() {
                     false
                 }
             } else {
+                android.util.Log.d(
+                    "FloatingService",
+                    "executeSwipe: manual (${config.swipeX1},${config.swipeY1})->(${config.swipeX2},${config.swipeY2}) duration=${config.swipeDuration}"
+                )
                 service.swipeAndAwait(
                     config.swipeX1, config.swipeY1,
                     config.swipeX2, config.swipeY2,
                     config.swipeDuration
                 )
             }
+            android.util.Log.d("FloatingService", "executeSwipe: completed=$completed")
             if (!completed) {
                 android.util.Log.w("FloatingService", "executeSwipe: gesture not completed (cancelled or rejected)")
             }

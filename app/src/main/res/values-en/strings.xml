@@ -130,6 +130,10 @@
     <string name="rename_gesture">Rename gesture</string>
     <string name="rename_preset">Rename preset</string>
     <string name="rename_field">Name</string>
+    <string name="manual_preset_summary">(%1$s,%2$s) → (%3$s,%4$s) · %5$s ms</string>
+    <string name="save">Save</string>
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
     <string name="image_alpha">Image opacity</string>
     <string name="image_scrim_light">White overlay</string>
     <string name="image_scrim_dark">Black overlay</string>

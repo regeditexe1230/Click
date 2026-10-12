@@ -47,6 +47,13 @@ class MainActivity : AppCompatActivity() {
     private var infinite by mutableStateOf(false)
     private var gesturePresets by mutableStateOf<List<GestureStore.Preset>>(emptyList())
     private var selectedGestureId by mutableStateOf<String?>(null)
+    private var manualPresets by mutableStateOf<List<ManualStore.Preset>>(emptyList())
+    private var selectedManualId by mutableStateOf<String?>(null)
+    // 二级面板的展开状态与「未保存的编辑」都只活在内存里：返回/切页都还在，退出 App 就没了
+    private var expandedManualIds by mutableStateOf<Set<String>>(emptySet())
+    private var manualDrafts by mutableStateOf<Map<String, ManualStore.Preset>>(emptyMap())
+    private var manualUndo by mutableStateOf<Map<String, List<ManualStore.Preset>>>(emptyMap())
+    private var manualRedo by mutableStateOf<Map<String, List<ManualStore.Preset>>>(emptyMap())
     private var canStart by mutableStateOf(false)
     private var showStartOverlay by mutableStateOf(false)
     private var canStop by mutableStateOf(false)
@@ -134,11 +141,12 @@ class MainActivity : AppCompatActivity() {
                     statusText = statusTextValue,
                     isSwipeMode = isSwipeMode,
                     isGestureMode = isGestureMode,
-                    swipeX1 = swipeX1,
-                    swipeY1 = swipeY1,
-                    swipeX2 = swipeX2,
-                    swipeY2 = swipeY2,
-                    swipeDuration = swipeDuration,
+                    manualPresets = manualPresets,
+                    selectedManualId = selectedManualId,
+                    expandedManualIds = expandedManualIds,
+                    manualDrafts = manualDrafts,
+                    manualUndoCounts = manualUndo.mapValues { it.value.size },
+                    manualRedoCounts = manualRedo.mapValues { it.value.size },
                     delay = delayText,
                     repeat = repeatText,
                     infinite = infinite,
@@ -176,11 +184,16 @@ class MainActivity : AppCompatActivity() {
                             updateStatus()
                         }
                     },
-                    onSwipeX1Change = { swipeX1 = it.numericInput(true); afterInputChange() },
-                    onSwipeY1Change = { swipeY1 = it.numericInput(true); afterInputChange() },
-                    onSwipeX2Change = { swipeX2 = it.numericInput(true); afterInputChange() },
-                    onSwipeY2Change = { swipeY2 = it.numericInput(true); afterInputChange() },
-                    onSwipeDurationChange = { swipeDuration = it.numericInput(); afterInputChange() },
+                    onManualSelect = { id -> selectManualPreset(id) },
+                    onManualToggle = { id -> toggleManualExpanded(id) },
+                    onManualRename = { id -> showManualRenameDialog(id) },
+                    onManualDelete = { id -> confirmDeleteManualPreset(id) },
+                    onManualAdd = { addManualPreset() },
+                    onManualField = { id, field, value -> editManualField(id, field, value) },
+                    onManualUndo = { id -> undoManualEdit(id) },
+                    onManualRedo = { id -> redoManualEdit(id) },
+                    onManualSave = { id -> saveManualPreset(id) },
+                    onManualCancel = { id -> cancelManualEdit(id) },
                     onDelayChange = { delayText = it.numericInput(); afterInputChange() },
                     onRepeatChange = { repeatText = it.numericInput(); afterInputChange() },
                     onInfiniteChange = { infinite = it; saveConfig() },
@@ -347,6 +360,8 @@ class MainActivity : AppCompatActivity() {
     private fun updateStatus() {
         // 手势列表先跟磁盘对齐：服务里刚录完的那条会在这里冒出来，并成为当前手势
         syncGesturePresets()
+        // 手动参数同理：选中那条的 5 个值就是运行时用的值
+        syncManualPresets()
 
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
@@ -366,6 +381,141 @@ class MainActivity : AppCompatActivity() {
         showStartOverlay = !startable
         canStop = AppConfig.running
         canRecord = !AppConfig.running
+    }
+
+    /** 从磁盘读手动参数预设，并把选中那条的 5 个值交给运行时配置（手动参数模式执行时用的就是它） */
+    private fun syncManualPresets() {
+        val snapshot = ManualStore.load(this)
+        manualPresets = snapshot.presets
+        selectedManualId = snapshot.selectedId
+        val selected = snapshot.selected
+        swipeX1 = selected?.x1 ?: ""
+        swipeY1 = selected?.y1 ?: ""
+        swipeX2 = selected?.x2 ?: ""
+        swipeY2 = selected?.y2 ?: ""
+        swipeDuration = selected?.duration ?: ""
+        // 必须一起写进运行时配置：否则切换预设或保存编辑后，悬浮球执行用的还是上一次的值
+        saveConfig()
+    }
+
+    private fun selectManualPreset(id: String) {
+        if (selectedManualId == id) return
+        val snapshot = ManualStore.load(this)
+        ManualStore.save(this, ManualStore.Snapshot(snapshot.presets, id))
+        updateStatus()
+    }
+
+    private fun toggleManualExpanded(id: String) {
+        expandedManualIds =
+            if (id in expandedManualIds) expandedManualIds - id else expandedManualIds + id
+    }
+
+    /** 新增预设：5 个值复制当前选中那条（没有选中就给空值），并展开它方便接着改 */
+    private fun addManualPreset() {
+        val snapshot = ManualStore.load(this)
+        val preset = ManualStore.newPreset(snapshot.presets, snapshot.selected)
+        ManualStore.save(this, ManualStore.Snapshot(snapshot.presets + preset, preset.id))
+        expandedManualIds = expandedManualIds + preset.id
+        updateStatus()
+    }
+
+    /** 重命名手动参数预设（清空后确定 = 回到「预设一 / 预设二」这种自动编号名） */
+    private fun showManualRenameDialog(id: String) {
+        val preset = manualPresets.firstOrNull { it.id == id } ?: return
+        RenameDialog.show(this, R.string.rename_preset, ManualStore.displayName(this, preset)) { newName ->
+            val snapshot = ManualStore.load(this)
+            val updated = snapshot.presets.map { if (it.id == id) it.copy(name = newName) else it }
+            ManualStore.save(this, ManualStore.Snapshot(updated, snapshot.selectedId))
+            updateStatus()
+        }
+    }
+
+    /** 删除手动参数预设前先确认（与设置页删背景预设同一套弹窗） */
+    private fun confirmDeleteManualPreset(id: String) {
+        val preset = manualPresets.firstOrNull { it.id == id } ?: return
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.delete_preset)
+            .setMessage(getString(R.string.delete_preset_confirm, ManualStore.displayName(this, preset)))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteManualPreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deleteManualPreset(id: String) {
+        val snapshot = ManualStore.load(this)
+        val remaining = snapshot.presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那条 → 落到剩下的第一条（都删完了就是没有）
+        val selected = snapshot.selectedId
+            ?.takeIf { it != id && remaining.any { p -> p.id == it } }
+            ?: remaining.firstOrNull()?.id
+        ManualStore.save(this, ManualStore.Snapshot(remaining, selected))
+        // 这条的编辑草稿和撤销历史一起清掉
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
+        expandedManualIds = expandedManualIds - id
+        updateStatus()
+    }
+
+    /** 面板里改一个字段：把「改之前」的草稿压进撤销栈、清空重做栈（每步一条，最多留 20 步） */
+    private fun editManualField(id: String, field: Int, value: String) {
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        val next = when (field) {
+            0 -> current.copy(x1 = value.numericInput(true))
+            1 -> current.copy(y1 = value.numericInput(true))
+            2 -> current.copy(x2 = value.numericInput(true))
+            3 -> current.copy(y2 = value.numericInput(true))
+            else -> current.copy(duration = value.numericInput())
+        }
+        if (next == current) return
+        manualUndo = manualUndo + (id to ((manualUndo[id] ?: emptyList()) + current).takeLast(20))
+        manualRedo = manualRedo - id
+        manualDrafts = manualDrafts + (id to next)
+    }
+
+    private fun undoManualEdit(id: String) {
+        val stack = manualUndo[id] ?: return
+        if (stack.isEmpty()) return
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        manualUndo = manualUndo + (id to stack.dropLast(1))
+        manualRedo = manualRedo + (id to ((manualRedo[id] ?: emptyList()) + current))
+        manualDrafts = manualDrafts + (id to stack.last())
+    }
+
+    private fun redoManualEdit(id: String) {
+        val stack = manualRedo[id] ?: return
+        if (stack.isEmpty()) return
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        manualRedo = manualRedo + (id to stack.dropLast(1))
+        manualUndo = manualUndo + (id to ((manualUndo[id] ?: emptyList()) + current))
+        manualDrafts = manualDrafts + (id to stack.last())
+    }
+
+    /** 保存：写盘 + 让运行时用上新值；面板保持展开、展开状态也留着，撤销历史清空 */
+    private fun saveManualPreset(id: String) {
+        val draft = manualDrafts[id] ?: return
+        val snapshot = ManualStore.load(this)
+        if (snapshot.presets.none { it.id == id }) return
+        ManualStore.save(
+            this,
+            ManualStore.Snapshot(ManualStore.withPreset(snapshot.presets, draft), snapshot.selectedId),
+        )
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
+        updateStatus()
+    }
+
+    /** 取消：丢掉内存里的编辑，面板里显示回已保存的值（面板不收起） */
+    private fun cancelManualEdit(id: String) {
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
     }
 
     /** 从磁盘读手势预设列表，并把选中的那条交给运行时配置（执行滑动时用的就是它；没得选就是空手势） */

@@ -119,6 +119,10 @@
     <string name="rename_gesture">ジェスチャー名を変更</string>
     <string name="rename_preset">プリセット名を変更</string>
     <string name="rename_field">名前</string>
+    <string name="manual_preset_summary">(%1$s,%2$s) → (%3$s,%4$s) · %5$s ms</string>
+    <string name="save">保存</string>
+    <string name="undo">元に戻す</string>
+    <string name="redo">やり直す</string>
     <string name="image_alpha">画像の不透明度</string>
     <string name="image_scrim_light">白いオーバーレイ</string>
     <string name="image_scrim_dark">黒いオーバーレイ</string>
