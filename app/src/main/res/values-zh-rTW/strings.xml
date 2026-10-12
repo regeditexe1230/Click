@@ -9,6 +9,8 @@
     <string name="notification_running">執行中</string>
     <string name="notification_idle">點擊懸浮球執行操作</string>
     <string name="notification_title">懸浮球運行中</string>
+    <string name="notification_click_service_running">Click 服務執行中</string>
+    <string name="notification_preparing_recording">正在準備錄製手勢，點按回到 Click</string>
     <string name="notification_action_stop">停止</string>
 
     <!-- 手勢錄製通知（點「新增手勢」後單獨發的高優先級通知） -->

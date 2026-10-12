@@ -9,6 +9,8 @@
     <string name="notification_running">Running</string>
     <string name="notification_idle">Tap floating ball to execute</string>
     <string name="notification_title">Floating ball running</string>
+    <string name="notification_click_service_running">Click service running</string>
+    <string name="notification_preparing_recording">Preparing to record a gesture — tap to return to Click</string>
     <string name="notification_action_stop">Stop</string>
 
     <!-- Gesture recording notification (posted separately by "Add gesture") -->

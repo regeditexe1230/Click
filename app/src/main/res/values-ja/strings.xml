@@ -9,6 +9,8 @@
     <string name="notification_running">実行中</string>
     <string name="notification_idle">フローティングボールをタップして実行</string>
     <string name="notification_title">フローティングボール実行中</string>
+    <string name="notification_click_service_running">Click サービス実行中</string>
+    <string name="notification_preparing_recording">ジェスチャー録画の準備中 — タップで Click に戻る</string>
     <string name="notification_action_stop">停止</string>
 
     <!-- ジェスチャー録画通知（「ジェスチャーを追加」で個別に出す高優先度通知） -->

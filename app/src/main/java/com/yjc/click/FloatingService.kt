@@ -197,14 +197,20 @@ class FloatingService : Service() {
     }
 
     private fun createNotification(): Notification {
+        // 录制会话期间悬浮球已经隐藏，这条前台通知不能再自称「悬浮球运行中」；
+        // 录制本身由高优先级的录制通知负责，这里只说清楚服务还在跑。
+        val sessionActive = AppConfig.recordSessionActive
+        val title = if (sessionActive) getString(R.string.notification_click_service_running)
+        else getString(R.string.notification_title)
         val text = when {
-            AppConfig.recordSessionActive -> getString(R.string.notification_recording)
+            sessionActive && recordingActive -> getString(R.string.notification_recording)
+            sessionActive -> getString(R.string.notification_preparing_recording)
             AppConfig.operationActive && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
             AppConfig.operationActive -> getString(R.string.notification_running)
             else -> getString(R.string.notification_idle)
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.notification_title))
+            .setContentTitle(title)
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -552,6 +558,7 @@ class FloatingService : Service() {
             recordingPending = false
             recordingActive = true
             showRecordingNotification(recording = true)
+            updateNotification()
             armRecordingIdleTimeout()
             android.util.Log.d("FloatingService", "recording started, observed=$observed")
         }

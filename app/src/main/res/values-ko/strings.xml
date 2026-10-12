@@ -9,6 +9,8 @@
     <string name="notification_running">실행 중</string>
     <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
     <string name="notification_title">플로팅 볼 실행 중</string>
+    <string name="notification_click_service_running">Click 서비스 실행 중</string>
+    <string name="notification_preparing_recording">제스처 녹화 준비 중 — 탭하면 Click으로 돌아갑니다</string>
     <string name="notification_action_stop">중지</string>
 
     <!-- 제스처 녹화 알림 ('제스처 추가' 시 따로 표시되는 높은 우선순위 알림) -->
