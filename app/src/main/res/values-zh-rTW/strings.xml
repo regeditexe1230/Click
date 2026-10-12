@@ -11,6 +11,14 @@
     <string name="notification_title">懸浮球運行中</string>
     <string name="notification_action_stop">停止</string>
 
+    <!-- 手勢錄製通知（點「新增手勢」後單獨發的高優先級通知） -->
+    <string name="record_notification_channel_name">手勢錄製</string>
+    <string name="record_notification_title">點此開始錄製手勢</string>
+    <string name="record_notification_text_pending">切到目標應用後點這則通知，再滑動手指</string>
+    <string name="record_notification_title_recording">正在錄製手勢</string>
+    <string name="record_notification_text_recording">鬆手即結束，隨後自動返回 Click</string>
+    <string name="notification_action_cancel">取消</string>
+
     <!-- Toast訊息 -->
     <string name="toast_drag_to_position">請先拖動懸浮球設到點擊位置</string>
     <string name="toast_operation_paused">操作已暫停</string>
@@ -23,7 +31,11 @@
     <string name="toast_need_accessibility_for_record">需要無障礙服務才能錄製手勢</string>
     <string name="toast_need_accessibility">需要無障礙服務才能執行</string>
     <string name="toast_accessibility_revoked">無障礙服務已關閉，已停止執行</string>
-    <string name="toast_swipe_to_record">請在螢幕上滑動手指錄製手勢</string>
+    <string name="toast_record_switch_to_app">已發出錄製通知，切到目標應用後點它開始錄製</string>
+    <string name="toast_record_need_notification">請先允許通知：錄製手勢要靠通知來啟動</string>
+    <string name="toast_record_too_short">手勢太短，未儲存</string>
+    <string name="toast_record_unavailable">目前系統無法錄製手勢，請手動填寫參數</string>
+    <string name="toast_record_timeout">錄製逾時，已退出</string>
     <string name="toast_floating_started">懸浮球已啟動</string>
 
     <!-- 狀態文字 -->
@@ -59,7 +71,6 @@
     <string name="end_y">終點 Y (縱向座標)</string>
     <string name="swipe_duration">滑動耗時(毫秒)</string>
 
-    <string name="recording_overlay_hint">請在螢幕上滑動手指錄製手勢\n完成後鬆手即可</string>
     <string name="floating_ball_content_description">懸浮球</string>
 
     <string name="execution_settings">執行設定</string>
@@ -163,7 +174,7 @@
     <string name="security_warning">安全警告</string>
     <string name="security_warning_message">請確認此軟體是從github下載獲得，從其他地方下載此軟體可能會含有惡意程式碼，請謹慎授予無障礙服務權限</string>
     <string name="usage_instructions">使用說明</string>
-    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動，然後點擊新增預設，即可開始設定\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動，然後點擊新增預設，即可開始設定\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（點「新增手勢」後退到背景並發出通知，切到目標應用後點通知開始錄製，滑動手指，鬆手即結束並自動返回本應用）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
     <string name="floating_ball_instructions">懸浮球使用說明</string>
     <string name="floating_ball_instructions_message">1.切到想執行操作的應用\n\n2.按住懸浮球拖動即可拖動懸浮球，可拖動到想執行操作的位置，拖動時懸浮球會半透明，以便定位\n\n3.拖動完畢後點擊一下懸浮球即可開始操作\n\n4.雙擊懸浮球可暫停操作\n\n注意：從一個應用切回本軟體時懸浮球會自動停止，恢復可以再點擊啟動懸浮球按鈕</string>
 

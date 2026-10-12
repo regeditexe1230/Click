@@ -40,8 +40,12 @@ data class AppConfig(
         @Volatile
         var operationActive = false
 
+        /**
+         * 手势录制会话是否活着（等待用户点通知开始 / 正在录制）。
+         * 由 FloatingService 维护，MainActivity 在回到前台时用它撤销悬挂的会话。
+         */
         @Volatile
-        var recordRequested = false
+        var recordSessionActive = false
 
         @Volatile
         var recordedGesture: RecordedGesture = RecordedGesture.EMPTY

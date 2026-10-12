@@ -9,6 +9,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.os.Build
@@ -24,6 +25,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,7 +39,12 @@ class FloatingService : Service() {
     private lateinit var floatingView: FrameLayout
     private lateinit var params: WindowManager.LayoutParams
     private var floatingViewReady = false
-    private var recordingOverlay: View? = null
+    /** 低版本（API < 33）用的不可见捕获层；高版本走无障碍触摸观察，不建任何窗口 */
+    private var captureView: View? = null
+    private var recordingPending = false
+    private var recordingStarting = false
+    private var recordingActive = false
+    private var recordingIdleJob: Job? = null
     private var recordingPoints = mutableListOf<Pair<Float, Float>>()
     private var recordingStartTime = 0L
     private var initialX = 0
@@ -65,6 +72,7 @@ class FloatingService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
+        createRecordingChannel()
         watchOverlayPermission()
         active = this
     }
@@ -127,10 +135,19 @@ class FloatingService : Service() {
         val notification = createNotification()
         startForeground(NOTIFICATION_ID, notification)
 
-        if (AppConfig.recordRequested && recordingOverlay == null) {
-            AppConfig.recordRequested = false
-            showRecordingOverlay()
-            return START_STICKY
+        when (intent?.action) {
+            ACTION_PREPARE_RECORDING -> {
+                prepareRecordingSession()
+                return START_NOT_STICKY
+            }
+            ACTION_START_RECORDING -> {
+                beginRecordingCapture()
+                return START_NOT_STICKY
+            }
+            ACTION_CANCEL_RECORDING -> {
+                cancelRecordingSession()
+                return START_NOT_STICKY
+            }
         }
 
         if (!floatingViewReady || !floatingView.isAttachedToWindow) {
@@ -166,9 +183,22 @@ class FloatingService : Service() {
         }
     }
 
+    /** 录制通知单独一个高优先级渠道：点「添加手势」后要能直接以横幅弹出来点 */
+    private fun createRecordingChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                RECORDING_CHANNEL_ID,
+                getString(R.string.record_notification_channel_name),
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
     private fun createNotification(): Notification {
         val text = when {
-            AppConfig.recordRequested -> getString(R.string.notification_recording)
+            AppConfig.recordSessionActive -> getString(R.string.notification_recording)
             AppConfig.operationActive && AppConfig.current.isInfinite -> getString(R.string.notification_infinite)
             AppConfig.operationActive -> getString(R.string.notification_running)
             else -> getString(R.string.notification_idle)
@@ -438,15 +468,141 @@ class FloatingService : Service() {
         }
     }
 
-    private fun showRecordingOverlay() {
+    // ------------------------------------------------------------------
+    // 手势录制会话（新流程）
+    //
+    // 点主页「添加手势」→ App 退到后台 + 发一条高优先级录制通知（不显示任何遮罩）
+    // → 用户切到目标应用、点通知 → 开始录制：
+    //   · Android 13+：无障碍走 TouchInteractionController 收原始触摸，**不建任何窗口**
+    //   · Android 12 及以下：退回一个 alpha=0 的不可见捕获层
+    // → 松手即停 → 把刚录的这一划回放给目标应用一次 → 撤通知并切回 Click
+    //
+    // 为什么必须回放：系统在「服务观察触摸」时不会再把这串事件传给前台应用
+    //（TouchInteractionController 的官方注释：委托=放行=服务立即收不到事件，二者互斥）。
+    // 用户要的「穿透 + 同时录制」平台不提供，所以录制时触摸被我们吃掉，松手后原样补发。
+    // ------------------------------------------------------------------
+
+    /** 点「添加手势」后调用：进入待录制状态并发通知，不建任何窗口 */
+    private fun prepareRecordingSession() {
+        AppConfig.running = false
+        AppConfig.operationActive = false
+        AppConfig.preventExecution = false
+        job?.cancel()
+        hideTargetMarker()
         if (floatingViewReady && floatingView.isAttachedToWindow) {
             windowManager.removeView(floatingView)
         }
+        floatingViewReady = false
 
-        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        recordingOverlay = inflater.inflate(R.layout.recording_overlay, null)
+        recordingPending = true
+        recordingActive = false
+        AppConfig.recordSessionActive = true
+        updateNotification()
+        showRecordingNotification(recording = false)
+        android.util.Log.d("FloatingService", "recording session prepared, waiting for notification tap")
+    }
 
-        val overlayParams = WindowManager.LayoutParams(
+    /** 点通知后调用：开始抓这一划 */
+    private fun beginRecordingCapture() {
+        if (recordingActive || recordingStarting) return
+        recordingStarting = true
+        recordingPending = true
+        AppConfig.recordSessionActive = true
+        recordingPoints.clear()
+        recordingStartTime = 0L
+
+        scope.launch {
+            // 无障碍刚重连时 instance 还可能是 null，等一下再判断：
+            // 否则会在重连的一瞬间误退到低版本的捕获层（那条路还需要悬浮窗权限）。
+            var service = ClickAccessibilityService.instance
+            if (service == null) {
+                android.util.Log.w("FloatingService", "beginRecording: waiting for accessibility service")
+                val deadline = System.currentTimeMillis() + 1500
+                while (service == null && System.currentTimeMillis() < deadline) {
+                    delay(100)
+                    service = ClickAccessibilityService.instance
+                }
+            }
+            // 等待期间用户可能已经取消（或在别处取消了会话）
+            if (!recordingPending || recordingActive) {
+                recordingStarting = false
+                return@launch
+            }
+
+            val observed = service != null && service.supportsTouchObservation() &&
+                    service.startTouchObservation { event ->
+                        handleRecordedTouch(event.rawX, event.rawY, event.actionMasked)
+                    }
+
+            if (!observed) {
+                android.util.Log.d(
+                    "FloatingService",
+                    "touch observation unavailable (service=${service != null}), using invisible capture layer"
+                )
+                if (!showInvisibleCaptureView()) {
+                    Toast.makeText(this@FloatingService, R.string.toast_record_unavailable, Toast.LENGTH_LONG)
+                        .show()
+                    recordingStarting = false
+                    cancelRecordingSession()
+                    return@launch
+                }
+            }
+
+            recordingStarting = false
+            recordingPending = false
+            recordingActive = true
+            showRecordingNotification(recording = true)
+            armRecordingIdleTimeout()
+            android.util.Log.d("FloatingService", "recording started, observed=$observed")
+        }
+    }
+
+    /** 两种抓取机制共用的落点：DOWN 开始、MOVE 累积、UP 结束 */
+    private fun handleRecordedTouch(rawX: Float, rawY: Float, action: Int) {
+        if (!recordingActive) return
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                recordingPoints.clear()
+                recordingStartTime = System.currentTimeMillis()
+                recordingPoints.add(Pair(rawX, rawY))
+                armRecordingIdleTimeout()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                recordingPoints.add(Pair(rawX, rawY))
+                armRecordingIdleTimeout()
+            }
+            MotionEvent.ACTION_UP -> {
+                recordingPoints.add(Pair(rawX, rawY))
+                finishRecording()
+            }
+            MotionEvent.ACTION_CANCEL -> cancelRecordingSession()
+        }
+    }
+
+    /**
+     * 安全阀：录制期间系统处于触摸探索态，点按都不生效，
+     * 所以闲置超时（没碰到屏幕）必须自动退出，绝不能把用户困在这个状态里。
+     */
+    private fun armRecordingIdleTimeout() {
+        recordingIdleJob?.cancel()
+        recordingIdleJob = scope.launch {
+            delay(RECORD_IDLE_TIMEOUT_MS)
+            if (recordingActive) {
+                android.util.Log.w("FloatingService", "recording idle timeout, cancelling")
+                Toast.makeText(this@FloatingService, R.string.toast_record_timeout, Toast.LENGTH_LONG).show()
+                cancelRecordingSession()
+            }
+        }
+    }
+
+    /** 低版本兜底：alpha=0 的全屏捕获层，外观上等于没有遮罩 */
+    private fun showInvisibleCaptureView(): Boolean {
+        if (!Settings.canDrawOverlays(this)) return false
+        if (captureView != null) return true
+
+        val view = View(this)
+        view.setBackgroundColor(Color.TRANSPARENT)
+        val captureParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -458,60 +614,135 @@ class FloatingService : Service() {
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         )
-
-        windowManager.addView(recordingOverlay, overlayParams)
-
-        recordingPoints.clear()
-        recordingStartTime = 0L
-
-        recordingOverlay?.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    recordingPoints.clear()
-                    recordingStartTime = System.currentTimeMillis()
-                    recordingPoints.add(Pair(event.rawX, event.rawY))
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    recordingPoints.add(Pair(event.rawX, event.rawY))
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    recordingPoints.add(Pair(event.rawX, event.rawY))
-                    finishRecording()
-                    true
-                }
-                else -> false
-            }
+        view.setOnTouchListener { _, event ->
+            handleRecordedTouch(event.rawX, event.rawY, event.actionMasked)
+            true
+        }
+        return try {
+            windowManager.addView(view, captureParams)
+            captureView = view
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingService", "addView(captureView) failed", e)
+            false
         }
     }
 
-    private fun finishRecording() {
-        recordingOverlay?.let {
+    /** 关掉抓取：撤掉捕获层 + 让无障碍立刻退出触摸探索态 */
+    private fun stopCapture() {
+        captureView?.let {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
-        recordingOverlay = null
+        captureView = null
+        ClickAccessibilityService.instance?.stopTouchObservation()
+    }
 
-        if (recordingPoints.size >= 2) {
-            val totalDuration = System.currentTimeMillis() - recordingStartTime
-            val points = recordingPoints.toList()
-            AppConfig.recordedGesture = RecordedGesture(
-                points = points,
-                totalDuration = totalDuration
-            )
-            // 同时落盘成一条预设并选中它：主页「手势录制」里就是这条列表，重启也不会丢
-            GestureStore.appendRecorded(this, points, totalDuration)
-        }
+    private fun finishRecording() {
+        stopCapture()
+        recordingIdleJob?.cancel()
+        recordingIdleJob = null
+        recordingActive = false
+        recordingPending = false
+        AppConfig.recordSessionActive = false
+        cancelRecordingNotification()
+
+        val points = recordingPoints.toList()
+        val totalDuration = (System.currentTimeMillis() - recordingStartTime).coerceAtLeast(1L)
         recordingPoints.clear()
 
-        // 录完不再把悬浮球留在屏幕上：撤掉这次录制会话，把 App 拉回前台
-        //（想用悬浮球时用户在主页点「启动悬浮球」）
-        returnToApp()
+        if (points.size < 2) {
+            android.util.Log.d("FloatingService", "recording discarded: too few points (${points.size})")
+            Toast.makeText(this, R.string.toast_record_too_short, Toast.LENGTH_SHORT).show()
+            returnToApp()
+            return
+        }
+
+        AppConfig.recordedGesture = RecordedGesture(points = points, totalDuration = totalDuration)
+        // 落盘成一条预设并选中它：主页「手势录制」里就是这条列表，重启也不会丢
+        GestureStore.appendRecorded(this, points, totalDuration)
+        android.util.Log.d("FloatingService", "recorded gesture: ${points.size} points, ${totalDuration}ms")
+
+        // 录制时这一划没到目标应用手上，这里原样补发一次，让用户的动作真的生效
+        scope.launch {
+            delay(RECORD_REPLAY_DELAY_MS)
+            val service = ClickAccessibilityService.instance
+            val replayed = if (service != null) {
+                replayGesture(service, AppConfig.recordedGesture)
+            } else {
+                false
+            }
+            android.util.Log.d("FloatingService", "recorded gesture replayed=$replayed")
+            returnToApp()
+        }
+    }
+
+    /** 用户取消（通知上的「取消」，或回到 App）：撤掉一切，但不把 App 拉到前台 */
+    private fun cancelRecordingSession() {
+        stopCapture()
+        recordingIdleJob?.cancel()
+        recordingIdleJob = null
+        recordingPoints.clear()
+        recordingPending = false
+        recordingStarting = false
+        recordingActive = false
+        AppConfig.recordSessionActive = false
+        cancelRecordingNotification()
+        android.util.Log.d("FloatingService", "recording session cancelled")
+        stopSelf()
+    }
+
+    private fun showRecordingNotification(recording: Boolean) {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val builder = NotificationCompat.Builder(this, RECORDING_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .addAction(0, getString(R.string.notification_action_cancel), cancelRecordingIntent())
+        if (recording) {
+            builder.setContentTitle(getString(R.string.record_notification_title_recording))
+                .setContentText(getString(R.string.record_notification_text_recording))
+        } else {
+            builder.setContentTitle(getString(R.string.record_notification_title))
+                .setContentText(getString(R.string.record_notification_text_pending))
+                .setContentIntent(startRecordingIntent())
+        }
+        manager.notify(RECORDING_NOTIFICATION_ID, builder.build())
+    }
+
+    private fun cancelRecordingNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancel(RECORDING_NOTIFICATION_ID)
+    }
+
+    /** 点通知本体 = 开始录制 */
+    private fun startRecordingIntent(): PendingIntent {
+        val intent = Intent(this, FloatingService::class.java).setAction(ACTION_START_RECORDING)
+        return PendingIntent.getService(
+            this, REQUEST_START_RECORDING, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    }
+
+    /** 通知上的「取消」 */
+    private fun cancelRecordingIntent(): PendingIntent {
+        val intent = Intent(this, FloatingService::class.java).setAction(ACTION_CANCEL_RECORDING)
+        return PendingIntent.getService(
+            this, REQUEST_CANCEL_RECORDING, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
     }
 
     /** 结束录制会话：关掉悬浮球服务并把 App 叫回前台 */
     private fun returnToApp() {
-        AppConfig.recordRequested = false
+        stopCapture()
+        recordingIdleJob?.cancel()
+        recordingIdleJob = null
+        recordingPending = false
+        recordingActive = false
+        AppConfig.recordSessionActive = false
+        cancelRecordingNotification()
         AppConfig.preventExecution = true
         AppConfig.running = false
         AppConfig.operationActive = false
@@ -729,9 +960,11 @@ class FloatingService : Service() {
         overlayOpWatcher = null
         AppConfig.running = false
         AppConfig.operationActive = false
-        recordingOverlay?.let {
-            if (it.isAttachedToWindow) windowManager.removeView(it)
-        }
+        AppConfig.recordSessionActive = false
+        stopCapture()
+        recordingIdleJob?.cancel()
+        recordingIdleJob = null
+        cancelRecordingNotification()
         hideTargetMarker()
         if (floatingViewReady && floatingView.isAttachedToWindow) {
             windowManager.removeView(floatingView)
@@ -747,6 +980,32 @@ class FloatingService : Service() {
         private const val REQUEST_STOP_SERVICE = 1
         private const val ACTION_STOP = "com.yjc.click.action.STOP"
         private const val BALL_SIZE_DP = 60
+
+        /** 录制通知单独一个渠道，保证点「添加手势」后能立刻以横幅出现 */
+        private const val RECORDING_CHANNEL_ID = "gesture_recording_channel"
+        private const val RECORDING_NOTIFICATION_ID = 2
+        private const val REQUEST_START_RECORDING = 2
+        private const val REQUEST_CANCEL_RECORDING = 3
+        private const val ACTION_PREPARE_RECORDING = "com.yjc.click.action.PREPARE_RECORDING"
+        private const val ACTION_START_RECORDING = "com.yjc.click.action.START_RECORDING"
+        private const val ACTION_CANCEL_RECORDING = "com.yjc.click.action.CANCEL_RECORDING"
+
+        /** 录制期间系统处于触摸探索态，闲置这么久没动静就自动退出，避免用户被困住 */
+        private const val RECORD_IDLE_TIMEOUT_MS = 60_000L
+
+        /** 松手后稍等一下再回放，避免和系统收尾抢时序 */
+        private const val RECORD_REPLAY_DELAY_MS = 120L
+
+        /** 主页「添加手势」用：唤醒服务进入待录制态（服务随后发通知并让 App 退到后台） */
+        fun prepareRecording(context: Context) {
+            val intent = Intent(context, FloatingService::class.java)
+                .setAction(ACTION_PREPARE_RECORDING)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
 
         @Volatile
         private var active: FloatingService? = null

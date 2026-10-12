@@ -625,24 +625,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 开始手势录制（旧版 btnRecordGesture 的点击逻辑） */
+    /**
+     * 开始手势录制（新版流程，没有遮罩）：
+     * 发一条高优先级录制通知 → 立刻退到后台/桌面 → 用户切到目标应用点通知开始录制。
+     * Android 13 起靠无障碍的触摸观察取事件，不再需要悬浮窗权限。
+     */
     private fun startGestureRecording() {
-        if (!hasOverlayPermission()) {
-            Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
-            return
-        }
         if (!isServiceEnabled()) {
             Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
             return
         }
-        saveConfig()
-        AppConfig.recordRequested = true
-        AppConfig.preventExecution = false
-        if (!AppConfig.running) {
-            AppConfig.running = true
-            startFloatingService()
+        // 低于 Android 13 没有触摸观察 API，只能用不可见捕获层兜底，那种情况才需要悬浮窗权限
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && !hasOverlayPermission()) {
+            Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
+            return
         }
-        Toast.makeText(this, R.string.toast_swipe_to_record, Toast.LENGTH_SHORT).show()
+        // 录制通知就是这次的入口，通知被禁用的话整个流程走不通，先要权限
+        if (!canPostNotifications()) {
+            ensureNotificationPermission()
+            Toast.makeText(this, R.string.toast_record_need_notification, Toast.LENGTH_LONG).show()
+            return
+        }
+        saveConfig()
+        AppConfig.preventExecution = false
+        FloatingService.prepareRecording(this)
+        Toast.makeText(this, R.string.toast_record_switch_to_app, Toast.LENGTH_SHORT).show()
+        // 用户要切到目标应用去滑动，本应用不能挡在前面
+        moveTaskToBack(true)
+    }
+
+    private fun canPostNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     private fun saveConfig() {

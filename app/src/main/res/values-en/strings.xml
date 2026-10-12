@@ -11,6 +11,14 @@
     <string name="notification_title">Floating ball running</string>
     <string name="notification_action_stop">Stop</string>
 
+    <!-- Gesture recording notification (posted separately by "Add gesture") -->
+    <string name="record_notification_channel_name">Gesture recording</string>
+    <string name="record_notification_title">Tap to start recording</string>
+    <string name="record_notification_text_pending">Switch to the target app, then tap this notification and swipe</string>
+    <string name="record_notification_title_recording">Recording gesture</string>
+    <string name="record_notification_text_recording">Release to finish, then Click returns automatically</string>
+    <string name="notification_action_cancel">Cancel</string>
+
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">Please drag the floating ball to the click position first</string>
     <string name="toast_operation_paused">Operation paused</string>
@@ -23,7 +31,11 @@
     <string name="toast_need_accessibility_for_record">Accessibility service required to record gesture</string>
     <string name="toast_need_accessibility">Accessibility service required to run</string>
     <string name="toast_accessibility_revoked">Accessibility service turned off, execution stopped</string>
-    <string name="toast_swipe_to_record">Swipe on screen to record gesture</string>
+    <string name="toast_record_switch_to_app">Recording notification posted — switch to the target app and tap it</string>
+    <string name="toast_record_need_notification">Please allow notifications first — gesture recording starts from a notification</string>
+    <string name="toast_record_too_short">Gesture too short, not saved</string>
+    <string name="toast_record_unavailable">This system cannot record gestures, please set manual parameters</string>
+    <string name="toast_record_timeout">Recording timed out</string>
     <string name="toast_floating_started">Floating ball started</string>
 
     <!-- Status Text -->
@@ -64,7 +76,6 @@
     <string name="swipe_duration">Swipe Duration (ms)</string>
 
     <!-- Gesture Recording -->
-    <string name="recording_overlay_hint">Swipe on the screen with your finger to record a gesture\nRelease to finish</string>
     <string name="floating_ball_content_description">Floating ball</string>
 
     <!-- Execution Settings -->
@@ -177,7 +188,7 @@
     <string name="security_warning">Security Warning</string>
     <string name="security_warning_message">Please confirm this app was downloaded from GitHub. Apps downloaded from other sources may contain malicious code. Grant Accessibility permission with caution.</string>
     <string name="usage_instructions">Usage Instructions</string>
-    <string name="usage_instructions_message">First time use:\n\n1. Enable Accessibility Service and Overlay permission by tapping the two buttons at the top (Accessibility permission needs to be re-authorized each time the app restarts due to Android security policy)\n\n2. Select mode: Click or Swipe, then tap \"Add preset\" to start setting it up\n\n3. Click mode: Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)\n\n4. Swipe mode: Record gesture (swipe on screen) or set manual parameters (enter start/end coordinates) → Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)</string>
+    <string name="usage_instructions_message">First time use:\n\n1. Enable Accessibility Service and Overlay permission by tapping the two buttons at the top (Accessibility permission needs to be re-authorized each time the app restarts due to Android security policy)\n\n2. Select mode: Click or Swipe, then tap \"Add preset\" to start setting it up\n\n3. Click mode: Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)\n\n4. Swipe mode: Record gesture (tap \"Add gesture\" to leave the app and post a notification, switch to the target app, tap the notification to start, swipe with your finger, release to finish and return to this app) or set manual parameters (enter start/end coordinates) → Set delay → Set repeat count → Start floating ball (missing permissions will prompt a settings page)</string>
     <string name="floating_ball_instructions">Floating Ball Instructions</string>
     <string name="floating_ball_instructions_message">1. Switch to the app where you want to perform actions\n\n2. Press and drag the floating ball to reposition it. The ball becomes semi-transparent while dragging for easier positioning\n\n3. After positioning, tap the floating ball once to start the operation\n\n4. Double-tap the floating ball to pause\n\nNote: The floating ball automatically stops when switching back to this app from another app. Tap the start button again to resume.</string>
 
