@@ -62,7 +62,6 @@
     <string name="swipe_duration">滑动耗时(毫秒)</string>
 
     <!-- 手势录制 -->
-    <string name="record_gesture">录制手势 (在屏幕上滑动)</string>
     <string name="recording_overlay_hint">请在屏幕上滑动手指录制手势\n完成后松手即可</string>
     <string name="floating_ball_content_description">悬浮球</string>
 
@@ -79,11 +78,8 @@
     <string name="stop_floating_ball">停止悬浮球</string>
 
     <!-- 程序页面 -->
-    <string name="program_page">程序页面</string>
-    <string name="under_development">此页面正在开发中...</string>
 
     <!-- 设置页面 -->
-    <string name="settings">设置</string>
     <string name="text_section">文字</string>
     <string name="personalization_section">个性化</string>
     <string name="language">语言</string>
@@ -91,7 +87,6 @@
     <string name="follow_system">跟随系统</string>
     <string name="font">字体</string>
     <string name="change_app_font">更改应用字体</string>
-    <string name="default_font">默认</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_scheme_desc">深色模式、浅色模式或跟随系统</string>
     <string name="light_theme">浅色主题</string>
@@ -100,7 +95,6 @@
     <string name="color_desc">更改应用主题颜色</string>
     <string name="dynamic_color">动态取色</string>
     <string name="dynamic_color_desc">从系统壁纸应用动态配色</string>
-    <string name="theme_color">主题颜色</string>
     <string name="color_purple">紫色</string>
     <string name="color_blue">蓝色</string>
     <string name="color_red">红色</string>
@@ -136,7 +130,6 @@
     <string name="image_alpha">图片透明度</string>
     <string name="image_scrim_light">白色遮罩</string>
     <string name="image_scrim_dark">黑色遮罩</string>
-    <string name="image_invalid">不是有效的图片文件</string>
     <string name="image_read_error">无法读取图片文件</string>
 
     <!-- 更新 -->

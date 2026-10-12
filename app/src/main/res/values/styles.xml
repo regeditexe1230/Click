@@ -1,19 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Click.Button" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/md_theme_primary</item>
-        <item name="android:textColor">@color/md_theme_onPrimary</item>
-    </style>
 
-    <style name="Theme.Click.Button.Disabled" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/md_theme_surfaceVariant</item>
-        <item name="android:textColor">@color/md_theme_onSurfaceVariant</item>
-    </style>
 
-    <style name="SettingsCardContainer">
-        <item name="android:padding">2dp</item>
-        <item name="android:background">@drawable/settings_card_bg</item>
-    </style>
 
     <!--
         弹窗标题样式覆盖。

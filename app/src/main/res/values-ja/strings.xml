@@ -59,7 +59,6 @@
     <string name="end_y">終了 Y (縦座標)</string>
     <string name="swipe_duration">スワイプ時間(ミリ秒)</string>
 
-    <string name="record_gesture">ジェスチャー録画 (画面をスワイプ)</string>
     <string name="recording_overlay_hint">画面を指でスワイプしてジェスチャーを記録\n指を離すと完了します</string>
     <string name="floating_ball_content_description">フローティングボール</string>
 
@@ -73,17 +72,13 @@
     <string name="start_floating_ball">フローティング開始</string>
     <string name="stop_floating_ball">フローティング停止</string>
 
-    <string name="program_page">プログラム</string>
-    <string name="under_development">このページは開発中です...</string>
 
-    <string name="settings">設定</string>
     <string name="text_section">テキスト</string>
     <string name="language">言語</string>
     <string name="change_app_language">アプリの言語を変更</string>
     <string name="follow_system">システムに従う</string>
     <string name="font">フォント</string>
     <string name="change_app_font">アプリのフォントを変更</string>
-    <string name="default_font">デフォルト</string>
     <string name="personalization_section">パーソナライゼーション</string>
     <string name="color_scheme">カラースキーム</string>
     <string name="color_scheme_desc">ダークモード、ライトモード、またはシステムに従う</string>
@@ -93,7 +88,6 @@
     <string name="color_desc">アプリのテーマカラーを変更</string>
     <string name="dynamic_color">ダイナミックカラー</string>
     <string name="dynamic_color_desc">システム壁紙からカラーを適用</string>
-    <string name="theme_color">テーマカラー</string>
     <string name="color_purple">紫</string>
     <string name="color_blue">青</string>
     <string name="color_red">赤</string>
@@ -127,7 +121,6 @@
     <string name="image_alpha">画像の不透明度</string>
     <string name="image_scrim_light">白いオーバーレイ</string>
     <string name="image_scrim_dark">黒いオーバーレイ</string>
-    <string name="image_invalid">有効な画像ファイルではありません</string>
     <string name="image_read_error">画像ファイルを読み込めません</string>
 
     <string name="update_section">アップデート</string>

@@ -59,7 +59,6 @@
     <string name="end_y">종료 Y (세로 좌표)</string>
     <string name="swipe_duration">스와이프 시간(밀리초)</string>
 
-    <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
     <string name="recording_overlay_hint">화면을 손가락으로 쓸어 제스처를 녹화하세요\n손을 떼면 완료됩니다</string>
     <string name="floating_ball_content_description">플로팅 볼</string>
 
@@ -73,17 +72,13 @@
     <string name="start_floating_ball">플로팅 시작</string>
     <string name="stop_floating_ball">플로팅 중지</string>
 
-    <string name="program_page">프로그램</string>
-    <string name="under_development">이 페이지는 개발 중입니다...</string>
 
-    <string name="settings">설정</string>
     <string name="text_section">텍스트</string>
     <string name="language">언어</string>
     <string name="change_app_language">앱 언어 변경</string>
     <string name="follow_system">시스템 따르기</string>
     <string name="font">글꼴</string>
     <string name="change_app_font">앱 글꼴 변경</string>
-    <string name="default_font">기본</string>
     <string name="personalization_section">개인 설정</string>
     <string name="color_scheme">색 구성표</string>
     <string name="color_scheme_desc">다크 모드, 라이트 모드 또는 시스템 따르기</string>
@@ -93,7 +88,6 @@
     <string name="color_desc">앱 테마 색상 변경</string>
     <string name="dynamic_color">다이나믹 컬러</string>
     <string name="dynamic_color_desc">시스템 배경화면에서 색상 적용</string>
-    <string name="theme_color">테마 색상</string>
     <string name="color_purple">보라색</string>
     <string name="color_blue">파란색</string>
     <string name="color_red">빨간색</string>
@@ -127,7 +121,6 @@
     <string name="image_alpha">이미지 투명도</string>
     <string name="image_scrim_light">흰색 오버레이</string>
     <string name="image_scrim_dark">검은색 오버레이</string>
-    <string name="image_invalid">유효한 이미지 파일이 아닙니다</string>
     <string name="image_read_error">이미지 파일을 읽을 수 없습니다</string>
 
     <string name="update_section">업데이트</string>

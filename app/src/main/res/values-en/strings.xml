@@ -64,7 +64,6 @@
     <string name="swipe_duration">Swipe Duration (ms)</string>
 
     <!-- Gesture Recording -->
-    <string name="record_gesture">Record Gesture (Swipe on screen)</string>
     <string name="recording_overlay_hint">Swipe on the screen with your finger to record a gesture\nRelease to finish</string>
     <string name="floating_ball_content_description">Floating ball</string>
 
@@ -81,18 +80,14 @@
     <string name="stop_floating_ball">Stop Floating Ball</string>
 
     <!-- Program Page -->
-    <string name="program_page">Program</string>
-    <string name="under_development">This page is under development...</string>
 
     <!-- Settings Page -->
-    <string name="settings">Settings</string>
     <string name="text_section">Text</string>
     <string name="language">Language</string>
     <string name="change_app_language">Change app language</string>
     <string name="follow_system">Follow System</string>
     <string name="font">Font</string>
     <string name="change_app_font">Change app font</string>
-    <string name="default_font">Default</string>
     <string name="personalization_section">Personalization</string>
     <string name="color_scheme">Color Scheme</string>
     <string name="color_scheme_desc">Dark mode, light mode, or follow system</string>
@@ -102,7 +97,6 @@
     <string name="color_desc">Change app theme color</string>
     <string name="dynamic_color">Dynamic Colors</string>
     <string name="dynamic_color_desc">Apply colors from system wallpaper</string>
-    <string name="theme_color">Theme Color</string>
     <string name="color_purple">Purple</string>
     <string name="color_blue">Blue</string>
     <string name="color_red">Red</string>
@@ -138,7 +132,6 @@
     <string name="image_alpha">Image opacity</string>
     <string name="image_scrim_light">White overlay</string>
     <string name="image_scrim_dark">Black overlay</string>
-    <string name="image_invalid">Not a valid image file</string>
     <string name="image_read_error">Cannot read the image file</string>
 
     <!-- Updates -->

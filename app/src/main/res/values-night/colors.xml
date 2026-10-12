@@ -14,16 +14,8 @@
     <color name="md_theme_onSecondaryContainer">#FFE8DEF8</color>
 
     <!-- Tertiary -->
-    <color name="md_theme_tertiary">#FFEFB8C8</color>
-    <color name="md_theme_onTertiary">#FF492532</color>
-    <color name="md_theme_tertiaryContainer">#FF633B48</color>
-    <color name="md_theme_onTertiaryContainer">#FFFFD8E4</color>
 
     <!-- Error -->
-    <color name="md_theme_error">#FFF2B8B5</color>
-    <color name="md_theme_onError">#FF601410</color>
-    <color name="md_theme_errorContainer">#FF8C1D18</color>
-    <color name="md_theme_onErrorContainer">#FFF9DEDC</color>
 
     <!-- Background & Surface -->
     <color name="md_theme_background">#FF141218</color>
