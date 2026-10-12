@@ -30,5 +30,4 @@
     <color name="md_theme_outlineVariant">#FF49454F</color>
     
     <!-- 框背景颜色 - 深色模式也使用浅紫色 -->
-    <color name="section_background">#206750A4</color>
 </resources>

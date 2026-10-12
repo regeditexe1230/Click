@@ -18,7 +18,6 @@
     <color name="md_theme_outlineVariant">#CAC4D0</color>
     
     <!-- 框背景颜色 - 使用 primaryContainer 浅紫色 -->
-    <color name="section_background">#206750A4</color>
 
     <!-- 启动图标底色（自适应图标背景层，取自原始图标纸面颜色） -->
     <color name="ic_launcher_background">#F5EDE0</color>
