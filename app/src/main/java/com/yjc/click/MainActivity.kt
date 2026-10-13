@@ -77,6 +77,8 @@ class MainActivity : AppCompatActivity() {
     private var notificationDialogShowing = false
     /** onCreate 之后的第一轮 onResume 跳过通知检查（那一轮交给 onCreate 去申请） */
     private var resumedOnce = false
+    /** 「悬浮通知」被关掉的说明框每次启动最多提示一次 */
+    private var headsUpDialogShown = false
 
     /**
      * Android 13+ 通知权限申请：允许了就结束；被拒就弹我们自己的说明框，
@@ -852,7 +854,10 @@ class MainActivity : AppCompatActivity() {
      * @param force 点「添加手势」时用：即使本轮已经问过，也要再提示一次
      */
     private fun ensureNotificationPermission(force: Boolean = false) {
-        if (canPostNotifications()) return
+        if (canPostNotifications()) {
+            checkRecordingHeadsUp()
+            return
+        }
         if (notificationRequestInFlight) return
         // 只有"运行时权限还没给"这一种情况系统弹窗才有用；权限已经给了、但用户在设置里关掉了
         // 整个应用的通知时，再调系统申请什么都不会发生，只能直接引导去设置页
@@ -915,6 +920,48 @@ class MainActivity : AppCompatActivity() {
             } catch (e2: Exception) {
                 Toast.makeText(applicationContext, R.string.notification_permission_title, Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    /**
+     * 通知权限没问题时再看一眼录制通道：被改成静默/低重要性的话，切到目标应用后
+     * 录制提示不会浮到屏幕上，用户会找不到开始录制的入口。
+     *
+     * 这个开关应用自己改不了（通道重要性只有用户能改），所以只能提示 + 一键跳到该通道的设置页。
+     */
+    private fun checkRecordingHeadsUp() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (headsUpDialogShown || isFinishing) return
+        if (FloatingService.isRecordingHeadsUpEnabled(this)) return
+        headsUpDialogShown = true
+        showRecordingHeadsUpDialog()
+    }
+
+    /** 「悬浮通知」被关掉时的说明框：只有一个「去开启」，点完直接进该通知通道的设置页 */
+    private fun showRecordingHeadsUpDialog() {
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.notification_heads_up_title)
+            .setMessage(R.string.notification_heads_up_message)
+            .setPositiveButton(R.string.notification_heads_up_confirm) { d, _ ->
+                d.dismiss()
+                openRecordingChannelSettings()
+            }
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    /** 跳到「手势录制」这一条通知通道的设置页，比应用通知总页少点几步 */
+    private fun openRecordingChannelSettings() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    .putExtra(Settings.EXTRA_CHANNEL_ID, FloatingService.recordingChannelId())
+            )
+        } catch (e: Exception) {
+            openNotificationSettings()
         }
     }
 

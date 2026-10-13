@@ -39,6 +39,9 @@
     <string name="notification_permission_title">Notification permission needed</string>
     <string name="notification_permission_message">Gesture recording starts from a notification: after you tap Add gesture, a notification is posted — switch to the target app and tap it to start recording.\n\nPlease allow Click to send notifications, otherwise recording cannot work.</string>
     <string name="notification_permission_confirm">Open settings</string>
+    <string name="notification_heads_up_title">Turn on heads-up notifications</string>
+    <string name="notification_heads_up_message">The gesture recording notification is silent right now, so the recording prompt will not pop up over other apps and you may not find the way to start recording.\n\nPlease switch that notification to heads-up (banner) in notification settings.</string>
+    <string name="notification_heads_up_confirm">Open settings</string>
     <string name="toast_record_too_short">Gesture too short, not saved</string>
     <string name="toast_record_timeout">Recording timed out</string>
     <string name="toast_floating_started">Floating ball started</string>

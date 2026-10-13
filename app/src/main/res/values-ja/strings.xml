@@ -38,6 +38,9 @@
     <string name="notification_permission_title">通知の権限が必要です</string>
     <string name="notification_permission_message">ジェスチャー録画は通知から始まります。「ジェスチャーを追加」をタップすると通知が届くので、対象のアプリに切り替えてその通知をタップすると録画が始まります。\n\n録画を使うには Click の通知を許可してください。</string>
     <string name="notification_permission_confirm">設定を開く</string>
+    <string name="notification_heads_up_title">ヘッドアップ通知をオンに</string>
+    <string name="notification_heads_up_message">「ジェスチャー録画」の通知が現在サイレントになっています。対象のアプリに切り替えても録画の案内が画面に浮かび上がらず、録画の開始方法が分からなくなります。\n\n通知設定でこの通知をヘッドアップ（バナー）表示に変更してください。</string>
+    <string name="notification_heads_up_confirm">設定を開く</string>
     <string name="toast_record_too_short">ジェスチャーが短すぎるため保存しませんでした</string>
     <string name="toast_record_timeout">録画がタイムアウトしました</string>
     <string name="toast_floating_started">フローティングボールが開始されました</string>

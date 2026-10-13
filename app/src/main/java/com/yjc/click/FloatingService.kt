@@ -1165,6 +1165,26 @@ class FloatingService : Service() {
             android.util.Log.d("FloatingService", "pending recording cancelled (returned to app)")
         }
 
+        /** 录制通知所在的通知通道 id（API 26+ 才有通道概念） */
+        fun recordingChannelId(): String = RECORDING_CHANNEL_ID
+
+        /**
+         * 录制提示能不能弹横幅（MIUI 叫「悬浮通知」）。
+         *
+         * API 26+ 就看法定通道的重要性：低于 HIGH 时系统只把通知塞进状态栏，不会浮出来。
+         * 用户在通知设置里把「手势录制」调成静默就是这个状态。通道重要性应用自己改不了，
+         * 只能提示用户去改，所以这里只负责判断。
+         *
+         * API 24/25 没有通道，系统也不给应用读这个开关 —— 一律当作可用。
+         */
+        fun isRecordingHeadsUpEnabled(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                ?: return true
+            val channel = manager.getNotificationChannel(RECORDING_CHANNEL_ID) ?: return true
+            return channel.importance >= NotificationManager.IMPORTANCE_HIGH
+        }
+
         /** 无障碍服务被系统关掉时由 ClickAccessibilityService 回调 */
         fun onAccessibilityLost() {
             active?.handleAccessibilityLost()

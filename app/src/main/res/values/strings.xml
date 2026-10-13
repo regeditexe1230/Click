@@ -39,6 +39,9 @@
     <string name="notification_permission_title">需要通知权限</string>
     <string name="notification_permission_message">手势录制是靠一条通知启动的：点「添加手势」后会发一条通知，你切到目标应用后点它才开始录制。\n\n请允许 Click 发送通知，否则录制无法使用。</string>
     <string name="notification_permission_confirm">去开启</string>
+    <string name="notification_heads_up_title">开启悬浮通知</string>
+    <string name="notification_heads_up_message">「手势录制」这条通知现在是静默的：你切到目标应用后，录制提示不会浮到屏幕上，会找不到开始录制的入口。\n\n请到通知设置里把这条通知改成「悬浮通知」（横幅）。</string>
+    <string name="notification_heads_up_confirm">去开启</string>
     <string name="toast_record_too_short">手势太短，未保存</string>
     <string name="toast_record_timeout">录制超时，已退出</string>
     <string name="toast_floating_started">悬浮球已启动</string>
