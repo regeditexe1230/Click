@@ -20,6 +20,7 @@
     <string name="record_notification_title_recording">正在录制手势</string>
     <string name="record_notification_text_recording">松手即结束，随后自动返回 Click</string>
     <string name="notification_action_cancel">取消</string>
+    <string name="recording_overlay_hint">请在屏幕上滑动手指录制手势\n完成后松手即可</string>
 
     <!-- Toast消息 -->
     <string name="toast_drag_to_position">请先拖动悬浮球设到点击位置</string>
@@ -36,7 +37,6 @@
     <string name="toast_record_switch_to_app">已发出录制通知，切到目标应用后点它开始录制</string>
     <string name="toast_record_need_notification">请先允许通知：录制手势要靠通知来启动</string>
     <string name="toast_record_too_short">手势太短，未保存</string>
-    <string name="toast_record_unavailable">当前系统无法录制手势，请手动填写参数</string>
     <string name="toast_record_timeout">录制超时，已退出</string>
     <string name="toast_floating_started">悬浮球已启动</string>
 
@@ -230,4 +230,7 @@
     <string name="licenses_third_party">第三方组件</string>
     <!-- 许可整页的返回按钮 -->
     <string name="action_back">返回</string>
+    <string name="record_return_title">手势已录制</string>
+    <string name="record_return_text">点此回到 Click</string>
+    <string name="toast_return_blocked">未能自动回到 Click：请在系统设置里允许 Click「后台弹出界面」，或点通知回到 Click</string>
 </resources>

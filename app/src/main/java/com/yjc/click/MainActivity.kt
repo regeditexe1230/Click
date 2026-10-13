@@ -628,15 +628,15 @@ class MainActivity : AppCompatActivity() {
     /**
      * 开始手势录制（新版流程，没有遮罩）：
      * 发一条高优先级录制通知 → 立刻退到后台/桌面 → 用户切到目标应用点通知开始录制。
-     * Android 13 起靠无障碍的触摸观察取事件，不再需要悬浮窗权限。
+     * 录制时屏幕上会盖一层半透明遮罩来收下这一划，所以需要悬浮窗权限。
      */
     private fun startGestureRecording() {
         if (!isServiceEnabled()) {
             Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
             return
         }
-        // 低于 Android 13 没有触摸观察 API，只能用不可见捕获层兜底，那种情况才需要悬浮窗权限
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && !hasOverlayPermission()) {
+        // 录制靠半透明遮罩收触摸，必须能画在别的应用上层
+        if (!hasOverlayPermission()) {
             Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
             return
         }

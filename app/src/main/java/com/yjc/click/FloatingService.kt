@@ -1,5 +1,6 @@
 package com.yjc.click
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -39,12 +40,15 @@ class FloatingService : Service() {
     private lateinit var floatingView: FrameLayout
     private lateinit var params: WindowManager.LayoutParams
     private var floatingViewReady = false
-    /** 低版本（API < 33）用的不可见捕获层；高版本走无障碍触摸观察，不建任何窗口 */
+    /** 录制时盖在屏幕上的半透明遮罩：既提示用户「松手结束」，也收下这一划 */
     private var captureView: View? = null
     private var recordingPending = false
     private var recordingStarting = false
     private var recordingActive = false
     private var recordingIdleJob: Job? = null
+    private var returnCheckJob: Job? = null
+    /** 会话开始后，等 App 退到后台再把录制通知重发一次（App 在前台时横幅会被系统压掉） */
+    private var sessionNotifyJob: Job? = null
     private var recordingPoints = mutableListOf<Pair<Float, Float>>()
     private var recordingStartTime = 0L
     private var initialX = 0
@@ -133,14 +137,25 @@ class FloatingService : Service() {
         }
 
         val notification = createNotification()
-        startForeground(NOTIFICATION_ID, notification)
 
         when (intent?.action) {
+            // 待录制阶段刻意不进前台：前台服务通知会被系统强制标成常驻，
+            // MIUI 这类系统就不给弹横幅了。点通知开始录制时再由
+            // PendingIntent.getForegroundService 把服务拉起来并提回前台。
             ACTION_PREPARE_RECORDING -> {
+                if (intent.getBooleanExtra(EXTRA_FOREGROUND_FALLBACK, false)) {
+                    // 兜底路径（只能用 startForegroundService 起来时）先把 5 秒规则喂饱，
+                    // prepareRecordingSession 里会立刻退出前台
+                    startForeground(NOTIFICATION_ID, notification)
+                }
                 prepareRecordingSession()
                 return START_NOT_STICKY
             }
             ACTION_START_RECORDING -> {
+                startForeground(
+                    RECORDING_NOTIFICATION_ID,
+                    createRecordingNotification(recording = true, firstPost = false, ongoing = true)
+                )
                 beginRecordingCapture()
                 return START_NOT_STICKY
             }
@@ -149,6 +164,8 @@ class FloatingService : Service() {
                 return START_NOT_STICKY
             }
         }
+
+        startForeground(NOTIFICATION_ID, notification)
 
         if (!floatingViewReady || !floatingView.isAttachedToWindow) {
             showFloatingView()
@@ -189,10 +206,13 @@ class FloatingService : Service() {
             val channel = NotificationChannel(
                 RECORDING_CHANNEL_ID,
                 getString(R.string.record_notification_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX
             )
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
+            // 老渠道不再使用：MIUI 那类系统会给渠道单独记一份「悬浮通知」开关，
+            // 早期版本用它发过前台服务（常驻）通知，系统就把横幅关了；换新渠道拿回默认值。
+            LEGACY_RECORDING_CHANNEL_IDS.forEach { manager.deleteNotificationChannel(it) }
         }
     }
 
@@ -220,6 +240,27 @@ class FloatingService : Service() {
             .build()
     }
 
+    /**
+     * 系统拦下后台启动界面时的兜底：发一条安静的通知，点一下就能回到 Click。
+     * 复用 RECORDING_NOTIFICATION_ID，此刻录制通知已经撤掉，通知栏里仍然只有一条。
+     */
+    private fun showReturnNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.record_return_title))
+            .setContentText(getString(R.string.record_return_text))
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setContentIntent(openAppIntent())
+            .build()
+        manager.notify(RETURN_NOTIFICATION_ID, notification)
+    }
+
+    private fun warnReturnBlocked() {
+        Toast.makeText(this, R.string.toast_return_blocked, Toast.LENGTH_LONG).show()
+    }
+
     /** 点击通知回到 App */
     private fun openAppIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -242,6 +283,8 @@ class FloatingService : Service() {
 
     /** 立即刷新前台通知，使其反映当前运行状态 */
     private fun updateNotification() {
+        // 录制会话期间状态栏只留那条录制通知，别再冒出「点击服务」这一条
+        if (recordingPending || recordingStarting || recordingActive) return
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_ID, createNotification())
     }
@@ -477,18 +520,15 @@ class FloatingService : Service() {
     // ------------------------------------------------------------------
     // 手势录制会话（新流程）
     //
-    // 点主页「添加手势」→ App 退到后台 + 发一条高优先级录制通知（不显示任何遮罩）
-    // → 用户切到目标应用、点通知 → 开始录制：
-    //   · Android 13+：无障碍走 TouchInteractionController 收原始触摸，**不建任何窗口**
-    //   · Android 12 及以下：退回一个 alpha=0 的不可见捕获层
-    // → 松手即停 → 把刚录的这一划回放给目标应用一次 → 撤通知并切回 Click
+    // 点主页「添加手势」→ App 退到后台 + 发一条高优先级录制通知
+    // → 用户切到目标应用、点通知 → 开始录制：屏幕上盖一层半透明遮罩（带操作提示），
+    //   这一划由遮罩自己收下来
+    // → 松手即停 → 撤遮罩、把刚录的这一划回放给目标应用一次 → 撤通知并切回 Click
     //
-    // 为什么必须回放：系统在「服务观察触摸」时不会再把这串事件传给前台应用
-    //（TouchInteractionController 的官方注释：委托=放行=服务立即收不到事件，二者互斥）。
-    // 用户要的「穿透 + 同时录制」平台不提供，所以录制时触摸被我们吃掉，松手后原样补发。
+    // 为什么必须回放：录制时触摸被遮罩吃掉，目标应用收不到，所以松手后原样补发。
     // ------------------------------------------------------------------
 
-    /** 点「添加手势」后调用：进入待录制状态并发通知，不建任何窗口 */
+    /** 点「添加手势」后调用：进入待录制状态并发通知 */
     private fun prepareRecordingSession() {
         AppConfig.running = false
         AppConfig.operationActive = false
@@ -499,16 +539,56 @@ class FloatingService : Service() {
             windowManager.removeView(floatingView)
         }
         floatingViewReady = false
+        // 悬浮球在跑的话先退出前台、撤掉「点击服务」那条通知：
+        // 待录制阶段不能带着前台服务通知（常驻标记会让系统不弹横幅）
+        dropForegroundNotification()
 
         recordingPending = true
         recordingActive = false
         AppConfig.recordSessionActive = true
-        updateNotification()
-        showRecordingNotification(recording = false)
+        // 先把 FGS 通知换成录制通知，但要等 App 退到后台：应用还在前台时系统
+        // 不会为它弹横幅，通知只会静静地躺在状态栏里。
+        postRecordingNotificationWhenBackground()
         android.util.Log.d("FloatingService", "recording session prepared, waiting for notification tap")
     }
 
-    /** 点通知后调用：开始抓这一划 */
+    /** 等本应用退到后台再发录制通知，保证它能以横幅（heads-up）弹出来 */
+    private fun postRecordingNotificationWhenBackground() {
+        sessionNotifyJob?.cancel()
+        sessionNotifyJob = scope.launch {
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            val deadline = System.currentTimeMillis() + SESSION_NOTIFY_MAX_WAIT_MS
+            while (System.currentTimeMillis() < deadline && isAppForeground(am)) {
+                delay(SESSION_NOTIFY_POLL_MS)
+            }
+            if (recordingPending && !recordingActive) {
+                // 发成普通通知（不是前台服务通知）：系统才不会把它标成常驻，
+                // MIUI 等系统这时才会真的弹横幅
+                showRecordingNotification(
+                    recording = false, firstPost = true, ongoing = false, asForeground = false
+                )
+                android.util.Log.d(
+                    "FloatingService",
+                    "recording notification posted (heads-up), foreground=${isAppForeground(am)}"
+                )
+            }
+        }
+    }
+
+    /** 自己是不是还在前台（前台发的通知弹不出横幅） */
+    private fun isAppForeground(am: ActivityManager?): Boolean {
+        if (am == null) return false
+        return try {
+            val myPid = android.os.Process.myPid()
+            am.runningAppProcesses?.any {
+                it.pid == myPid && it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+            } == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** 点通知后调用：盖上遮罩开始抓这一划 */
     private fun beginRecordingCapture() {
         if (recordingActive || recordingStarting) return
         recordingStarting = true
@@ -518,49 +598,19 @@ class FloatingService : Service() {
         recordingStartTime = 0L
 
         scope.launch {
-            // 无障碍刚重连时 instance 还可能是 null，等一下再判断：
-            // 否则会在重连的一瞬间误退到低版本的捕获层（那条路还需要悬浮窗权限）。
-            var service = ClickAccessibilityService.instance
-            if (service == null) {
-                android.util.Log.w("FloatingService", "beginRecording: waiting for accessibility service")
-                val deadline = System.currentTimeMillis() + 1500
-                while (service == null && System.currentTimeMillis() < deadline) {
-                    delay(100)
-                    service = ClickAccessibilityService.instance
-                }
-            }
-            // 等待期间用户可能已经取消（或在别处取消了会话）
-            if (!recordingPending || recordingActive) {
+            if (!showRecordingOverlay()) {
+                Toast.makeText(this@FloatingService, R.string.toast_enable_overlay, Toast.LENGTH_LONG).show()
                 recordingStarting = false
+                cancelRecordingSession()
                 return@launch
-            }
-
-            val observed = service != null && service.supportsTouchObservation() &&
-                    service.startTouchObservation { event ->
-                        handleRecordedTouch(event.rawX, event.rawY, event.actionMasked)
-                    }
-
-            if (!observed) {
-                android.util.Log.d(
-                    "FloatingService",
-                    "touch observation unavailable (service=${service != null}), using invisible capture layer"
-                )
-                if (!showInvisibleCaptureView()) {
-                    Toast.makeText(this@FloatingService, R.string.toast_record_unavailable, Toast.LENGTH_LONG)
-                        .show()
-                    recordingStarting = false
-                    cancelRecordingSession()
-                    return@launch
-                }
             }
 
             recordingStarting = false
             recordingPending = false
             recordingActive = true
-            showRecordingNotification(recording = true)
-            updateNotification()
+            showRecordingNotification(recording = true, firstPost = false)
             armRecordingIdleTimeout()
-            android.util.Log.d("FloatingService", "recording started, observed=$observed")
+            android.util.Log.d("FloatingService", "recording started, overlay shown")
         }
     }
 
@@ -602,14 +652,13 @@ class FloatingService : Service() {
         }
     }
 
-    /** 低版本兜底：alpha=0 的全屏捕获层，外观上等于没有遮罩 */
-    private fun showInvisibleCaptureView(): Boolean {
+    /** 盖一层半透明遮罩：既提示用户「正在录制、松手结束」，也负责收下这一划 */
+    private fun showRecordingOverlay(): Boolean {
         if (!Settings.canDrawOverlays(this)) return false
         if (captureView != null) return true
 
-        val view = View(this)
-        view.setBackgroundColor(Color.TRANSPARENT)
-        val captureParams = WindowManager.LayoutParams(
+        val view = LayoutInflater.from(this).inflate(R.layout.recording_overlay, null)
+        val overlayParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -626,32 +675,34 @@ class FloatingService : Service() {
             true
         }
         return try {
-            windowManager.addView(view, captureParams)
+            windowManager.addView(view, overlayParams)
             captureView = view
             true
         } catch (e: Exception) {
-            android.util.Log.e("FloatingService", "addView(captureView) failed", e)
+            android.util.Log.e("FloatingService", "addView(recordingOverlay) failed", e)
             false
         }
     }
 
-    /** 关掉抓取：撤掉捕获层 + 让无障碍立刻退出触摸探索态 */
+    /** 关掉抓取：撤掉遮罩 */
     private fun stopCapture() {
         captureView?.let {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
         captureView = null
-        ClickAccessibilityService.instance?.stopTouchObservation()
     }
 
     private fun finishRecording() {
         stopCapture()
+        sessionNotifyJob?.cancel()
+        sessionNotifyJob = null
         recordingIdleJob?.cancel()
         recordingIdleJob = null
         recordingActive = false
         recordingPending = false
         AppConfig.recordSessionActive = false
-        cancelRecordingNotification()
+        // 录制通知先留着，returnToApp() 里连同前台服务一起撤，
+        // 免得中途出现「前台服务没有通知」的窗口期
 
         val points = recordingPoints.toList()
         val totalDuration = (System.currentTimeMillis() - recordingStartTime).coerceAtLeast(1L)
@@ -686,6 +737,8 @@ class FloatingService : Service() {
     /** 用户取消（通知上的「取消」，或回到 App）：撤掉一切，但不把 App 拉到前台 */
     private fun cancelRecordingSession() {
         stopCapture()
+        sessionNotifyJob?.cancel()
+        sessionNotifyJob = null
         recordingIdleJob?.cancel()
         recordingIdleJob = null
         recordingPoints.clear()
@@ -698,14 +751,20 @@ class FloatingService : Service() {
         stopSelf()
     }
 
-    private fun showRecordingNotification(recording: Boolean) {
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    /** 造出录制通知：会话期间状态栏只留这一条 */
+    private fun createRecordingNotification(
+        recording: Boolean,
+        firstPost: Boolean,
+        ongoing: Boolean
+    ): Notification {
         val builder = NotificationCompat.Builder(this, RECORDING_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setOngoing(ongoing)
             .setAutoCancel(false)
-            .setOnlyAlertOnce(true)
+            .setOnlyAlertOnce(!firstPost)
             .addAction(0, getString(R.string.notification_action_cancel), cancelRecordingIntent())
         if (recording) {
             builder.setContentTitle(getString(R.string.record_notification_title_recording))
@@ -715,18 +774,53 @@ class FloatingService : Service() {
                 .setContentText(getString(R.string.record_notification_text_pending))
                 .setContentIntent(startRecordingIntent())
         }
-        manager.notify(RECORDING_NOTIFICATION_ID, builder.build())
+        return builder.build()
+    }
+
+    /**
+     * 发/更新录制通知。asForeground = true 时它同时是前台服务通知（录制中要保证进程活着、
+     * 也保证注入的手势不被打断）；待录制阶段必须走普通通知，否则系统会强制把它标成常驻，
+     * MIUI 这类系统就不弹横幅了。
+     */
+    private fun showRecordingNotification(
+        recording: Boolean,
+        firstPost: Boolean = true,
+        ongoing: Boolean = true,
+        asForeground: Boolean = true
+    ) {
+        val notification = createRecordingNotification(recording, firstPost, ongoing)
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (asForeground) {
+            startForeground(RECORDING_NOTIFICATION_ID, notification)
+        } else {
+            manager.notify(RECORDING_NOTIFICATION_ID, notification)
+        }
+        // 顶掉「点击服务」那条静默通知：会话期间状态栏只留这条录制通知
+        manager.cancel(NOTIFICATION_ID)
+    }
+
+    /** 退出前台状态并撤掉悬浮球那条前台通知 */
+    private fun dropForegroundNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancel(NOTIFICATION_ID)
     }
 
     private fun cancelRecordingNotification() {
+        dropForegroundNotification()
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.cancel(RECORDING_NOTIFICATION_ID)
     }
 
-    /** 点通知本体 = 开始录制 */
+    /** 点通知本体 = 开始录制（后台的 App 靠通知这道豁免把服务拉回前台） */
     private fun startRecordingIntent(): PendingIntent {
         val intent = Intent(this, FloatingService::class.java).setAction(ACTION_START_RECORDING)
-        return PendingIntent.getService(
+        return PendingIntent.getForegroundService(
             this, REQUEST_START_RECORDING, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -749,16 +843,31 @@ class FloatingService : Service() {
         recordingPending = false
         recordingActive = false
         AppConfig.recordSessionActive = false
-        cancelRecordingNotification()
         AppConfig.preventExecution = true
         AppConfig.running = false
         AppConfig.operationActive = false
+        // 先拉 App 再退前台：服务一旦退出前台，本应用就成了纯后台应用，
+        // Android 10+ 会拦掉后台启动 Activity，界面就回不来
         val launch = packageManager.getLaunchIntentForPackage(packageName)
         if (launch != null) {
             launch.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(launch)
+            android.util.Log.d("FloatingService", "returnToApp: app launched")
         }
-        stopSelf()
+        cancelRecordingNotification()
+        // 有些系统（如 MIUI/HyperOS，「后台弹出界面」默认关闭）会拦下后台应用启动的界面，
+        // startActivity 不报错但界面回不到前台。这里等一小会儿确认一下，没回来就补条通知。
+        returnCheckJob?.cancel()
+        returnCheckJob = scope.launch {
+            delay(RETURN_CHECK_DELAY_MS)
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            if (!isAppForeground(am)) {
+                android.util.Log.w("FloatingService", "returnToApp: still in background, showing fallback")
+                showReturnNotification()
+                warnReturnBlocked()
+            }
+            stopSelf()
+        }
     }
 
     private fun executeAction() {
@@ -969,6 +1078,8 @@ class FloatingService : Service() {
         AppConfig.operationActive = false
         AppConfig.recordSessionActive = false
         stopCapture()
+        sessionNotifyJob?.cancel()
+        sessionNotifyJob = null
         recordingIdleJob?.cancel()
         recordingIdleJob = null
         cancelRecordingNotification()
@@ -989,8 +1100,16 @@ class FloatingService : Service() {
         private const val BALL_SIZE_DP = 60
 
         /** 录制通知单独一个渠道，保证点「添加手势」后能立刻以横幅出现 */
-        private const val RECORDING_CHANNEL_ID = "gesture_recording_channel"
+        private const val RECORDING_CHANNEL_ID = "gesture_recording_channel_v3"
+
+        /** 早期版本用过的渠道 id，创建渠道时顺手删掉 */
+        private val LEGACY_RECORDING_CHANNEL_IDS = listOf(
+            "gesture_recording_channel", "gesture_recording_channel_v2"
+        )
         private const val RECORDING_NOTIFICATION_ID = 2
+
+    /** 界面回不到前台时的兜底通知（录制通知已撤，不与它冲突） */
+    private const val RETURN_NOTIFICATION_ID = 3
         private const val REQUEST_START_RECORDING = 2
         private const val REQUEST_CANCEL_RECORDING = 3
         private const val ACTION_PREPARE_RECORDING = "com.yjc.click.action.PREPARE_RECORDING"
@@ -1003,14 +1122,36 @@ class FloatingService : Service() {
         /** 松手后稍等一下再回放，避免和系统收尾抢时序 */
         private const val RECORD_REPLAY_DELAY_MS = 120L
 
-        /** 主页「添加手势」用：唤醒服务进入待录制态（服务随后发通知并让 App 退到后台） */
+        /** 等 App 退到后台再发录制通知：最多等这么久，之后即使还在前台也照发 */
+        private const val SESSION_NOTIFY_MAX_WAIT_MS = 3_000L
+        private const val SESSION_NOTIFY_POLL_MS = 150L
+
+    /** returnToApp 之后等这么久再确认界面是否真的回到前台 */
+    private const val RETURN_CHECK_DELAY_MS = 900L
+
+        /** startService 被后台限制时的兜底标记（此时必须先 startForeground 喂饱 5 秒规则） */
+        private const val EXTRA_FOREGROUND_FALLBACK = "foreground_fallback"
+
+        /**
+         * 主页「添加手势」用：唤醒服务进入待录制态（服务随后发通知并让 App 退到后台）。
+         * 这里刻意用 startService 而不是 startForegroundService：待录制通知必须发成
+         * 普通通知，系统才不会强加常驻标记、MIUI 这类系统才肯弹横幅。
+         */
         fun prepareRecording(context: Context) {
             val intent = Intent(context, FloatingService::class.java)
                 .setAction(ACTION_PREPARE_RECORDING)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
+            try {
                 context.startService(intent)
+            } catch (e: Exception) {
+                // 后台启动受限时退一步：至少起前台服务，让用户还能看到通知
+                android.util.Log.w("FloatingService", "prepareRecording: startService failed, fallback", e)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(
+                        Intent(context, FloatingService::class.java)
+                            .setAction(ACTION_PREPARE_RECORDING)
+                            .putExtra(EXTRA_FOREGROUND_FALLBACK, true)
+                    )
+                }
             }
         }
 
@@ -1028,3 +1169,4 @@ class FloatingService : Service() {
         }
     }
 }
+

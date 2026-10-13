@@ -1,17 +1,12 @@
 package com.yjc.click
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
-import android.accessibilityservice.TouchInteractionController
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.RectF
 import android.os.Build
 import android.util.Log
-import android.view.Display
-import android.view.MotionEvent
 import android.view.accessibility.AccessibilityEvent
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -116,7 +111,6 @@ class ClickAccessibilityService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "Accessibility service unbinding")
-        stopTouchObservation()
         instance = null
         // 用户在系统设置里关掉无障碍时，悬浮球还在屏幕上却点不动，交给它提示
         FloatingService.onAccessibilityLost()
@@ -124,101 +118,8 @@ class ClickAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        stopTouchObservation()
         instance = null
         FloatingService.onAccessibilityLost()
         super.onDestroy()
-    }
-
-    // ------------------------------------------------------------------
-    // 手势录制：在不显示任何窗口的前提下拿到用户的真实触摸
-    //
-    // Android 13（API 33）起可以用 TouchInteractionController：服务临时请求
-    // FLAG_REQUEST_TOUCH_EXPLORATION_MODE，系统就会把这一整段触摸事件交给服务
-    // （因此触摸不会再传给前台应用——这是平台限制，录完由 Click 把这一划回放出去）。
-    // 低版本没有这个 API，由 FloatingService 用不可见的捕获层兜底。
-    // ------------------------------------------------------------------
-
-    private var touchController: TouchInteractionController? = null
-    private var touchCallback: TouchInteractionController.Callback? = null
-    private var flagsBeforeObservation = -1
-
-    /** 当前系统是否支持「无窗口触摸观察」 */
-    fun supportsTouchObservation(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-
-    /**
-     * 开始观察触摸。回调里拿到的就是用户这一划的原始事件流（DOWN/MOVE/UP）。
-     * @return 是否成功进入观察状态
-     */
-    @SuppressLint("NewApi")
-    fun startTouchObservation(onEvent: (MotionEvent) -> Unit): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
-        if (touchCallback != null) return true
-
-        val current = serviceInfo ?: run {
-            Log.e(TAG, "startTouchObservation: serviceInfo is null")
-            return false
-        }
-        flagsBeforeObservation = current.flags
-        current.flags = current.flags or AccessibilityServiceInfo.FLAG_REQUEST_TOUCH_EXPLORATION_MODE
-        serviceInfo = current
-
-        val controller = try {
-            getTouchInteractionController(Display.DEFAULT_DISPLAY)
-        } catch (e: Exception) {
-            Log.e(TAG, "getTouchInteractionController threw", e)
-            null
-        }
-        if (controller == null) {
-            Log.e(TAG, "startTouchObservation: controller unavailable, restoring flags")
-            restoreFlags()
-            return false
-        }
-
-        val callback = object : TouchInteractionController.Callback {
-            override fun onMotionEvent(event: MotionEvent) = onEvent(event)
-
-            override fun onStateChanged(state: Int) {
-                Log.d(TAG, "touch state -> ${TouchInteractionController.stateToString(state)}")
-            }
-        }
-        controller.registerCallback(mainExecutor, callback)
-        touchController = controller
-        touchCallback = callback
-        Log.d(
-            TAG,
-            "touch observation started, flags=0x${current.flags.toString(16)}, state=${
-                TouchInteractionController.stateToString(controller.state)
-            }"
-        )
-        return true
-    }
-
-    /** 结束观察并立刻把触摸探索恢复原状（否则全屏的点按都会失效） */
-    @SuppressLint("NewApi")
-    fun stopTouchObservation() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val callback = touchCallback
-        if (callback != null) {
-            try {
-                touchController?.unregisterCallback(callback)
-            } catch (e: Exception) {
-                Log.w(TAG, "unregisterCallback failed", e)
-            }
-        }
-        touchCallback = null
-        touchController = null
-        restoreFlags()
-    }
-
-    @SuppressLint("NewApi")
-    private fun restoreFlags() {
-        if (flagsBeforeObservation < 0) return
-        val saved = flagsBeforeObservation
-        flagsBeforeObservation = -1
-        val current = serviceInfo ?: return
-        current.flags = saved
-        serviceInfo = current
-        Log.d(TAG, "touch observation flags restored to 0x${saved.toString(16)}")
     }
 }

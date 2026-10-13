@@ -20,6 +20,7 @@
     <string name="record_notification_title_recording">Recording gesture</string>
     <string name="record_notification_text_recording">Release to finish, then Click returns automatically</string>
     <string name="notification_action_cancel">Cancel</string>
+    <string name="recording_overlay_hint">Swipe on the screen to record the gesture\nRelease when you are done</string>
 
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">Please drag the floating ball to the click position first</string>
@@ -36,7 +37,6 @@
     <string name="toast_record_switch_to_app">Recording notification posted — switch to the target app and tap it</string>
     <string name="toast_record_need_notification">Please allow notifications first — gesture recording starts from a notification</string>
     <string name="toast_record_too_short">Gesture too short, not saved</string>
-    <string name="toast_record_unavailable">This system cannot record gestures, please set manual parameters</string>
     <string name="toast_record_timeout">Recording timed out</string>
     <string name="toast_floating_started">Floating ball started</string>
 
@@ -234,4 +234,7 @@
     <string name="licenses_third_party">Third-party components</string>
     <!-- Back button of the licenses page -->
     <string name="action_back">Back</string>
+    <string name="record_return_title">Gesture recorded</string>
+    <string name="record_return_text">Tap to return to Click</string>
+    <string name="toast_return_blocked">Unable to return to Click automatically. Allow background pop-up for Click in system settings, or tap the notification.</string>
 </resources>

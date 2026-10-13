@@ -20,6 +20,7 @@
     <string name="record_notification_title_recording">ジェスチャーを録画中</string>
     <string name="record_notification_text_recording">指を離すと終了し、Click に戻ります</string>
     <string name="notification_action_cancel">キャンセル</string>
+    <string name="recording_overlay_hint">画面を指でスワイプしてジェスチャーを録画します\n終わったら指を離してください</string>
 
     <!-- Toast Messages -->
     <string name="toast_drag_to_position">まずフローティングボールをクリック位置にドラッグしてください</string>
@@ -36,7 +37,6 @@
     <string name="toast_record_switch_to_app">録画通知を出しました。対象アプリに切り替えて通知をタップしてください</string>
     <string name="toast_record_need_notification">先に通知を許可してください（ジェスチャー録画は通知から開始します）</string>
     <string name="toast_record_too_short">ジェスチャーが短すぎるため保存しませんでした</string>
-    <string name="toast_record_unavailable">この端末ではジェスチャーを録画できません。手動パラメータを入力してください</string>
     <string name="toast_record_timeout">録画がタイムアウトしました</string>
     <string name="toast_floating_started">フローティングボールが開始されました</string>
 
@@ -219,4 +219,7 @@
     <string name="licenses_third_party">サードパーティ製コンポーネント</string>
     <!-- ライセンスページの戻るボタン -->
     <string name="action_back">戻る</string>
+    <string name="record_return_title">ジェスチャーを記録しました</string>
+    <string name="record_return_text">タップして Click に戻る</string>
+    <string name="toast_return_blocked">Click に自動で戻れませんでした：システム設定で Click の「バックグラウンドでのポップアップ」を許可するか、通知をタップして戻ってください。</string>
 </resources>
