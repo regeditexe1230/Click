@@ -41,6 +41,10 @@
     <string name="notification_heads_up_title">헤드업 알림 켜기</string>
     <string name="notification_heads_up_message">제스처 녹화 알림이 지금 무음으로 설정되어 있습니다. 대상 앱으로 전환해도 녹화 안내가 화면에 뜨지 않아 녹화 시작 방법을 찾기 어렵습니다.\n\n알림 설정에서 이 알림을 헤드업(배너)으로 바꿔 주세요.</string>
     <string name="notification_heads_up_confirm">설정 열기</string>
+    <string name="dialog_dont_ask_again">다시 묻지 않기</string>
+    <string name="back_popup_title">백그라운드 팝업 권한이 필요합니다</string>
+    <string name="back_popup_message">지난번 녹화 후 Click이 자동으로 앞으로 돌아오지 못했습니다. 시스템의 백그라운드 팝업 권한이 막고 있습니다.\n\n권한 관리 → 기타 권한에서 백그라운드 팝업을 항상 허용으로 설정하면 녹화 후 자동으로 Click으로 돌아옵니다.</string>
+    <string name="back_popup_confirm">설정 열기</string>
     <string name="toast_record_too_short">제스처가 너무 짧아 저장하지 않았습니다</string>
     <string name="toast_record_timeout">녹화 시간이 초과되었습니다</string>
     <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>

@@ -42,6 +42,11 @@
     <string name="notification_heads_up_title">Turn on heads-up notifications</string>
     <string name="notification_heads_up_message">The gesture recording notification is silent right now, so the recording prompt will not pop up over other apps and you may not find the way to start recording.\n\nPlease switch that notification to heads-up (banner) in notification settings.</string>
     <string name="notification_heads_up_confirm">Open settings</string>
+    <string name="dialog_dont_ask_again">Do not ask again</string>
+    <!-- Shown after a recording when Click could not come back to the foreground -->
+    <string name="back_popup_title">Back pop-up permission needed</string>
+    <string name="back_popup_message">Last time, Click could not come back to the foreground after recording — the system blocked it with the Back pop-up permission.\n\nPlease set Back pop-up to Always allow under Permissions → Other permissions. After that, Click will return automatically once a recording ends.</string>
+    <string name="back_popup_confirm">Open settings</string>
     <string name="toast_record_too_short">Gesture too short, not saved</string>
     <string name="toast_record_timeout">Recording timed out</string>
     <string name="toast_floating_started">Floating ball started</string>

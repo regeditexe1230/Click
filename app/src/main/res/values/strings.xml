@@ -42,6 +42,11 @@
     <string name="notification_heads_up_title">开启悬浮通知</string>
     <string name="notification_heads_up_message">「手势录制」这条通知现在是静默的：你切到目标应用后，录制提示不会浮到屏幕上，会找不到开始录制的入口。\n\n请到通知设置里把这条通知改成「悬浮通知」（横幅）。</string>
     <string name="notification_heads_up_confirm">去开启</string>
+    <string name="dialog_dont_ask_again">不再提醒</string>
+    <!-- 录制结束没能自己跳回前台时的说明框（MIUI/HyperOS 的「后台弹出界面」被关） -->
+    <string name="back_popup_title">需要「后台弹出界面」权限</string>
+    <string name="back_popup_message">上次录完手势后，Click 没能自己跳回前台 —— 被系统的「后台弹出界面」权限拦住了。\n\n请到「权限管理 → 其他权限」里，把「后台弹出界面」设为「始终允许」，之后录完就会自动回到 Click。</string>
+    <string name="back_popup_confirm">去开启</string>
     <string name="toast_record_too_short">手势太短，未保存</string>
     <string name="toast_record_timeout">录制超时，已退出</string>
     <string name="toast_floating_started">悬浮球已启动</string>

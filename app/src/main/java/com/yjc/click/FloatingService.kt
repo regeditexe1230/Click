@@ -858,6 +858,8 @@ class FloatingService : Service() {
             val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             if (!isAppForeground(am)) {
                 android.util.Log.w("FloatingService", "returnToApp: still in background, showing fallback")
+                // 记一笔：用户下次回到应用时会看到「后台弹出界面」的说明框
+                PromptFlags.setReturnBlocked(applicationContext, true)
                 showReturnNotification()
                 warnReturnBlocked()
             }

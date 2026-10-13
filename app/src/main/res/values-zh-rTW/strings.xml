@@ -42,6 +42,10 @@
     <string name="notification_heads_up_title">開啟懸浮通知</string>
     <string name="notification_heads_up_message">「手勢錄製」這則通知目前是靜默的：你切到目標應用後，錄製提示不會浮到螢幕上，會找不到開始錄製的入口。\n\n請到通知設定裡把這則通知改成「懸浮通知」（橫幅）。</string>
     <string name="notification_heads_up_confirm">去開啟</string>
+    <string name="dialog_dont_ask_again">不再提醒</string>
+    <string name="back_popup_title">需要「背景彈出介面」權限</string>
+    <string name="back_popup_message">上次錄完手勢後，Click 沒能自己跳回前景 —— 被系統的「背景彈出介面」權限擋住了。\n\n請到「權限管理 → 其他權限」把「背景彈出介面」設為「永遠允許」，之後錄完就會自動回到 Click。</string>
+    <string name="back_popup_confirm">去開啟</string>
     <string name="toast_record_too_short">手勢太短，未儲存</string>
     <string name="toast_record_timeout">錄製逾時，已退出</string>
     <string name="toast_floating_started">懸浮球已啟動</string>
