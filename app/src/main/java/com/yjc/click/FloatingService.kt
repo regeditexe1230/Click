@@ -1181,6 +1181,14 @@ class FloatingService : Service() {
          */
         fun isRecordingHeadsUpEnabled(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+            // 两个条件一起看：系统级「悬浮通知」总开关 + 这条通道自己的重要性
+            // （全局开关关掉时，系统里连通道页都不会再给「悬浮通知」这一项）
+            val global = Settings.Global.getInt(
+                context.contentResolver,
+                "heads_up_notifications_enabled",
+                1,
+            )
+            if (global == 0) return false
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 ?: return true
             val channel = manager.getNotificationChannel(RECORDING_CHANNEL_ID) ?: return true

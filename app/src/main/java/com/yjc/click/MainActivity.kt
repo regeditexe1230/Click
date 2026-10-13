@@ -21,6 +21,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.yjc.click.ui.BackPopupPromptDialog
+import com.yjc.click.ui.NotificationPermissionPromptDialog
+import com.yjc.click.ui.RecordingHeadsUpPromptDialog
 import com.yjc.click.ui.home.HomeScreen
 import com.yjc.click.ui.shell.MainScaffold
 import com.yjc.click.ui.shell.MainTab
@@ -75,8 +78,11 @@ class MainActivity : AppCompatActivity() {
     private var notificationRequestInFlight = false
     /** 说明框是否正在显示，避免 onResume 反复触发时叠出好几个 */
     private var notificationDialogShowing = false
-    /** 说明框本体：系统权限弹窗晚一步出现、用户又点了「允许」时，要能把它自己收掉 */
-    private var notificationDialog: androidx.appcompat.app.AlertDialog? = null
+    /**
+     * 当前正在显示的说明弹窗。走 Compose 那套（和「发现新版本」更新弹窗同一份样式），
+     * 不再自己拼 View 弹窗，免得样式和别的弹窗对不上。
+     */
+    private var promptKind by mutableStateOf<PromptKind?>(null)
     /** onCreate 之后的第一轮 onResume 跳过通知检查（那一轮交给 onCreate 去申请） */
     private var resumedOnce = false
     /** 「悬浮通知」说明框是否正在显示（点「添加手势」时按需弹，勾过「不再提醒」就不再弹） */
@@ -166,6 +172,41 @@ class MainActivity : AppCompatActivity() {
                         MainTab.SETTINGS -> getString(R.string.nav_settings)
                     },
                     playEntrance = playBottomBarEntrance,
+                    promptContent = {
+                        when (promptKind) {
+                            PromptKind.NOTIFICATION -> NotificationPermissionPromptDialog(
+                                onConfirm = {
+                                    closePrompt()
+                                    openNotificationSettings()
+                                },
+                                onDismiss = { closePrompt() },
+                            )
+                            PromptKind.HEADS_UP -> RecordingHeadsUpPromptDialog(
+                                onGoOpen = { ignore ->
+                                    if (ignore) PromptFlags.setHeadsUpMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    openRecordingChannelSettings()
+                                },
+                                onLater = { ignore ->
+                                    if (ignore) PromptFlags.setHeadsUpMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    startRecordingSession()
+                                },
+                            )
+                            PromptKind.BACK_POPUP -> BackPopupPromptDialog(
+                                onGoOpen = { ignore ->
+                                    if (ignore) PromptFlags.setBackPopupMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    openBackPopupPermissionSettings()
+                                },
+                                onLater = { ignore ->
+                                    if (ignore) PromptFlags.setBackPopupMuted(this@MainActivity, true)
+                                    closePrompt()
+                                },
+                            )
+                            null -> {}
+                        }
+                    },
                     settingsContent = { },
                     programContent = { },
                     homeContent = {
@@ -363,7 +404,7 @@ class MainActivity : AppCompatActivity() {
         }
         // 系统权限弹窗有时候比我们的说明框晚一步才出现：用户在系统弹窗里点了「允许」，
         // 这个说明框就该自己消失，不用用户再手动关一次。
-        if (notificationDialogShowing && canPostNotifications()) notificationDialog?.dismiss()
+        if (notificationDialogShowing && canPostNotifications()) closePrompt()
 
         // 上次录完没能自己跳回前台（MIUI/HyperOS 的「后台弹出界面」被关）：回来时说明一次。
         // 那个开关系统不给普通应用读，只能拿「界面回没回来」当判据。
@@ -914,22 +955,15 @@ class MainActivity : AppCompatActivity() {
     private fun showNotificationPermissionDialog() {
         if (notificationDialogShowing || isFinishing) return
         notificationDialogShowing = true
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
-            .setTitle(R.string.notification_permission_title)
-            .setMessage(R.string.notification_permission_message)
-            .setPositiveButton(R.string.notification_permission_confirm) { d, _ ->
-                d.dismiss()
-                openNotificationSettings()
-            }
-            .setOnDismissListener {
-                notificationDialogShowing = false
-                notificationDialog = null
-            }
-            .create()
-        notificationDialog = dialog
-        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
-        dialog.show()
-        FontManager.applyFontToDialog(dialog)
+        promptKind = PromptKind.NOTIFICATION
+    }
+
+    /** 收掉当前说明弹窗（点按钮 / 点外面 / 系统权限已经给了都走这里） */
+    private fun closePrompt() {
+        promptKind = null
+        notificationDialogShowing = false
+        headsUpDialogShowing = false
+        backPopupDialogShowing = false
     }
 
     private fun openNotificationSettings() {
@@ -970,68 +1004,13 @@ class MainActivity : AppCompatActivity() {
     /**
      * 「悬浮通知」被关掉时的说明框：「去开启」跳到这条通知通道的设置页；
      * 「取消」= 这次照样录（只是可能不弹横幅，通知栏里那条还在）。
-     * 按钮用系统那套（跟其它弹窗样式一致），「不再提醒」勾选框塞到按钮条最左边同一行；
-     * 勾上（点哪个按钮都算）以后都不再检查。
+     * 样式和「发现新版本」弹窗一致（见 ui/PromptDialogs.kt）；
+     * 勾上「不再提醒」（点哪个按钮都算）以后都不再检查。
      */
     private fun showRecordingHeadsUpDialog() {
+        if (headsUpDialogShowing || isFinishing) return
         headsUpDialogShowing = true
-        val box = dontAskAgainCheckBox()
-        fun muteIfChecked() {
-            if (box.isChecked) PromptFlags.setHeadsUpMuted(this, true)
-        }
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
-            .setTitle(R.string.notification_heads_up_title)
-            .setMessage(R.string.notification_heads_up_message)
-            .setPositiveButton(R.string.notification_heads_up_confirm) { d, _ ->
-                muteIfChecked()
-                d.dismiss()
-                openRecordingChannelSettings()
-            }
-            .setNegativeButton(R.string.cancel) { d, _ ->
-                muteIfChecked()
-                d.dismiss()
-                startRecordingSession()
-            }
-            .setOnCancelListener {
-                muteIfChecked()
-                startRecordingSession()
-            }
-            .setOnDismissListener { headsUpDialogShowing = false }
-            .create()
-        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
-        dialog.show()
-        attachDontAskToButtonBar(dialog, box)
-        FontManager.applyFontToDialog(dialog)
-    }
-
-    /** 「不再提醒」勾选框：挂到弹窗按钮条最左边，和取消/确认同一行（样式仍用系统按钮） */
-    private fun attachDontAskToButtonBar(
-        dialog: androidx.appcompat.app.AlertDialog,
-        box: android.widget.CheckBox,
-    ) {
-        val positive = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE) ?: return
-        val bar = positive.parent as? android.view.ViewGroup ?: return
-        (box.parent as? android.view.ViewGroup)?.removeView(box)
-        box.setPadding(0, 0, 0, 0)
-        val params: android.view.ViewGroup.LayoutParams =
-            if (bar is android.widget.LinearLayout) {
-                android.widget.LinearLayout.LayoutParams(
-                    0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f
-                ).apply { gravity = android.view.Gravity.CENTER_VERTICAL }
-            } else {
-                android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            }
-        bar.addView(box, 0, params)
-    }
-
-    /** 弹窗里那个「不再提醒」勾选框（现拼一个，省得为它单开布局文件） */
-    private fun dontAskAgainCheckBox(): android.widget.CheckBox {
-        return android.widget.CheckBox(AppTheme.viewContext(this)).apply {
-            setText(R.string.dialog_dont_ask_again)
-        }
+        promptKind = PromptKind.HEADS_UP
     }
 
     /**
@@ -1042,29 +1021,7 @@ class MainActivity : AppCompatActivity() {
     private fun showBackPopupDialog() {
         if (backPopupDialogShowing || isFinishing) return
         backPopupDialogShowing = true
-        val box = dontAskAgainCheckBox()
-        fun muteIfChecked() {
-            if (box.isChecked) PromptFlags.setBackPopupMuted(this, true)
-        }
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
-            .setTitle(R.string.back_popup_title)
-            .setMessage(R.string.back_popup_message)
-            .setPositiveButton(R.string.back_popup_confirm) { d, _ ->
-                muteIfChecked()
-                d.dismiss()
-                openBackPopupPermissionSettings()
-            }
-            .setNegativeButton(R.string.cancel) { d, _ ->
-                muteIfChecked()
-                d.dismiss()
-            }
-            .setOnCancelListener { muteIfChecked() }
-            .setOnDismissListener { backPopupDialogShowing = false }
-            .create()
-        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
-        dialog.show()
-        attachDontAskToButtonBar(dialog, box)
-        FontManager.applyFontToDialog(dialog)
+        promptKind = PromptKind.BACK_POPUP
     }
 
     /** 跳到 MIUI/HyperOS 安全中心里本应用的「其他权限」页；非 MIUI 退回应用详情页 */
@@ -1175,3 +1132,6 @@ class MainActivity : AppCompatActivity() {
         return if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
     }
 }
+
+/** 当前要显示的说明弹窗；样式与「发现新版本」更新弹窗一致（见 ui/PromptDialogs.kt） */
+private enum class PromptKind { NOTIFICATION, HEADS_UP, BACK_POPUP }

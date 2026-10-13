@@ -119,6 +119,7 @@ fun MainScaffold(
     homeContent: @Composable () -> Unit,
     programContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
+    promptContent: @Composable () -> Unit = {},
 ) {
     val surface = MaterialTheme.colorScheme.surface
 
@@ -348,6 +349,9 @@ fun MainScaffold(
                 onLater = { UpdateStore.dismissDialog() },
             )
         }
+
+        // 说明类弹窗（通知权限 / 悬浮通知 / 后台弹出界面）：和更新弹窗同一套 Compose 样式
+        promptContent()
     }
 }
 
