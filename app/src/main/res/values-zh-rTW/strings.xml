@@ -35,7 +35,10 @@
     <string name="toast_need_accessibility">需要無障礙服務才能執行</string>
     <string name="toast_accessibility_revoked">無障礙服務已關閉，已停止執行</string>
     <string name="toast_record_switch_to_app">已發出錄製通知，切到目標應用後點它開始錄製</string>
-    <string name="toast_record_need_notification">請先允許通知：錄製手勢要靠通知來啟動</string>
+    <!-- 通知權限被拒時的說明框（點確定跳系統通知設定） -->
+    <string name="notification_permission_title">需要通知權限</string>
+    <string name="notification_permission_message">手勢錄製是靠一則通知啟動的：點「新增手勢」後會發出一則通知，你切到目標應用後點它才開始錄製。\n\n請允許 Click 傳送通知，否則錄製無法使用。</string>
+    <string name="notification_permission_confirm">去開啟</string>
     <string name="toast_record_too_short">手勢太短，未儲存</string>
     <string name="toast_record_timeout">錄製逾時，已退出</string>
     <string name="toast_floating_started">懸浮球已啟動</string>

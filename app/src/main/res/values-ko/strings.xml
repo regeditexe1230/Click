@@ -35,7 +35,9 @@
     <string name="toast_need_accessibility">실행하려면 접근성 서비스가 필요합니다</string>
     <string name="toast_accessibility_revoked">접근성 서비스가 꺼져 실행을 중지했습니다</string>
     <string name="toast_record_switch_to_app">녹화 알림을 보냈습니다. 대상 앱으로 전환해 알림을 탭하세요</string>
-    <string name="toast_record_need_notification">먼저 알림을 허용해 주세요 (제스처 녹화는 알림에서 시작합니다)</string>
+    <string name="notification_permission_title">알림 권한이 필요합니다</string>
+    <string name="notification_permission_message">제스처 녹화는 알림에서 시작됩니다. 제스처 추가를 누르면 알림이 표시되고, 대상 앱으로 전환해 그 알림을 누르면 녹화가 시작됩니다.\n\n녹화를 사용하려면 Click의 알림을 허용해 주세요.</string>
+    <string name="notification_permission_confirm">설정 열기</string>
     <string name="toast_record_too_short">제스처가 너무 짧아 저장하지 않았습니다</string>
     <string name="toast_record_timeout">녹화 시간이 초과되었습니다</string>
     <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>

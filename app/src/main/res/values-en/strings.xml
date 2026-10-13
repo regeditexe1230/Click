@@ -35,7 +35,10 @@
     <string name="toast_need_accessibility">Accessibility service required to run</string>
     <string name="toast_accessibility_revoked">Accessibility service turned off, execution stopped</string>
     <string name="toast_record_switch_to_app">Recording notification posted — switch to the target app and tap it</string>
-    <string name="toast_record_need_notification">Please allow notifications first — gesture recording starts from a notification</string>
+    <!-- Shown when notification permission is denied (OK opens system notification settings) -->
+    <string name="notification_permission_title">Notification permission needed</string>
+    <string name="notification_permission_message">Gesture recording starts from a notification: after you tap Add gesture, a notification is posted — switch to the target app and tap it to start recording.\n\nPlease allow Click to send notifications, otherwise recording cannot work.</string>
+    <string name="notification_permission_confirm">Open settings</string>
     <string name="toast_record_too_short">Gesture too short, not saved</string>
     <string name="toast_record_timeout">Recording timed out</string>
     <string name="toast_floating_started">Floating ball started</string>

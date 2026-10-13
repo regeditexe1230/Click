@@ -561,7 +561,8 @@ class FloatingService : Service() {
             while (System.currentTimeMillis() < deadline && isAppForeground(am)) {
                 delay(SESSION_NOTIFY_POLL_MS)
             }
-            if (recordingPending && !recordingActive) {
+            // 用户中途回到 App（cancelPendingRecording）后不能再补发通知
+            if (recordingPending && !recordingActive && AppConfig.recordSessionActive) {
                 // 发成普通通知（不是前台服务通知）：系统才不会把它标成常驻，
                 // MIUI 等系统这时才会真的弹横幅
                 showRecordingNotification(
@@ -1151,6 +1152,18 @@ class FloatingService : Service() {
 
         @Volatile
         private var active: FloatingService? = null
+
+        /**
+         * 用户自己回到 App（没点那条通知就开始录）时调用：把待录制状态作废，
+         * 顺手撤掉「点此开始录制手势」那条通知，免得它一直躺在状态栏里。
+         * 服务本身的收尾由 MainActivity.onResume 里的 stopService 负责。
+         */
+        fun cancelPendingRecording(context: Context) {
+            if (!AppConfig.recordSessionActive) return
+            AppConfig.recordSessionActive = false
+            androidx.core.app.NotificationManagerCompat.from(context).cancel(RECORDING_NOTIFICATION_ID)
+            android.util.Log.d("FloatingService", "pending recording cancelled (returned to app)")
+        }
 
         /** 无障碍服务被系统关掉时由 ClickAccessibilityService 回调 */
         fun onAccessibilityLost() {

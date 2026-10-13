@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontFamily
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.yjc.click.ui.home.HomeScreen
@@ -59,12 +60,37 @@ class MainActivity : AppCompatActivity() {
     private var canStop by mutableStateOf(false)
     private var canRecord by mutableStateOf(false)
     private var isWarningDialogShowing = false
-    private var notificationPermissionAsked = false
+    /**
+     * 是否已经向系统申请过一次通知权限。必须持久化：只有"申请过 + 系统不再允许弹框"
+     * 才能判定用户点过「拒绝且不再提示」，重启应用后依然要能判断出来。
+     */
+    private var notificationPermissionAsked: Boolean
+        get() = getPreferences(Context.MODE_PRIVATE)
+            .getBoolean("notification_permission_asked", false)
+        set(value) {
+            getPreferences(Context.MODE_PRIVATE).edit()
+                .putBoolean("notification_permission_asked", value).apply()
+        }
+    /** 系统权限弹窗正在显示：这时候别再叠我们自己的说明框 */
+    private var notificationRequestInFlight = false
+    /** 说明框是否正在显示，避免 onResume 反复触发时叠出好几个 */
+    private var notificationDialogShowing = false
+    /** onCreate 之后的第一轮 onResume 跳过通知检查（那一轮交给 onCreate 去申请） */
+    private var resumedOnce = false
 
-    /** Android 13+ 通知权限申请（拒绝不影响服务运行，只是前台通知不可见） */
+    /**
+     * Android 13+ 通知权限申请：允许了就结束；被拒就弹我们自己的说明框，
+     * 点「去开启」跳到系统通知设置，回来后 onResume 还会再查一次（直到允许为止）。
+     */
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { granted ->
+        notificationRequestInFlight = false
+        // 允许了也要再看一眼应用级开关：系统权限给了、但用户在设置里把整个应用的通知关掉的情况
+        if (!granted || !canPostNotifications()) {
+            window.decorView.post { showNotificationPermissionDialog() }
+        }
+    }
 
     /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
     private var selectedTab by mutableStateOf(MainTab.HOME)
@@ -319,6 +345,16 @@ class MainActivity : AppCompatActivity() {
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
+        // 用户自己回到 App = 放弃这次录制：待录制状态和那条「点此开始录制手势」通知都撤掉
+        FloatingService.cancelPendingRecording(this)
+
+        // 每次回到前台都查一遍通知权限：用户可能在系统设置里把它撤销了（没重启应用）。
+        // 首轮 onResume 交给 onCreate 去申请，这里跳过，避免两个弹窗叠在一起。
+        if (resumedOnce) {
+            ensureNotificationPermission()
+        } else {
+            resumedOnce = true
+        }
 
         if (pendingPermissionStep == PermissionStep.ACCESSIBILITY) {
             if (isServiceEnabled()) {
@@ -640,10 +676,10 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
             return
         }
-        // 录制通知就是这次的入口，通知被禁用的话整个流程走不通，先要权限
+        // 录制通知就是这次的入口，通知被禁用的话整个流程走不通 —— 直接弹窗引导开启，
+        // 用户可能是在没重启应用的情况下把权限撤销的，这里 force=true 再问一次
         if (!canPostNotifications()) {
-            ensureNotificationPermission()
-            Toast.makeText(this, R.string.toast_record_need_notification, Toast.LENGTH_LONG).show()
+            ensureNotificationPermission(force = true)
             return
         }
         saveConfig()
@@ -655,9 +691,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun canPostNotifications(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
-        return ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return false
+        // 13 以下没有运行时权限，但用户仍可能在通知设置里把整个应用关掉
+        return NotificationManagerCompat.from(this).areNotificationsEnabled()
     }
 
     private fun saveConfig() {
@@ -803,17 +842,80 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，否则通知不会显示。
-     * 每个进程只申请一次，避免反复打扰。
+     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，被关掉通知的话
+     * 录制流程整个走不通（录制就是靠一条通知启动的）。
+     *
+     * 守门逻辑按用户要求：没有就申请；被拒就弹说明框，点「去开启」跳到系统设置，
+     * 回到前台再查一遍 —— 直到用户真的允许为止。每次启动、每次回到前台、
+     * 以及点「添加手势」时都会走一遍这里。
+     *
+     * @param force 点「添加手势」时用：即使本轮已经问过，也要再提示一次
      */
-    private fun ensureNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (notificationPermissionAsked) return
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) return
-        notificationPermissionAsked = true
-        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    private fun ensureNotificationPermission(force: Boolean = false) {
+        if (canPostNotifications()) return
+        if (notificationRequestInFlight) return
+        // 只有"运行时权限还没给"这一种情况系统弹窗才有用；权限已经给了、但用户在设置里关掉了
+        // 整个应用的通知时，再调系统申请什么都不会发生，只能直接引导去设置页
+        val needsRuntime =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    this, android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+        if (needsRuntime) {
+            // 用户点过「拒绝且不再提示」：rationale 为 false 且已经申请过，系统不会再弹申请框，
+            // 这时候再调 launch 只会立刻回调被拒 —— 直接送到设置页，不再尝试申请
+            val cannotAskAgain = notificationPermissionAsked &&
+                !shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
+            if (cannotAskAgain) {
+                // 点「添加手势」时直接去设置页；启动时的检查还是先给个说明框，
+                // 免得用户一打开应用就被弹到系统设置里
+                if (force) openNotificationSettings() else showNotificationPermissionDialog()
+                return
+            }
+            if (force || !notificationPermissionAsked) {
+                notificationPermissionAsked = true
+                notificationRequestInFlight = true
+                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                return
+            }
+        }
+        // 系统弹窗不会再来（拒绝过两次 / 系统级关闭）→ 只能引导去设置里开
+        showNotificationPermissionDialog()
+    }
+
+    /** 通知权限被拒时的说明框：只有一个「去开启」，点完跳系统设置 */
+    private fun showNotificationPermissionDialog() {
+        if (notificationDialogShowing || isFinishing) return
+        notificationDialogShowing = true
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.notification_permission_title)
+            .setMessage(R.string.notification_permission_message)
+            .setPositiveButton(R.string.notification_permission_confirm) { d, _ ->
+                d.dismiss()
+                openNotificationSettings()
+            }
+            .setOnDismissListener { notificationDialogShowing = false }
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun openNotificationSettings() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            )
+        } catch (e: Exception) {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                )
+            } catch (e2: Exception) {
+                Toast.makeText(applicationContext, R.string.notification_permission_title, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun isServiceEnabled(): Boolean {

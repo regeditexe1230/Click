@@ -35,7 +35,9 @@
     <string name="toast_need_accessibility">実行にはユーザー補助サービスが必要です</string>
     <string name="toast_accessibility_revoked">ユーザー補助サービスが無効になったため、実行を停止しました</string>
     <string name="toast_record_switch_to_app">録画通知を出しました。対象アプリに切り替えて通知をタップしてください</string>
-    <string name="toast_record_need_notification">先に通知を許可してください（ジェスチャー録画は通知から開始します）</string>
+    <string name="notification_permission_title">通知の権限が必要です</string>
+    <string name="notification_permission_message">ジェスチャー録画は通知から始まります。「ジェスチャーを追加」をタップすると通知が届くので、対象のアプリに切り替えてその通知をタップすると録画が始まります。\n\n録画を使うには Click の通知を許可してください。</string>
+    <string name="notification_permission_confirm">設定を開く</string>
     <string name="toast_record_too_short">ジェスチャーが短すぎるため保存しませんでした</string>
     <string name="toast_record_timeout">録画がタイムアウトしました</string>
     <string name="toast_floating_started">フローティングボールが開始されました</string>
