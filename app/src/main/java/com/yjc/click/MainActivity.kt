@@ -970,84 +970,67 @@ class MainActivity : AppCompatActivity() {
     /**
      * 「悬浮通知」被关掉时的说明框：「去开启」跳到这条通知通道的设置页；
      * 「取消」= 这次照样录（只是可能不弹横幅，通知栏里那条还在）。
-     * 底部一行：左边「不再提醒」勾选框，右边「取消 / 去开启」；勾上（点哪个按钮都算）以后都不再检查。
+     * 按钮用系统那套（跟其它弹窗样式一致），「不再提醒」勾选框塞到按钮条最左边同一行；
+     * 勾上（点哪个按钮都算）以后都不再检查。
      */
     private fun showRecordingHeadsUpDialog() {
         headsUpDialogShowing = true
-        val row = dontAskRow(R.string.notification_heads_up_confirm)
+        val box = dontAskAgainCheckBox()
         fun muteIfChecked() {
-            if (row.box.isChecked) PromptFlags.setHeadsUpMuted(this, true)
+            if (box.isChecked) PromptFlags.setHeadsUpMuted(this, true)
         }
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.notification_heads_up_title)
             .setMessage(R.string.notification_heads_up_message)
-            .setView(row.view)
+            .setPositiveButton(R.string.notification_heads_up_confirm) { d, _ ->
+                muteIfChecked()
+                d.dismiss()
+                openRecordingChannelSettings()
+            }
+            .setNegativeButton(R.string.cancel) { d, _ ->
+                muteIfChecked()
+                d.dismiss()
+                startRecordingSession()
+            }
             .setOnCancelListener {
                 muteIfChecked()
                 startRecordingSession()
             }
             .setOnDismissListener { headsUpDialogShowing = false }
             .create()
-        row.cancel.setOnClickListener {
-            muteIfChecked()
-            dialog.dismiss()
-            startRecordingSession()
-        }
-        row.confirm.setOnClickListener {
-            muteIfChecked()
-            dialog.dismiss()
-            openRecordingChannelSettings()
-        }
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        attachDontAskToButtonBar(dialog, box)
         FontManager.applyFontToDialog(dialog)
     }
 
-    /** 「不再提醒」勾选框 + 取消/确认两个按钮，供弹窗底部那一行用 */
-    private class DontAskRow(
-        val view: android.view.View,
-        val box: android.widget.CheckBox,
-        val cancel: android.widget.Button,
-        val confirm: android.widget.Button,
-    )
-
-    /** 现拼一个底部行：左边勾选框占满剩余宽度，右边两个文字按钮（省得为它单开布局文件） */
-    private fun dontAskRow(confirmTextRes: Int): DontAskRow {
-        val ctx = AppTheme.viewContext(this)
-        val dp = resources.displayMetrics.density
-        val pad = (16 * dp).toInt()
-        val row = android.widget.LinearLayout(ctx).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(pad, (4 * dp).toInt(), (8 * dp).toInt(), 0)
-        }
-        val box = dontAskAgainCheckBox().apply { setPadding(0, 0, 0, 0) }
-        row.addView(
-            box,
-            android.widget.LinearLayout.LayoutParams(
-                0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f
-            )
-        )
-        val cancel = rowTextButton(ctx, R.string.cancel)
-        val confirm = rowTextButton(ctx, confirmTextRes)
-        row.addView(cancel)
-        row.addView(confirm)
-        return DontAskRow(row, box, cancel, confirm)
-    }
-
-    private fun rowTextButton(ctx: android.content.Context, textRes: Int): android.widget.Button {
-        return android.widget.Button(ctx, null, android.R.attr.borderlessButtonStyle).apply {
-            setText(textRes)
-            isAllCaps = false
-        }
+    /** 「不再提醒」勾选框：挂到弹窗按钮条最左边，和取消/确认同一行（样式仍用系统按钮） */
+    private fun attachDontAskToButtonBar(
+        dialog: androidx.appcompat.app.AlertDialog,
+        box: android.widget.CheckBox,
+    ) {
+        val positive = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE) ?: return
+        val bar = positive.parent as? android.view.ViewGroup ?: return
+        (box.parent as? android.view.ViewGroup)?.removeView(box)
+        box.setPadding(0, 0, 0, 0)
+        val params: android.view.ViewGroup.LayoutParams =
+            if (bar is android.widget.LinearLayout) {
+                android.widget.LinearLayout.LayoutParams(
+                    0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+                ).apply { gravity = android.view.Gravity.CENTER_VERTICAL }
+            } else {
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            }
+        bar.addView(box, 0, params)
     }
 
     /** 弹窗里那个「不再提醒」勾选框（现拼一个，省得为它单开布局文件） */
     private fun dontAskAgainCheckBox(): android.widget.CheckBox {
         return android.widget.CheckBox(AppTheme.viewContext(this)).apply {
             setText(R.string.dialog_dont_ask_again)
-            val pad = (16 * resources.displayMetrics.density).toInt()
-            setPadding(pad, pad / 2, pad, 0)
         }
     }
 
@@ -1059,28 +1042,28 @@ class MainActivity : AppCompatActivity() {
     private fun showBackPopupDialog() {
         if (backPopupDialogShowing || isFinishing) return
         backPopupDialogShowing = true
-        val row = dontAskRow(R.string.back_popup_confirm)
+        val box = dontAskAgainCheckBox()
         fun muteIfChecked() {
-            if (row.box.isChecked) PromptFlags.setBackPopupMuted(this, true)
+            if (box.isChecked) PromptFlags.setBackPopupMuted(this, true)
         }
         val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
             .setTitle(R.string.back_popup_title)
             .setMessage(R.string.back_popup_message)
-            .setView(row.view)
+            .setPositiveButton(R.string.back_popup_confirm) { d, _ ->
+                muteIfChecked()
+                d.dismiss()
+                openBackPopupPermissionSettings()
+            }
+            .setNegativeButton(R.string.cancel) { d, _ ->
+                muteIfChecked()
+                d.dismiss()
+            }
             .setOnCancelListener { muteIfChecked() }
             .setOnDismissListener { backPopupDialogShowing = false }
             .create()
-        row.cancel.setOnClickListener {
-            muteIfChecked()
-            dialog.dismiss()
-        }
-        row.confirm.setOnClickListener {
-            muteIfChecked()
-            dialog.dismiss()
-            openBackPopupPermissionSettings()
-        }
         dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
         dialog.show()
+        attachDontAskToButtonBar(dialog, box)
         FontManager.applyFontToDialog(dialog)
     }
 
