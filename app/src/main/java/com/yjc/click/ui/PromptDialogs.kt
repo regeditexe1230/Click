@@ -28,8 +28,9 @@ import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickText
 
 /**
- * 说明类弹窗的公共壳：和「发现新版本」更新弹窗（[UpdateDialog]）同一套 Compose 样式 ——
- * 标题 18sp、正文 13sp、底栏一行里左边「不再提醒」勾选框、右边按钮，勾选框不要 48dp 最小触摸区。
+ * 说明类弹窗的公共壳：样式跟「删除手势」那类系统弹窗（MaterialAlertDialogBuilder）对齐 ——
+ * 标题用主题的 headlineSmall、正文用主题的 bodyMedium，底栏一行里左边「不再提醒」勾选框、
+ * 右边按钮，勾选框不要 48dp 最小触摸区。
  *
  * @param onConfirm 点右边主按钮，参数 = 「不再提醒」是否勾上
  * @param onDismiss 点取消 / 点外面 / 返回键，参数同上
@@ -48,12 +49,16 @@ private fun PromptDialog(
     AlertDialog(
         onDismissRequest = { onDismiss(ignored) },
         title = {
-            ClickText(stringResource(titleRes), 18.sp, MaterialTheme.colorScheme.onSurface)
+            ClickText(
+                stringResource(titleRes),
+                MaterialTheme.typography.headlineSmall.fontSize,
+                MaterialTheme.colorScheme.onSurface,
+            )
         },
         text = {
             ClickText(
                 text = stringResource(messageRes),
-                fontSize = 13.sp,
+                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
