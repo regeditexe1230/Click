@@ -577,15 +577,9 @@ class FloatingService : Service() {
 
     /** 自己是不是还在前台（前台发的通知弹不出横幅） */
     private fun isAppForeground(am: ActivityManager?): Boolean {
-        if (am == null) return false
-        return try {
-            val myPid = android.os.Process.myPid()
-            am.runningAppProcesses?.any {
-                it.pid == myPid && it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-            } == true
-        } catch (e: Exception) {
-            false
-        }
+        // 以 Activity 生命周期为准：部分 ROM（实测小米 8.1/MIUI）后台时仍把本进程
+        // 报成 IMPORTANCE_FOREGROUND，只信 importance 会导致永远等不到「已退到后台」。
+        return AppForegroundTracker.isForeground
     }
 
     /** 点通知后调用：盖上遮罩开始抓这一划 */

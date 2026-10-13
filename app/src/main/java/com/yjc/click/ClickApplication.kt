@@ -14,6 +14,8 @@ class ClickApplication : Application() {
             "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         }
+        // 记录本应用处于前台还是后台：录制通知要等退到后台再发，才能弹出横幅
+        AppForegroundTracker.install(this)
         // 深浅色/动态取色的状态在这里先读一次：进程可能只为悬浮球服务而启动
         //（通知栏重开、START_STICKY 重启），那时没有 Activity 去初始化 AppTheme，
         // 球会被画成固定紫色、深色下还会用错主色。
