@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -78,11 +79,18 @@ private fun PromptDialog(
                         CompositionLocalProvider(
                             LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
                         ) {
-                            Checkbox(checked = ignored, onCheckedChange = { ignored = it })
+                            // 显式给个小尺寸：默认 48dp 触摸区会把右侧按钮行的空间挤掉，
+                            // 日文/韩文这种长标签就会折行（整行本身可点，触摸区不受影响）
+                            Checkbox(
+                                checked = ignored,
+                                onCheckedChange = { ignored = it },
+                                modifier = Modifier.size(20.dp),
+                            )
                         }
                         ClickText(
                             text = stringResource(R.string.dialog_dont_ask_again),
-                            fontSize = 13.sp,
+                            // 用 labelMedium（12sp）：日文「今後表示しない」这类长标签才能在按钮行里单行放下
+                            fontSize = MaterialTheme.typography.labelMedium.fontSize,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
