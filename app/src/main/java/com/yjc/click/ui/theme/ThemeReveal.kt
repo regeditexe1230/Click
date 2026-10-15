@@ -131,9 +131,15 @@ object AppTheme {
             return
         }
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        PixelCopy.request(window, bitmap, { result ->
-            onCaptured(if (result == PixelCopy.SUCCESS) bitmap else null)
-        }, Handler(Looper.getMainLooper()))
+        try {
+            PixelCopy.request(window, bitmap, { result ->
+                onCaptured(if (result == PixelCopy.SUCCESS) bitmap else null)
+            }, Handler(Looper.getMainLooper()))
+        } catch (e: IllegalArgumentException) {
+            // 窗口此刻没有 surface（App 在后台、或配置变化还没落定时）PixelCopy 会直接抛
+            // "Window doesn't have a backing surface!"：退化成"没有旧画面"，不播圆形揭示。
+            onCaptured(null)
+        }
     }
 
     /** 揭示圆心：屏幕上的随机一点（每次切换都随机） */
@@ -218,20 +224,25 @@ object AppTheme {
             return
         }
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        PixelCopy.request(
-            window,
-            bitmap,
-            { result ->
-                commit(
-                    activity,
-                    theme,
-                    target,
-                    if (result == PixelCopy.SUCCESS) bitmap else null,
-                    origin,
-                )
-            },
-            Handler(Looper.getMainLooper()),
-        )
+        try {
+            PixelCopy.request(
+                window,
+                bitmap,
+                { result ->
+                    commit(
+                        activity,
+                        theme,
+                        target,
+                        if (result == PixelCopy.SUCCESS) bitmap else null,
+                        origin,
+                    )
+                },
+                Handler(Looper.getMainLooper()),
+            )
+        } catch (e: IllegalArgumentException) {
+            // 同上：窗口没有 surface 时不播过渡，直接把主题状态落下去。
+            commit(activity, theme, target, null, origin)
+        }
     }
 
     /** 挂起的"再来一次"（上一次揭示还没播完时的新请求），只保留最后一次选择 */

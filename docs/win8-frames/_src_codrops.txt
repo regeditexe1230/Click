@@ -1,0 +1,114 @@
+
+ It’s very rare that we come across a piece of software that feels alive. Most web sites and apps you use are functional and stoic. If you are lucky you will find something that you think is pretty. But when you find something that has energy and character it becomes special. This achievement comes from a culmination of things, but life in software comes almost entirely from motion and animation. 
+ Classic Examples 
+ Everything about this app feels organic and upbeat. Pay particular attention to the compose button interaction. 
+ For better or for worse, Windows 8 has a lot of energy. They created a new visual style for Microsoft that is a combination of flat minimal visual design and responsive motion design. Take note of all the view transitions. 
+ This one is a little more subtle. As the video scrolls down notice how the new posts animate in. Also, see the pull to refresh. It is something that is fun and playful which echoes Google’s brand. 
+ I love this app. These guys did a great job using animation to demonstrate modality shifts. Pay attention to the pop up windows and pop over menus. The animations draw attention and make it easier for the user to imagine the dimensional model. 
+ This app is a game that uses a lot of little animations to make it feel fun and lightweight. It uses animation for emphasis / call outs and animation for delight (see the end). 
+ When looking at all of these it is important to notice that not very much is happening! There aren’t a lot of elements flying across your screen like an arcade game. The animations are subtle, complex, and natural. The right combination of these can make a UI feel responsive and alive. Animation is a tool best used subtly. Think of it as a new color that can’t be used conventionally. This new color is the loudest and brightest color ever made. Let’s learn how and when to use it. 
+ Tiny break: Want to get website inspiration? Check out our Webzibition and see whats trending. 
+ Break it down 
+ Like all design you have to learn how be able to look at animations and understand what elements make them up. With animation you have to consider direction, timing, and easing. Let’s look at Currently as an example. The animation when Currently loads is pretty complex. There are six things moving, three different animations, three different directions, and each day of the week is slightly more delayed than the previous one. 
+ Direction 
+ There is a classic design principle called focal point . It is the convergence of energy in the piece; the loudest point. This is most easily abused with animation. When things are flying around your screen it is pretty easy to overwhelm the user. When picking animation directions you have to retain a focal point. Where do you want people to look? With Currently, watch the two rows. The time is moving down towards the center, and the weather is moving up. The direction of these animations create focus and energy in the center of the screen, where the user is meant to look. 
+ Timing 
+ When you press a physical button on your computer or in your car, the button is depressed at the same rate that you pressed it. In software, this isn’t something we can recreate. However, we can fake it. The timing on a button is important because you don’t want the button to suddenly look different, but you also don’t want it to be so slow that it feels unrealistic. There is a magic number somewhere between 80ms and 200ms here. With other types of animation it really depends on the context and the distance. If you have no idea where to start, try 200ms. It is a pretty magical number. 
+ Easing 
+ Without opening a calculus book, easing is basically how fast your element is moving at any time during its journey from point A to point B. Here is a great list of easing function graphs. When trying to design life into your web site or app you have to remember how life works. When you are driving a car and you want to go from 0 to 60, you start at 0 and accelerate all the way up 60, getting faster and faster over time. It is the same when slowing down. You don’t instantly go from 0 to 60. So, when picking your easing function you want one that has clear acceleration and deceleration. This creates a natural feeling. On the chart, look at Ease-In-Out functions to start. 
+ Start Building 
+ Let’s make something. A great way to play with animations is to use CSS animations for a web site. They are very simple to understand, easy to customize, and they perform pretty well in modern browsers, especially if you enable hardware acceleration . I put together a jsFiddle using Dan Eden’s Animate.css , and jQuery. 
+ Here is an example of an animation that happens on load. Click on the little play button to run the animation. It can be found at the top right of the embedded jsFiddle. 
+ Here is an interactive example. 
+ Animation is hard 
+ Adding life to code is not easy. It is far from the territory of logical UX design and closer to the door step of art. Like anything it requires practice, adoration, and consumption. Look for movement and rhythm in movies, art (dance), and hopefully other websites and apps. Add animations to your website, then remove 90% of them. You have to be an expert in reduction and focus. Remember, animation is the loudest and brightest color you can possibly use. Use it strategically for emphasis or delight, and use it sparingly. 
+ Read this great Quora discussion on the tools that designers can use. 
+ Final Inspiration 
+ Here is an awesome video of some non-functional UI design. It is the UI in Iron Man’s suit in the movie The Avengers. Notice all the complex motion and floating elements and see how they still seem collected and actionable. Have fun. 
+ best practices roundup 
+ Henry Modisett 
+ I am a 21 year old designer and student from Boulder, Colorado. I do interaction design, visual design and front end development. In the past, I have worked as a UX Designer at Google and at LevelUp. 
+ Website 
+ X 
+ Dribbble 
+ Creative Spotlights 
+ Inside the journeys and portfolios of today's most inspiring designers and developers . 
+ Studio Stories 
+ Discover how studios & agencies started, how they work, and what they've built. 
+ Read their stories 
+ Case Studies 
+ Discover the ideas, design, and craft behind today’s most inspiring web experiences. 
+ View all Case Studies 
+ Learn with Tutorials 
+ Level up your front-end skills with practical, step-by-step tutorials. 
+ View all Tutorials 
+ Feedback 
+ 13 
+ Comments are closed. 
+ Al Nemec February 8, 2013 at 20:23 
+ Fantastic article! 
+ I absolutely love the use of subtle, fluid, and responsive animations. To me, these sorts of animations have really become much more effective with the use of CSS animations as those generally out perform their JS animation counterparts in frame rate. And of course it means the animations are just as fluid (in iOS at least). 
+ Kagai February 9, 2013 at 08:05 
+ I have to be an expert in reduction and focus, having followed the parallax improvements since when the iPhone tweeetie app came with pull ro refresh, it has been nothing short of amazing. Thanks for the great article. 
+ James Clark February 9, 2013 at 14:15 
+ Very interesting! 
+ I love using animations, but the big problem is the compatibility with older browsers … 
+We need to provide alternatives for each effect .. 
+ Maicon Sobczak February 12, 2013 at 11:49 
+ Great explanation with perfect examples Henry. With advent of CSS3 is more and more easy to make an interesting and fluid interface . 
+ capitalH February 12, 2013 at 17:57 
+ that was really really helpful, actually i created my first animation on a live site after reading this article, supper perfect, thanks. 
+ Marcia February 13, 2013 at 06:01 
+ This is extremely interesting stuff, interface design is something that excites me. I like the android interfaces on the galaxy s3 its amazing. I love the timeline time drag display. WOW! 
+ Co drop I hope you host a competition on your blog asking the users to submit their interface design sketch and then we will ask the designers to finalize the best interface mockup and then we can go ahead and code it. Host it regularly I hope you get many sketches each week. 
+ Fabiano February 14, 2013 at 11:54 
+ Nice article! 
+Thanks =) 
+ Zannat February 22, 2013 at 08:19 
+ Its really super & helpful article ,thanks to share… 
+ Nure February 22, 2013 at 08:24 
+ I like , thanks for your nice article 
+ Pritesh Desai February 26, 2013 at 19:56 
+ Wow, this was a very educational article. 
+All the examples were brilliant. I personally liked the ‘Currently’ animation. 
+ Uranbold April 15, 2013 at 16:37 
+ So creative article i have ever read. Keep it up nice articles. 
+ @Jimbola May 13, 2013 at 15:14 
+ Neat article Henry, on the use of motion and animation. 
+ I’ve just written a short article on the use of transitions and animation in Mobile App design, and how, when and why we should to use various animation patterns when design mobile apps. 
+ The Magic of Transitions and Animation in Mobile Interaction Design 
+ David Puerto January 5, 2014 at 02:12 
+ Spot on! I want a giant touch surface to prototype on! 
+ C reative Hu b 
+ A growing showcase of Codrops originals and hand-picked demos from the creative web. 
+ Start exploring 
+ Webzibition 
+ 💎✨ Discover fresh gems in our handpicked exhibition of over 2,000 standout websites that caught our eye. 
+ Get inspired 
+ Explore the site 
+ Home 
+ Creative Hub 
+ Webzibition 
+ Case Studies 
+ Motion Highlights 
+ All Posts 
+ Tutorials 
+ Studio Spotlights 
+ Designer Spotlights 
+ Developer Spotlights 
+ About 
+ Get in touch 
+ Advertise 
+ Privacy Policy 
+ License 
+ Follow Codrops 
+ LinkedIn 
+ Instagram 
+ Facebook 
+ X (Twitter) 
+ GitHub 
+ Proudly hosted by 
+ Content delivered by 
+ © Codrops 2026 
+ Support us on 
+ 

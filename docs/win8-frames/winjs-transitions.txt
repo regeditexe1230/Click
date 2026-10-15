@@ -1,0 +1,880 @@
+# WinJS 4.4.3 导航转场族 —— 实现体逐字导出
+
+来源：https://unpkg.com/winjs@4.4.3/js/base.js
+本文件由 `docs/win8-frames/_dumpnav.py` 生成，内容为源码原文，未做改写。
+
+**为什么单独导出这一族**：`turnstileForwardIn` 的实现体里出现了
+`perspective(600px) rotateY(80deg)` —— 这是 Win8 **官方发行源码中真实的
+绕 Y 轴 3D 旋转转场，并且显式写明了透视距离**。它与「磁贴按压」完全不同，
+正是「进出」语义最贴合的一组。
+
+---
+
+
+## `continuumForwardIn`
+
+起始行：**L18266**
+
+```js
+continuumForwardIn: function (incomingPage, incomingItemRoot, incomingItemContent) {
+            /// <signature helpKeyword="WinJS.UI.Animation.continuumForwardIn">
+            /// <summary locid="WinJS.UI.Animation.continuumForwardIn">
+            /// Execute a continuum animation, scaling up the incoming page while scaling, rotating, and translating the incoming item.
+            /// </summary>
+            /// <param name="incomingPage" locid="WinJS.UI.Animation.continuumForwardIn_p:incomingPage">
+            /// Single element to be scaled up that is the page root and does not contain the incoming item.
+            /// </param>
+            /// <param name="incomingItemRoot" locid="WinJS.UI.Animation.continuumForwardIn_p:incomingItemRoot">
+            /// Root of the item that will be translated as part of the continuum animation.
+            /// </param>
+            /// <param name="incomingItemContent" locid="WinJS.UI.Animation.continuumForwardIn_p:incomingItemContent">
+            /// Content of the item that will be scaled and rotated as part of the continuum animation.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.continuumForwardIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("continuumForwardIn,StartTM");
+
+            return Promise.join([
+                _TransitionAnimation.executeTransition(incomingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0.33, 0.18, 0.11, 1)",
+                    from: "scale(0.5, 0.5)",
+                    to: "scale(1.0, 1.0)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }]),
+                _TransitionAnimation.executeTransition(incomingItemRoot,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0.24,1.15,0.11,1.1575)",
+                    from: "translate(0px, 225px)",
+                    to: "translate(0px, 0px)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }]),
+                animRotationTransform(incomingItemContent, { ltr: "0px 50%", rtl: "100% 50%" },
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0,0.62,0.8225,0.9625)",
+                    from: "rotateX(80deg) scale(1.5, 1.5)",
+                    to: "rotateX(0deg) scale(1.0, 1.0)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }])
+            ])
+            .then(function () { writeAnimationProfilerMark("continuumForwardIn,StopTM"); });
+        }
+```
+
+
+## `continuumForwardOut`
+
+起始行：**L18342**
+
+```js
+continuumForwardOut: function (outgoingPage, outgoingItem) {
+            /// <signature helpKeyword="WinJS.UI.Animation.continuumForwardOut">
+            /// <summary locid="WinJS.UI.Animation.continuumForwardOut">
+            /// Execute a continuum animation, scaling down the outgoing page while scaling, rotating, and translating the outgoing item.
+            /// </summary>
+            /// <param name="outgoingPage" locid="WinJS.UI.Animation.continuumForwardOut_p:outgoingPage">
+            /// Single element to be scaled down that is the page root and contains the outgoing item.
+            /// </param>
+            /// <param name="outgoingItem" locid="WinJS.UI.Animation.continuumForwardOut_p:outgoingItem">
+            /// Single element to be scaled, rotated, and translated away from the outgoing page.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.continuumForwardOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("continuumForwardOut,StartTM");
+
+            return Promise.join([
+                _TransitionAnimation.executeTransition(outgoingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 120,
+                    timing: "cubic-bezier(0.3825,0.0025,0.8775,-0.1075)",
+                    from: "scale(1.0, 1.0)",
+                    to: "scale(1.1, 1.1)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 120,
+                    timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                    from: 1,
+                    to: 0,
+                }]),
+                animRotationTransform(outgoingItem, { ltr: "0px 100%", rtl: "100% 100%" },
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 152,
+                    timing: "cubic-bezier(0.3825,0.0025,0.8775,-0.1075)",
+                    from: "rotateX(0deg) scale(1.0, 1.0) translate(0px, 0px)",
+                    to: "rotateX(80deg) scale(1.5, 1.5) translate(0px, 150px)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 152,
+                    timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                    from: 1,
+                    to: 0,
+                }])
+            ])
+            .then(function () { writeAnimationProfilerMark("continuumForwardOut,StopTM"); });
+        }
+```
+
+
+## `continuumBackwardIn`
+
+起始行：**L18398**
+
+```js
+continuumBackwardIn: function (incomingPage, incomingItem) {
+            /// <signature helpKeyword="WinJS.UI.Animation.continuumBackwardIn">
+            /// <summary locid="WinJS.UI.Animation.continuumBackwardIn">
+            /// Execute a continuum animation, scaling down the incoming page while scaling, rotating, and translating the incoming item.
+            /// </summary>
+            /// <param name="incomingPage" locid="WinJS.UI.Animation.continuumBackwardIn_p:incomingPage">
+            /// Single element to be scaled down that is the page root and contains the incoming item.
+            /// </param>
+            /// <param name="incomingItem" locid="WinJS.UI.Animation.continuumBackwardIn_p:incomingItem">
+            /// Single element to be scaled, rotated, and translated into its final position on the page.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.continuumBackwardIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("continuumBackwardIn,StartTM");
+
+            return Promise.join([
+                _TransitionAnimation.executeTransition(incomingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 200,
+                    timing: "cubic-bezier(0.33, 0.18, 0.11, 1)",
+                    from: "scale(1.25, 1.25)",
+                    to: "scale(1.0, 1.0)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 200,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }]),
+                animRotationTransform(incomingItem, { ltr: "0px 50%", rtl: "100% 50%" },
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 250,
+                    timing: "cubic-bezier(0.2975, 0.7325, 0.4725, 0.99)",
+                    from: "rotateX(80deg) translate(0px, -100px)",
+                    to: "rotateX(0deg) translate(0px, 0px)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 250,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }])
+            ])
+            .then(function () { writeAnimationProfilerMark("continuumBackwardIn,StopTM"); });
+        }
+```
+
+
+## `continuumBackwardOut`
+
+起始行：**L18454**
+
+```js
+continuumBackwardOut: function (outgoingPage) {
+            /// <signature helpKeyword="WinJS.UI.Animation.continuumBackwardOut">
+            /// <summary locid="WinJS.UI.Animation.continuumBackwardOut">
+            /// Execute a continuum animation, scaling down the outgoing page while fading it out.
+            /// </summary>
+            /// <param name="outgoingPage" locid="WinJS.UI.Animation.continuumBackwardOut_p:outgoingPage">
+            /// Single element to be scaled down that is the page root.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.continuumBackwardOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("continuumBackwardOut,StartTM");
+
+            return _TransitionAnimation.executeTransition(outgoingPage,
+            [{
+                property: transformNames.cssName,
+                delay: 0,
+                duration: 167,
+                timing: "cubic-bezier(0.3825,0.0025,0.8775,-0.1075)",
+                from: "scale(1.0, 1.0)",
+                to: "scale(0.5, 0.5)"
+            },
+            {
+                property: "opacity",
+                delay: 0,
+                duration: 167,
+                timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                from: 1,
+                to: 0,
+            }])
+            .then(function () { writeAnimationProfilerMark("continuumBackwardOut,StopTM"); });
+        }
+```
+
+
+## `turnstileForwardIn`
+
+起始行：**L17934**
+
+```js
+turnstileForwardIn: function (incomingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.turnstileForwardIn">
+            /// <summary locid="WinJS.UI.Animation.turnstileForwardIn">
+            /// Execute a turnstile forward in animation.
+            /// </summary>
+            /// <param name="incomingElements" locid="WinJS.UI.Animation.turnstileForwardIn_p:incomingElements">
+            /// Single element or collection of elements to animate.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.turnstileForwardIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("turnstileForwardIn,StartTM");
+
+            incomingElements = makeArray(incomingElements);
+            var origins = collectTurnstileTransformOrigins(incomingElements);
+            return animRotationTransform(
+                incomingElements,
+                origins,
+                [{
+                    property: transformNames.cssName,
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 300,
+                    timing: "cubic-bezier(0.01,0.975,0.4775,0.9775)",
+                    from: "perspective(600px) rotateY(80deg)",
+                    to: "perspective(600px) rotateY(0deg)"
+                },
+                {
+                    property: "opacity",
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 300,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }])
+                .then(function () { writeAnimationProfilerMark("turnstileForwardIn,StopTM"); });
+        }
+```
+
+
+## `turnstileForwardOut`
+
+起始行：**L17972**
+
+```js
+turnstileForwardOut: function (outgoingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.turnstileForwardOut">
+            /// <summary locid="WinJS.UI.Animation.turnstileForwardOut">
+            /// Execute a turnstile forward out animation.
+            /// </summary>
+            /// <param name="outgoingElements" locid="WinJS.UI.Animation.turnstileForwardOut_p:outgoingElements">
+            /// Single element or collection of elements to animate.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.turnstileForwardOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("turnstileForwardOut,StartTM");
+
+            outgoingElements = makeArray(outgoingElements);
+            var origins = collectTurnstileTransformOrigins(outgoingElements);
+            return animRotationTransform(
+                outgoingElements,
+                origins,
+                [{
+                    property: transformNames.cssName,
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 128,
+                    timing: "cubic-bezier(0.4925,0.01,0.7675,-0.01)",
+                    from: "perspective(600px) rotateY(0deg)",
+                    to: "perspective(600px) rotateY(-50deg)",
+                },
+                {
+                    property: "opacity",
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 128,
+                    timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                    from: 1,
+                    to: 0,
+                }])
+                .then(function () { writeAnimationProfilerMark("turnstileForwardOut,StopTM"); });
+        }
+```
+
+
+## `turnstileBackwardIn`
+
+起始行：**L18010**
+
+```js
+turnstileBackwardIn: function (incomingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.turnstileBackwardIn">
+            /// <summary locid="WinJS.UI.Animation.turnstileBackwardIn">
+            /// Execute a turnstile backwards in animation.
+            /// </summary>
+            /// <param name="incomingElements" locid="WinJS.UI.Animation.turnstileBackwardIn_p:incomingElements">
+            /// Single element or collection of elements to animate.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.turnstileBackwardIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("turnstileBackwardIn,StartTM");
+
+            incomingElements = makeArray(incomingElements);
+            var origins = collectTurnstileTransformOrigins(incomingElements);
+            return animRotationTransform(
+                incomingElements,
+                origins,
+                [{
+                    property: transformNames.cssName,
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 300,
+                    timing: "cubic-bezier(0.01,0.975,0.4775,0.9775)",
+                    from: "perspective(600px) rotateY(-50deg)",
+                    to: "perspective(600px) rotateY(0deg)"
+                },
+                {
+                    property: "opacity",
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 300,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }])
+                .then(function () { writeAnimationProfilerMark("turnstileBackwardIn,StopTM"); });
+        }
+```
+
+
+## `turnstileBackwardOut`
+
+起始行：**L18048**
+
+```js
+turnstileBackwardOut: function (outgoingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.turnstileBackwardOut">
+            /// <summary locid="WinJS.UI.Animation.turnstileBackwardOut">
+            /// Execute a turnstile backward out animation.
+            /// </summary>
+            /// <param name="outgoingElements" locid="WinJS.UI.Animation.turnstileBackwardOut_p:outgoingElements">
+            /// Single element or collection of elements to animate.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.turnstileBackwardOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("turnstileBackwardOut,StartTM");
+
+            outgoingElements = makeArray(outgoingElements);
+            var origins = collectTurnstileTransformOrigins(outgoingElements);
+            return animRotationTransform(
+                outgoingElements,
+                origins,
+                [{
+                    property: transformNames.cssName,
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 128,
+                    timing: "cubic-bezier(0.4925,0.01,0.7675,-0.01)",
+                    from: "perspective(800px) rotateY(0deg)",
+                    to: "perspective(800px) rotateY(80deg)",
+                },
+                {
+                    property: "opacity",
+                    delay: staggerDelay(0, 50, 1, 1000),
+                    duration: 128,
+                    timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                    from: 1,
+                    to: 0,
+                }])
+                .then(function () { writeAnimationProfilerMark("turnstileBackwardOut,StopTM"); });
+        }
+```
+
+
+## `drillInIncoming`
+
+起始行：**L18488**
+
+```js
+drillInIncoming: function (incomingPage) {
+            /// <signature helpKeyword="WinJS.UI.Animation.drillInIncoming">
+            /// <summary locid="WinJS.UI.Animation.drillInIncoming">
+            /// Execute the incoming phase of the drill in animation, scaling up the incoming page while fading it in.
+            /// </summary>
+            /// <param name="incomingPage" locid="WinJS.UI.Animation.drillInIncoming_p:incomingPage">
+            /// Element to be scaled up and faded in.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.drillInIncoming_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("drillInIncoming,StartTM");
+
+            return _TransitionAnimation.executeTransition(
+                incomingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 500,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: "scale(0.84)",
+                    to: "scale(1.0)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 500,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: 0,
+                    to: 1,
+                }])
+                .then(function () { writeAnimationProfilerMark("drillInIncoming,StopTM"); });
+        }
+```
+
+
+## `drillInOutgoing`
+
+起始行：**L18523**
+
+```js
+drillInOutgoing: function (outgoingPage) {
+            /// <signature helpKeyword="WinJS.UI.Animation.drillInOutgoing">
+            /// <summary locid="WinJS.UI.Animation.drillInOutgoing">
+            /// Execute the outgoing phase of the drill in animation, scaling up the outgoing page while fading it out.
+            /// </summary>
+            /// <param name="outgoingPage" locid="WinJS.UI.Animation.drillInOutgoing_p:outgoingPage">
+            /// Element to be scaled up and faded out.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.drillInOutgoing_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("drillInOutgoing,StartTM");
+
+            return _TransitionAnimation.executeTransition(
+                outgoingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 233,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: "scale(1.0)",
+                    to: "scale(1.29)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 233,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: 1,
+                    to: 0,
+                }])
+                .then(function () { writeAnimationProfilerMark("drillInOutgoing,StopTM"); });
+        }
+```
+
+
+## `drillOutIncoming`
+
+起始行：**L18558**
+
+```js
+drillOutIncoming: function (incomingPage) {
+            /// <signature helpKeyword="WinJS.UI.Animation.drillOutIncoming">
+            /// <summary locid="WinJS.UI.Animation.drillOutIncoming">
+            /// Execute the incoming phase of the drill out animation, scaling down the incoming page while fading it in.
+            /// </summary>
+            /// <param name="incomingPage" locid="WinJS.UI.Animation.drillOutIncoming_p:incomingPage">
+            /// Element to be scaled up and faded in.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.drillOutIncoming_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("drillOutIncoming,StartTM");
+
+            return _TransitionAnimation.executeTransition(
+                incomingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 500,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: "scale(1.29)",
+                    to: "scale(1.0)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 500,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: 0,
+                    to: 1,
+                }])
+                .then(function () { writeAnimationProfilerMark("drillOutIncoming,StopTM"); });
+        }
+```
+
+
+## `drillOutOutgoing`
+
+起始行：**L18593**
+
+```js
+drillOutOutgoing: function (outgoingPage) {
+            /// <signature helpKeyword="WinJS.UI.Animation.drillOutOutgoing">
+            /// <summary locid="WinJS.UI.Animation.drillOutOutgoing">
+            /// Execute the outgoing phase of the drill out animation, scaling down the outgoing page while fading it out.
+            /// </summary>
+            /// <param name="outgoingPage" locid="WinJS.UI.Animation.drillOutOutgoing_p:outgoingPage">
+            /// Element to be scaled down and faded out.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.drillOutOutgoing_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("drillOutOutgoing,StartTM");
+
+            return _TransitionAnimation.executeTransition(
+                outgoingPage,
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 233,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: "scale(1.0)",
+                    to: "scale(0.84)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 233,
+                    timing: "cubic-bezier(0.1,0.9,0.2,1)",
+                    from: 1,
+                    to: 0,
+                }])
+                .then(function () { writeAnimationProfilerMark("drillOutOutgoing,StopTM"); });
+        }
+```
+
+
+## `slideUp`
+
+起始行：**L18122**
+
+```js
+slideUp: function (incomingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideUp">
+            /// <summary locid="WinJS.UI.Animation.slideUp">
+            /// Execute a slide up animation.
+            /// </summary>
+            /// <param name="incomingElements" locid="WinJS.UI.Animation.slideUp_p:incomingElements">
+            /// Single element or collection of elements to animate sliding up.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideUp_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideUp,StartTM");
+
+            return animRotationTransform(
+                incomingElements,
+                { ltr: "", rtl: "" },
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 350,
+                    timing: "cubic-bezier(0.17,0.79,0.215,1.0025)",
+                    from: "translate(0px, 200px)",
+                    to: "translate(0px, 0px)"
+                },
+                {
+                    property: "opacity",
+                    delay: staggerDelay(0, 34, 1, 1000),
+                    duration: 350,
+                    timing: "cubic-bezier(0, 2, 0, 2)",
+                    from: 0,
+                    to: 1,
+                }])
+                .then(function () { writeAnimationProfilerMark("slideUp,StopTM"); });
+        }
+```
+
+
+## `slideDown`
+
+起始行：**L18086**
+
+```js
+slideDown: function (outgoingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideDown">
+            /// <summary locid="WinJS.UI.Animation.slideDown">
+            /// Execute a slide down animation.
+            /// </summary>
+            /// <param name="outgoingElements" locid="WinJS.UI.Animation.slideDown_p:outgoingElements">
+            /// Single element or collection of elements to animate sliding down.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideDown_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideDown,StartTM");
+
+            return animRotationTransform(
+                outgoingElements,
+                { ltr: "", rtl: "" },
+                [{
+                    property: transformNames.cssName,
+                    delay: 0,
+                    duration: 250,
+                    timing: "cubic-bezier(0.3825,0.0025,0.8775,-0.1075)",
+                    from: "translate(0px, 0px)",
+                    to: "translate(0px, 200px)"
+                },
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 250,
+                    timing: "cubic-bezier(1,-0.42,0.995,-0.425)",
+                    from: 1,
+                    to: 0
+                }])
+                .then(function () { writeAnimationProfilerMark("slideDown,StopTM"); });
+        }
+```
+
+
+## `slideLeftIn`
+
+起始行：**L18212**
+
+```js
+slideLeftIn: function (page, firstIncomingElements, secondIncomingElements, thirdIncomingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideLeftIn">
+            /// <summary locid="WinJS.UI.Animation.slideLeftIn">
+            /// Execute a slide in from right to left animation.
+            /// </summary>
+            /// <param name="page" locid="WinJS.UI.Animation.slideLeftIn_p:page">
+            /// The page containing all elements to slide.
+            /// </param>
+            /// <param name="firstIncomingElements" locid="WinJS.UI.Animation.slideLeftIn_p:firstIncomingElements">
+            /// First element or collection of elements to animate sliding in.
+            /// </param>
+            /// <param name="secondIncomingElements" locid="WinJS.UI.Animation.slideLeftIn_p:secondIncomingElements">
+            /// Second element or collection of elements to animate sliding in, which will be offset slightly farther than the first.
+            /// </param>
+            /// <param name="thirdIncomingElements" locid="WinJS.UI.Animation.slideLeftIn_p:thirdIncomingElements">
+            /// Third element or collection of elements to animate sliding in, which will be offset slightly farther than the second.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideLeftIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideLeftIn,StartTM");
+
+            return animStaggeredSlide("cubic-bezier(0.17,0.79,0.215,1.0025)", _Global.innerWidth, 0, true, page, firstIncomingElements, secondIncomingElements, thirdIncomingElements)
+                .then(function () { writeAnimationProfilerMark("slideLeftIn,StopTM"); });
+        }
+```
+
+
+## `slideLeftOut`
+
+起始行：**L18239**
+
+```js
+slideLeftOut: function (page, firstOutgoingElements, secondOutgoingElements, thirdOutgoingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideLeftOut">
+            /// <summary locid="WinJS.UI.Animation.slideLeftOut">
+            /// Execute a slide out from right to left animation.
+            /// </summary>
+            /// <param name="page" locid="WinJS.UI.Animation.slideLeftOut_p:page">
+            /// The page containing all elements to slide.
+            /// </param>
+            /// <param name="firstOutgoingElements" locid="WinJS.UI.Animation.slideLeftOut_p:firstOutgoingElements">
+            /// First element or collection of elements to animate sliding out.
+            /// </param>
+            /// <param name="secondOutgoingElements" locid="WinJS.UI.Animation.slideLeftOut_p:secondOutgoingElements">
+            /// Second element or collection of elements to animate sliding out, which will be offset slightly farther than the first.
+            /// </param>
+            /// <param name="thirdOutgoingElements" locid="WinJS.UI.Animation.slideLeftOut_p:thirdOutgoingElements">
+            /// Third element or collection of elements to animate sliding out, which will be offset slightly farther than the second.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideLeftOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideLeftOut,StartTM");
+
+            return animStaggeredSlide("cubic-bezier(0.3825,0.0025,0.8775,-0.1075)", 0, -_Global.innerWidth, false, page, firstOutgoingElements, secondOutgoingElements, thirdOutgoingElements)
+                .then(function () { writeAnimationProfilerMark("slideLeftOut,StopTM"); });
+        }
+```
+
+
+## `slideRightIn`
+
+起始行：**L18158**
+
+```js
+slideRightIn: function (page, firstIncomingElements, secondIncomingElements, thirdIncomingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideRightIn">
+            /// <summary locid="WinJS.UI.Animation.slideRightIn">
+            /// Execute a slide in from left to right animation.
+            /// </summary>
+            /// <param name="page" locid="WinJS.UI.Animation.slideRightIn_p:page">
+            /// The page containing all elements to slide.
+            /// </param>
+            /// <param name="firstIncomingElements" locid="WinJS.UI.Animation.slideRightIn_p:firstIncomingElements">
+            /// First element or collection of elements to animate sliding in.
+            /// </param>
+            /// <param name="secondIncomingElements" locid="WinJS.UI.Animation.slideRightIn_p:secondIncomingElements">
+            /// Second element or collection of elements to animate sliding in, which will be offset slightly farther than the first.
+            /// </param>
+            /// <param name="thirdIncomingElements" locid="WinJS.UI.Animation.slideRightIn_p:thirdIncomingElements">
+            /// Third element or collection of elements to animate sliding in, which will be offset slightly farther than the second.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideRightIn_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideRightIn,StartTM");
+
+            return animStaggeredSlide("cubic-bezier(0.17,0.79,0.215,1.0025)", -_Global.innerWidth, 0, true, page, firstIncomingElements, secondIncomingElements, thirdIncomingElements)
+                .then(function () { writeAnimationProfilerMark("slideRightIn,StopTM"); });
+        }
+```
+
+
+## `slideRightOut`
+
+起始行：**L18185**
+
+```js
+slideRightOut: function (page, firstOutgoingElements, secondOutgoingElements, thirdOutgoingElements) {
+            /// <signature helpKeyword="WinJS.UI.Animation.slideRightOut">
+            /// <summary locid="WinJS.UI.Animation.slideRightOut">
+            /// Execute a slide out from left to right animation.
+            /// </summary>
+            /// <param name="page" locid="WinJS.UI.Animation.slideRightOut_p:page">
+            /// The page containing all elements to slide.
+            /// </param>
+            /// <param name="firstOutgoingElements" locid="WinJS.UI.Animation.slideRightOut_p:firstOutgoingElements">
+            /// First element or collection of elements to animate sliding out.
+            /// </param>
+            /// <param name="secondOutgoingElements" locid="WinJS.UI.Animation.slideRightOut_p:secondOutgoingElements">
+            /// Second element or collection of elements to animate sliding out, which will be offset slightly farther than the first.
+            /// </param>
+            /// <param name="thirdOutgoingElements" locid="WinJS.UI.Animation.slideRightOut_p:thirdOutgoingElements">
+            /// Third element or collection of elements to animate sliding out, which will be offset slightly farther than the second.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.slideRightOut_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("slideRightOut,StartTM");
+
+            return animStaggeredSlide("cubic-bezier(0.3825,0.0025,0.8775,-0.1075)", 0, _Global.innerWidth, false, page, firstOutgoingElements, secondOutgoingElements, thirdOutgoingElements)
+                .then(function () { writeAnimationProfilerMark("slideRightOut,StopTM"); });
+        }
+```
+
+
+## `crossFade`
+
+起始行：**L17826**
+
+```js
+crossFade: function (incoming, outgoing) {
+            /// <signature helpKeyword="WinJS.UI.Animation.crossFade">
+            /// <summary locid="WinJS.UI.Animation.crossFade">
+            /// Execute a crossFade animation.
+            /// </summary>
+            /// <param name="incoming" locid="WinJS.UI.Animation.crossFade_p:incoming">
+            /// Single incoming element or collection of incoming elements.
+            /// At the end of the animation, the opacity of the elements is 1.
+            /// </param>
+            /// <param name="outgoing" locid="WinJS.UI.Animation.crossFade_p:outgoing">
+            /// Single outgoing element or collection of outgoing elements.
+            /// At the end of the animation, the opacity of the elements is 0.
+            /// </param>
+            /// <returns type="WinJS.Promise" locid="WinJS.UI.Animation.crossFade_returnValue">
+            /// Promise object that completes when the animation is complete.
+            /// </returns>
+            /// </signature>
+            writeAnimationProfilerMark("crossFade,StartTM");
+
+            var promise1 = _TransitionAnimation.executeTransition(
+                incoming,
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 167,
+                    timing: "linear",
+                    to: 1
+                });
+
+            var promise2 = _TransitionAnimation.executeTransition(
+                outgoing,
+                {
+                    property: "opacity",
+                    delay: 0,
+                    duration: 167,
+                    timing: "linear",
+                    to: 0
+                });
+            return Promise.join([promise1, promise2])
+                .then(function () { writeAnimationProfilerMark("crossFade,StopTM"); });
+        }
+```

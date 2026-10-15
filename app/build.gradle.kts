@@ -12,8 +12,8 @@ android {
         applicationId = "com.yjc.click"
         minSdk = 24
         targetSdk = 33
-        versionCode = 21
-        versionName = "5.0"
+        versionCode = 22
+        versionName = "5.1-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +36,12 @@ android {
     }
 
     buildTypes {
+        // 本地调试也走 release 签名：Android Studio 点 Run 装出来的包和 Release 包是同一把钥匙，
+        // 手机上可以互相覆盖安装，不会再出现「安装包签名与当前版本不一致」。
+        // 只改签名，debuggable / 不混淆 / 调试符号等调试特性保持不变。
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(

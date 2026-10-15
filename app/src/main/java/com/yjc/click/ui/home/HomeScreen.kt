@@ -2,12 +2,15 @@ package com.yjc.click.ui.home
 
 import android.view.animation.DecelerateInterpolator
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,15 +19,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,8 +39,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,9 +50,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -51,6 +64,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yjc.click.GestureStore
+import com.yjc.click.ManualStore
 import com.yjc.click.R
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.LocalSectionBackground
@@ -87,16 +102,17 @@ fun HomeScreen(
     statusText: String,
     isSwipeMode: Boolean,
     isGestureMode: Boolean,
-    swipeX1: String,
-    swipeY1: String,
-    swipeX2: String,
-    swipeY2: String,
-    swipeDuration: String,
+    manualPresets: List<ManualStore.Preset>,
+    selectedManualId: String?,
+    expandedManualIds: Set<String>,
+    manualDrafts: Map<String, ManualStore.Preset>,
+    manualUndoCounts: Map<String, Int>,
+    manualRedoCounts: Map<String, Int>,
     delay: String,
     repeat: String,
     infinite: Boolean,
-    recordedStatus: String,
-    recordedVisible: Boolean,
+    gesturePresets: List<GestureStore.Preset>,
+    selectedGestureId: String?,
     canStart: Boolean,
     showStartOverlay: Boolean,
     canStop: Boolean,
@@ -105,17 +121,25 @@ fun HomeScreen(
     onEnableOverlay: () -> Unit,
     onModeSelected: (Boolean) -> Unit,
     onSwipeMethodSelected: (Boolean) -> Unit,
-    onSwipeX1Change: (String) -> Unit,
-    onSwipeY1Change: (String) -> Unit,
-    onSwipeX2Change: (String) -> Unit,
-    onSwipeY2Change: (String) -> Unit,
-    onSwipeDurationChange: (String) -> Unit,
+    onManualSelect: (String) -> Unit,
+    onManualToggle: (String) -> Unit,
+    onManualRename: (String) -> Unit,
+    onManualDelete: (String) -> Unit,
+    onManualAdd: () -> Unit,
+    onManualField: (String, Int, String) -> Unit,
+    onManualUndo: (String) -> Unit,
+    onManualRedo: (String) -> Unit,
+    onManualSave: (String) -> Unit,
+    onManualCancel: (String) -> Unit,
     onDelayChange: (String) -> Unit,
     onRepeatChange: (String) -> Unit,
     onInfiniteChange: (Boolean) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onRecord: () -> Unit,
+    onAddGesture: () -> Unit,
+    onGestureSelect: (String) -> Unit,
+    onGestureRename: (String) -> Unit,
+    onGestureDelete: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -167,15 +191,30 @@ fun HomeScreen(
             ) {
                 SwipeParamsSection(
                     isGestureMode = isGestureMode,
-                    swipeX1 = swipeX1, swipeY1 = swipeY1, swipeX2 = swipeX2, swipeY2 = swipeY2,
-                    swipeDuration = swipeDuration,
-                    recordedStatus = recordedStatus, recordedVisible = recordedVisible,
+                    manualPresets = manualPresets,
+                    selectedManualId = selectedManualId,
+                    expandedManualIds = expandedManualIds,
+                    manualDrafts = manualDrafts,
+                    manualUndoCounts = manualUndoCounts,
+                    manualRedoCounts = manualRedoCounts,
+                    gesturePresets = gesturePresets,
+                    selectedGestureId = selectedGestureId,
                     canRecord = canRecord,
                     onSwipeMethodSelected = onSwipeMethodSelected,
-                    onSwipeX1Change = onSwipeX1Change, onSwipeY1Change = onSwipeY1Change,
-                    onSwipeX2Change = onSwipeX2Change, onSwipeY2Change = onSwipeY2Change,
-                    onSwipeDurationChange = onSwipeDurationChange,
-                    onRecord = onRecord,
+                    onManualSelect = onManualSelect,
+                    onManualToggle = onManualToggle,
+                    onManualRename = onManualRename,
+                    onManualDelete = onManualDelete,
+                    onManualAdd = onManualAdd,
+                    onManualField = onManualField,
+                    onManualUndo = onManualUndo,
+                    onManualRedo = onManualRedo,
+                    onManualSave = onManualSave,
+                    onManualCancel = onManualCancel,
+                    onAddGesture = onAddGesture,
+                    onGestureSelect = onGestureSelect,
+                    onGestureRename = onGestureRename,
+                    onGestureDelete = onGestureDelete,
                 )
             }
         }
@@ -387,17 +426,30 @@ private fun SegmentControl(
 @Composable
 private fun ColumnScope.SwipeParamsSection(
     isGestureMode: Boolean,
-    swipeX1: String, swipeY1: String, swipeX2: String, swipeY2: String, swipeDuration: String,
-    recordedStatus: String,
-    recordedVisible: Boolean,
+    manualPresets: List<ManualStore.Preset>,
+    selectedManualId: String?,
+    expandedManualIds: Set<String>,
+    manualDrafts: Map<String, ManualStore.Preset>,
+    manualUndoCounts: Map<String, Int>,
+    manualRedoCounts: Map<String, Int>,
+    gesturePresets: List<GestureStore.Preset>,
+    selectedGestureId: String?,
     canRecord: Boolean,
     onSwipeMethodSelected: (Boolean) -> Unit,
-    onSwipeX1Change: (String) -> Unit,
-    onSwipeY1Change: (String) -> Unit,
-    onSwipeX2Change: (String) -> Unit,
-    onSwipeY2Change: (String) -> Unit,
-    onSwipeDurationChange: (String) -> Unit,
-    onRecord: () -> Unit,
+    onManualSelect: (String) -> Unit,
+    onManualToggle: (String) -> Unit,
+    onManualRename: (String) -> Unit,
+    onManualDelete: (String) -> Unit,
+    onManualAdd: () -> Unit,
+    onManualField: (String, Int, String) -> Unit,
+    onManualUndo: (String) -> Unit,
+    onManualRedo: (String) -> Unit,
+    onManualSave: (String) -> Unit,
+    onManualCancel: (String) -> Unit,
+    onAddGesture: () -> Unit,
+    onGestureSelect: (String) -> Unit,
+    onGestureRename: (String) -> Unit,
+    onGestureDelete: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Box(
@@ -430,39 +482,60 @@ private fun ColumnScope.SwipeParamsSection(
                     fadeOut(animationSpec = tween(250, easing = CollapseEasing)),
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                ParamLabel(R.string.start_point)
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                    NumberField(
-                        value = swipeX1, onValueChange = onSwipeX1Change,
-                        hintRes = R.string.start_x, tag = "inputSwipeX1",
-                        modifier = Modifier.weight(1f).padding(end = 4.dp),
+                val context = LocalContext.current
+                manualPresets.forEachIndexed { index, preset ->
+                    // 预设之间用分割线隔开（与设置页的应用背景预设一致）
+                    if (index > 0) GestureDivider()
+                    val draft = manualDrafts[preset.id] ?: preset
+                    val unset = stringResource(R.string.manual_preset_unset)
+                    // 没填的项显示「未设置」，五项目全空时整行就只显示「未设置」
+                    val summary = if (preset.x1.isBlank() && preset.y1.isBlank() && preset.x2.isBlank() &&
+                        preset.y2.isBlank() && preset.duration.isBlank()
+                    ) {
+                        unset
+                    } else {
+                        stringResource(
+                            R.string.manual_preset_summary,
+                            preset.x1.ifBlank { unset }, preset.y1.ifBlank { unset },
+                            preset.x2.ifBlank { unset }, preset.y2.ifBlank { unset },
+                            preset.duration.ifBlank { unset },
+                        )
+                    }
+                    ManualPresetRow(
+                        preset = preset,
+                        name = ManualStore.displayName(context, preset),
+                        summary = summary,
+                        selected = preset.id == selectedManualId,
+                        expanded = preset.id in expandedManualIds,
+                        onSelect = { onManualSelect(preset.id) },
+                        onToggle = { onManualToggle(preset.id) },
+                        onRename = { onManualRename(preset.id) },
+                        onDelete = { onManualDelete(preset.id) },
                     )
-                    NumberField(
-                        value = swipeY1, onValueChange = onSwipeY1Change,
-                        hintRes = R.string.start_y, tag = "inputSwipeY1",
-                        modifier = Modifier.weight(1f).padding(start = 4.dp),
-                    )
+                    AnimatedVisibility(
+                        visible = preset.id in expandedManualIds,
+                        enter = expandVertically(animationSpec = tween(400, easing = ExpandEasing)),
+                        exit = shrinkVertically(animationSpec = tween(300, easing = CollapseEasing)),
+                    ) {
+                        ManualPresetPanel(
+                            draft = draft,
+                            canUndo = (manualUndoCounts[preset.id] ?: 0) > 0,
+                            canRedo = (manualRedoCounts[preset.id] ?: 0) > 0,
+                            dirty = manualDrafts.containsKey(preset.id),
+                            onField = { field, value -> onManualField(preset.id, field, value) },
+                            onUndo = { onManualUndo(preset.id) },
+                            onRedo = { onManualRedo(preset.id) },
+                            onSave = { onManualSave(preset.id) },
+                            onCancel = { onManualCancel(preset.id) },
+                        )
+                    }
                 }
-                ParamLabel(R.string.end_point, topMargin = 8.dp)
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                    NumberField(
-                        value = swipeX2, onValueChange = onSwipeX2Change,
-                        hintRes = R.string.end_x, tag = "inputSwipeX2",
-                        modifier = Modifier.weight(1f).padding(end = 4.dp),
-                    )
-                    NumberField(
-                        value = swipeY2, onValueChange = onSwipeY2Change,
-                        hintRes = R.string.end_y, tag = "inputSwipeY2",
-                        modifier = Modifier.weight(1f).padding(start = 4.dp),
-                    )
-                }
-                ParamLabel(R.string.duration, topMargin = 8.dp)
-                PlatformField(
-                    value = swipeDuration,
-                    onValueChange = onSwipeDurationChange,
-                    hintRes = R.string.swipe_duration,
-                    tag = "inputSwipeDuration",
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                if (manualPresets.isNotEmpty()) GestureDivider()
+                GestureAddRow(
+                    labelRes = R.string.add_preset,
+                    tag = "manual_add",
+                    enabled = true,
+                    onClick = onManualAdd,
                 )
             }
         }
@@ -475,24 +548,324 @@ private fun ColumnScope.SwipeParamsSection(
                     fadeOut(animationSpec = tween(250, easing = CollapseEasing)),
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                if (recordedVisible) {
-                    ClickText(
-                        text = recordedStatus,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.testTag("lblRecordedStatus"),
+                val context = LocalContext.current
+                gesturePresets.forEachIndexed { index, preset ->
+                    // 预设之间用分割线隔开（与设置页的应用背景预设一致）
+                    if (index > 0) GestureDivider()
+                    GesturePresetRow(
+                        preset = preset,
+                        name = GestureStore.displayName(context, preset),
+                        selected = preset.id == selectedGestureId,
+                        onSelect = { onGestureSelect(preset.id) },
+                        onRename = { onGestureRename(preset.id) },
+                        onDelete = { onGestureDelete(preset.id) },
                     )
                 }
-                Button(
-                    onClick = onRecord,
+                // 有预设时，最后一条下面也来一条：把列表和「添加手势」分开
+                if (gesturePresets.isNotEmpty()) GestureDivider()
+                GestureAddRow(
+                    labelRes = R.string.add_gesture,
+                    tag = "gesture_add",
                     enabled = canRecord,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .testTag("btnRecordGesture"),
-                ) { ButtonLabel(R.string.record_gesture) }
+                    onClick = onAddGesture,
+                )
             }
         }
+    }
+}
+
+/**
+ * 手动参数预设行：[◉] [预设名 / 参数摘要] … [▾] [✏️] [🗑]
+ *
+ * 与设置页「应用背景」预设行同款：点 ▾ 在行下面展开二级面板
+ *（那条预设的 5 个输入框 + 撤销/重做/保存/取消）。点名字也是展开（和设置页一致）。
+ */
+@Composable
+private fun ManualPresetRow(
+    preset: ManualStore.Preset,
+    name: String,
+    summary: String,
+    selected: Boolean,
+    expanded: Boolean,
+    onSelect: () -> Unit,
+    onToggle: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(200, easing = LinearEasing),
+        label = "manualArrow",
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            modifier = Modifier.testTag("manual_radio_${preset.id}"),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                // 点名字展开面板（「默认」那种不能展开的情况这里不存在，每条都能编辑）
+                .clickable(onClick = onToggle)
+                .padding(vertical = 8.dp)
+                .testTag("manual_name_${preset.id}"),
+        ) {
+            ClickText(name, 16.sp, MaterialTheme.colorScheme.onSurface)
+            ClickText(
+                text = summary,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp).testTag("manual_info_${preset.id}"),
+            )
+        }
+        RowIconBox(
+            R.drawable.ic_expand_more, "manual_arrow_${preset.id}",
+            Modifier.rotate(arrowRotation), onToggle,
+        )
+        RowIconBox(R.drawable.ic_edit, "manual_rename_${preset.id}", Modifier, onRename)
+        RowIconBox(R.drawable.ic_delete, "manual_delete_${preset.id}", Modifier, onDelete)
+    }
+}
+
+/**
+ * 手动参数预设的二级面板：5 个输入框 + 底部「撤销 / 重做 / 保存 / 取消」。
+ * [draft] 是内存里的编辑副本；没点保存前不影响已存的值。
+ */
+@Composable
+private fun ManualPresetPanel(
+    draft: ManualStore.Preset,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    dirty: Boolean,
+    onField: (Int, String) -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        ParamLabel(R.string.start_point)
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            NumberField(
+                value = draft.x1, onValueChange = { onField(0, it) },
+                hintRes = R.string.start_x, tag = "inputSwipeX1",
+                modifier = Modifier.weight(1f).padding(end = 4.dp),
+            )
+            NumberField(
+                value = draft.y1, onValueChange = { onField(1, it) },
+                hintRes = R.string.start_y, tag = "inputSwipeY1",
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+            )
+        }
+        ParamLabel(R.string.end_point, topMargin = 8.dp)
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            NumberField(
+                value = draft.x2, onValueChange = { onField(2, it) },
+                hintRes = R.string.end_x, tag = "inputSwipeX2",
+                modifier = Modifier.weight(1f).padding(end = 4.dp),
+            )
+            NumberField(
+                value = draft.y2, onValueChange = { onField(3, it) },
+                hintRes = R.string.end_y, tag = "inputSwipeY2",
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+            )
+        }
+        ParamLabel(R.string.duration, topMargin = 8.dp)
+        PlatformField(
+            value = draft.duration,
+            onValueChange = { onField(4, it) },
+            hintRes = R.string.swipe_duration,
+            tag = "inputSwipeDuration",
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
+        // 底部按钮：左边「撤销 / 重做」，右边「取消 / 保存」，中间空一段（弹窗那种纯文字按钮）
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            ManualActionButton(R.string.undo, "manual_undo", canUndo, onUndo)
+            ManualActionButton(R.string.redo, "manual_redo", canRedo, onRedo)
+            Spacer(modifier = Modifier.weight(1f))
+            ManualActionButton(R.string.cancel, "manual_cancel", dirty, onCancel)
+            ManualActionButton(R.string.save, "manual_save", dirty, onSave)
+        }
+    }
+}
+
+/** 面板底部的纯文字按钮：与弹窗里的「取消 / 确定」同款（无底色无描边，主色文字，禁用时 38% 透明） */
+@Composable
+private fun ManualActionButton(
+    labelRes: Int,
+    tag: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.testTag(tag),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        ClickText(
+            text = stringResource(labelRes),
+            fontSize = 15.sp,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            },
+        )
+    }
+}
+
+/** 行尾图标按钮：40dp 可点区域，图标 24dp、颜色 onSurfaceVariant（与设置页 RowIcon 同款） */
+@Composable
+private fun RowIconBox(
+    iconRes: Int,
+    tag: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+/** 1dp 分隔线，颜色 colorOutlineVariant（与设置页 InnerDivider 一致） */
+@Composable
+private fun GestureDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant),
+    )
+}
+
+/**
+ * 手势预设行：[◉] [手势名] … [12 个点 · 850 毫秒] [✏️] [🗑]
+ *
+ * 没有二级菜单：行下面不展开任何面板，点数/毫秒直接摆在这两个按钮左边；
+ * 点圆圈和点名字都是选中（与设置页的应用背景预设同一套交互）。
+ */
+@Composable
+private fun GesturePresetRow(
+    preset: GestureStore.Preset,
+    name: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            modifier = Modifier.testTag("gesture_radio_${preset.id}"),
+        )
+        ClickText(
+            text = name,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onSelect)
+                .padding(vertical = 12.dp)
+                .testTag("gesture_name_${preset.id}"),
+        )
+        ClickText(
+            text = stringResource(
+                R.string.gesture_points_duration,
+                preset.points.size,
+                preset.totalDuration,
+            ),
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag("gesture_info_${preset.id}"),
+        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onRename)
+                .testTag("gesture_rename_${preset.id}"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_edit),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onDelete)
+                .testTag("gesture_delete_${preset.id}"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_delete),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+/** 「＋ 添加…」行：与设置页「添加预设」同款（主色加号 + 主色文字） */
+@Composable
+private fun GestureAddRow(
+    labelRes: Int,
+    tag: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val tint = if (enabled) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_add),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(tint),
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        ClickText(
+            text = stringResource(labelRes),
+            fontSize = 16.sp,
+            color = tint,
+        )
     }
 }
 

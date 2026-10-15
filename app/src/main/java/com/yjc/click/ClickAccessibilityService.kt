@@ -5,6 +5,7 @@ import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.RectF
+import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import kotlin.coroutines.resume
@@ -62,6 +63,81 @@ class ClickAccessibilityService : AccessibilityService() {
     /** 回放录制路径并等待手势结束 */
     suspend fun dispatchGesturePathAndAwait(path: Path, duration: Long): Boolean =
         dispatchGestureAndAwait(path, duration)
+
+    /**
+     * 一次派发多根手指（多指并发），并等待整批手势结束。
+     *
+     * 每个元素是（路径, 起始时间 ms, 时长 ms）。程序执行引擎在同一个聚合窗口里
+     * 攒到多条支线的动作时，会把它们合成一次调用，于是多根手指同时按在各自的位置上。
+     *
+     * 与 [dispatchGesturePathAndAwait] 的区别只在于这里可以带多 stroke：
+     * 只有 1 条 stroke 时仍然可以走本方法，回调语义完全一样。
+     *
+     * @return 手势正常完成返回 true；被取消、参数非法或无法派发返回 false
+     */
+    suspend fun dispatchStrokesAndAwait(strokes: List<Triple<Path, Long, Long>>): Boolean {
+        if (strokes.isEmpty()) return false
+        val builder = GestureDescription.Builder()
+        var added = 0
+        for ((path, startTime, duration) in strokes) {
+            if (added >= GestureDescription.getMaxStrokeCount()) {
+                Log.w(TAG, "too many strokes, dropping the rest")
+                break
+            }
+            val stroke = buildStroke(path, startTime, duration) ?: continue
+            builder.addStroke(stroke)
+            added++
+        }
+        if (added == 0) return false
+        return dispatchDescriptionAndAwait(builder.build())
+    }
+
+    /** 派发一条已经组装好的手势描述并等回调；失败/被取消返回 false。 */
+    private suspend fun dispatchDescriptionAndAwait(
+        description: GestureDescription
+    ): Boolean = suspendCancellableCoroutine { continuation ->
+        val dispatched = try {
+            dispatchGesture(
+                description,
+                object : GestureResultCallback() {
+                    override fun onCompleted(gestureDescription: GestureDescription?) {
+                        if (continuation.isActive) continuation.resume(true)
+                    }
+
+                    override fun onCancelled(gestureDescription: GestureDescription?) {
+                        if (continuation.isActive) continuation.resume(false)
+                    }
+                },
+                null
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "dispatchGesture threw", e)
+            false
+        }
+        if (!dispatched && continuation.isActive) continuation.resume(false)
+    }
+
+    /**
+     * 多指笔画：在 [buildStroke] 的兜底之上，把起始时间也限制进合法区间。
+     * 起始时间加上时长不能超过 [GestureDescription.getMaxGestureDuration]，
+     * 否则 GestureDescription.build() 会抛异常。
+     */
+    private fun buildStroke(
+        path: Path,
+        startTime: Long,
+        duration: Long
+    ): GestureDescription.StrokeDescription? {
+        val maxDuration = GestureDescription.getMaxGestureDuration()
+        val safeStart = startTime.coerceIn(0L, (maxDuration - 1L).coerceAtLeast(0L))
+        val safeDuration = duration.coerceIn(1L, (maxDuration - safeStart).coerceAtLeast(1L))
+        val bounds = RectF()
+        path.computeBounds(bounds, false)
+        if (bounds.left < 0f || bounds.top < 0f) {
+            Log.e(TAG, "Multi stroke path bounds negative, skipping: $bounds")
+            return null
+        }
+        return GestureDescription.StrokeDescription(path, safeStart, safeDuration)
+    }
 
     private suspend fun dispatchGestureAndAwait(path: Path, duration: Long): Boolean =
         suspendCancellableCoroutine { continuation ->

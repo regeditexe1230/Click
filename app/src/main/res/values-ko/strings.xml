@@ -9,7 +9,18 @@
     <string name="notification_running">실행 중</string>
     <string name="notification_idle">플로팅 볼을 탭하여 실행</string>
     <string name="notification_title">플로팅 볼 실행 중</string>
+    <string name="notification_click_service_running">Click 서비스 실행 중</string>
+    <string name="notification_preparing_recording">제스처 녹화 준비 중 — 탭하면 Click으로 돌아갑니다</string>
     <string name="notification_action_stop">중지</string>
+
+    <!-- 제스처 녹화 알림 ('제스처 추가' 시 따로 표시되는 높은 우선순위 알림) -->
+    <string name="record_notification_channel_name">제스처 녹화</string>
+    <string name="record_notification_title">탭하여 녹화 시작</string>
+    <string name="record_notification_text_pending">대상 앱으로 전환한 뒤 이 알림을 탭하고 손가락으로 스와이프하세요</string>
+    <string name="record_notification_title_recording">제스처 녹화 중</string>
+    <string name="record_notification_text_recording">손을 떼면 종료되고 Click으로 돌아옵니다</string>
+    <string name="notification_action_cancel">취소</string>
+    <string name="recording_overlay_hint">화면을 손가락으로 밀어 제스처를 녹화하세요\n다 되면 손을 떼면 됩니다</string>
 
     <!-- 토스트 메시지 -->
     <string name="toast_drag_to_position">먼저 플로팅 볼을 클릭 위치로 드래그하세요</string>
@@ -23,7 +34,19 @@
     <string name="toast_need_accessibility_for_record">제스처 녹화에는 접근성 서비스가 필요합니다</string>
     <string name="toast_need_accessibility">실행하려면 접근성 서비스가 필요합니다</string>
     <string name="toast_accessibility_revoked">접근성 서비스가 꺼져 실행을 중지했습니다</string>
-    <string name="toast_swipe_to_record">화면을 스와이프하여 제스처 녹화</string>
+    <string name="toast_record_switch_to_app">녹화 알림을 보냈습니다. 대상 앱으로 전환해 알림을 탭하세요</string>
+    <string name="notification_permission_title">알림 권한이 필요합니다</string>
+    <string name="notification_permission_message">제스처 녹화는 알림에서 시작됩니다. 제스처 추가를 누르면 알림이 표시되고, 대상 앱으로 전환해 그 알림을 누르면 녹화가 시작됩니다.\n\n녹화를 사용하려면 Click의 알림을 허용해 주세요.</string>
+    <string name="notification_permission_confirm">설정 열기</string>
+    <string name="notification_heads_up_title">헤드업 알림 켜기</string>
+    <string name="notification_heads_up_message">제스처 녹화 알림이 지금 무음으로 설정되어 있습니다. 대상 앱으로 전환해도 녹화 안내가 화면에 뜨지 않아 녹화 시작 방법을 찾기 어렵습니다.\n\n알림 설정에서 이 알림을 헤드업(배너)으로 바꿔 주세요.</string>
+    <string name="notification_heads_up_confirm">설정 열기</string>
+    <string name="dialog_dont_ask_again">다시 묻지 않기</string>
+    <string name="back_popup_title">백그라운드 팝업 권한이 필요합니다</string>
+    <string name="back_popup_message">지난번 녹화 후 Click이 자동으로 앞으로 돌아오지 못했습니다. 시스템의 백그라운드 팝업 권한이 막고 있습니다.\n\n권한 관리 → 기타 권한에서 백그라운드 팝업을 항상 허용으로 설정하면 녹화 후 자동으로 Click으로 돌아옵니다.</string>
+    <string name="back_popup_confirm">설정 열기</string>
+    <string name="toast_record_too_short">제스처가 너무 짧아 저장하지 않았습니다</string>
+    <string name="toast_record_timeout">녹화 시간이 초과되었습니다</string>
     <string name="toast_floating_started">플로팅 볼이 시작되었습니다</string>
 
     <!-- 상태 텍스트 -->
@@ -31,8 +54,6 @@
     <string name="status_overlay">오버레이: %s</string>
     <string name="status_enabled">✅ 활성</string>
     <string name="status_disabled">❌ 비활성</string>
-    <string name="status_gesture_recorded">제스처 녹화됨: %d포인트, %dms</string>
-    <string name="status_gesture_not_recorded">제스처 미녹화</string>
 
     <!-- 대화상자 -->
     <string name="accessibility_service_description">화면 클릭 및 스와이프 작업을 위한 시뮬레이션 지원 서비스</string>
@@ -61,8 +82,6 @@
     <string name="end_y">종료 Y (세로 좌표)</string>
     <string name="swipe_duration">스와이프 시간(밀리초)</string>
 
-    <string name="record_gesture">제스처 녹화 (화면에서 스와이프)</string>
-    <string name="recording_overlay_hint">화면을 손가락으로 쓸어 제스처를 녹화하세요\n손을 떼면 완료됩니다</string>
     <string name="floating_ball_content_description">플로팅 볼</string>
 
     <string name="execution_settings">실행 설정</string>
@@ -75,17 +94,13 @@
     <string name="start_floating_ball">플로팅 시작</string>
     <string name="stop_floating_ball">플로팅 중지</string>
 
-    <string name="program_page">프로그램</string>
-    <string name="under_development">이 페이지는 개발 중입니다...</string>
 
-    <string name="settings">설정</string>
     <string name="text_section">텍스트</string>
     <string name="language">언어</string>
     <string name="change_app_language">앱 언어 변경</string>
     <string name="follow_system">시스템 따르기</string>
     <string name="font">글꼴</string>
     <string name="change_app_font">앱 글꼴 변경</string>
-    <string name="default_font">기본</string>
     <string name="personalization_section">개인 설정</string>
     <string name="color_scheme">색 구성표</string>
     <string name="color_scheme_desc">다크 모드, 라이트 모드 또는 시스템 따르기</string>
@@ -95,7 +110,6 @@
     <string name="color_desc">앱 테마 색상 변경</string>
     <string name="dynamic_color">다이나믹 컬러</string>
     <string name="dynamic_color_desc">시스템 배경화면에서 색상 적용</string>
-    <string name="theme_color">테마 색상</string>
     <string name="color_purple">보라색</string>
     <string name="color_blue">파란색</string>
     <string name="color_red">빨간색</string>
@@ -112,10 +126,23 @@
     <string name="delete_preset_confirm">\"%s\"을(를) 삭제할까요?</string>
     <string name="add_image">이미지 추가</string>
     <string name="remove_image">이미지 삭제</string>
+
+    <string name="add_gesture">제스처 추가</string>
+    <string name="gesture_name">제스처 %1$s</string>
+    <string name="gesture_points_duration">%1$d포인트 · %2$d ms</string>
+    <string name="delete_gesture">제스처 삭제</string>
+    <string name="delete_gesture_confirm">\"%1$s\"을(를) 삭제할까요?</string>
+    <string name="rename_gesture">제스처 이름 변경</string>
+    <string name="rename_preset">프리셋 이름 변경</string>
+    <string name="rename_field">이름</string>
+    <string name="manual_preset_summary">(%1$s,%2$s) → (%3$s,%4$s) · %5$s ms</string>
+    <string name="manual_preset_unset">설정 안 됨</string>
+    <string name="save">저장</string>
+    <string name="undo">실행 취소</string>
+    <string name="redo">다시 실행</string>
     <string name="image_alpha">이미지 투명도</string>
     <string name="image_scrim_light">흰색 오버레이</string>
     <string name="image_scrim_dark">검은색 오버레이</string>
-    <string name="image_invalid">유효한 이미지 파일이 아닙니다</string>
     <string name="image_read_error">이미지 파일을 읽을 수 없습니다</string>
 
     <string name="update_section">업데이트</string>
@@ -158,7 +185,7 @@
     <string name="security_warning">보안 경고</string>
     <string name="security_warning_message">이 앱이 GitHub에서 다운로드된 것인지 확인하세요. 다른 곳에서 다운로드한 앱에는 악성 코드가 포함되어 있을 수 있습니다. 접근성 권한 부여에 주의하세요.</string>
     <string name="usage_instructions">사용 방법</string>
-    <string name="usage_instructions_message">첫 사용:\n\n1. 상단의 두 버튼을 눌러 접근성 서비스와 오버레이 권한을 활성화하세요 (Android 보안 정책상 앱 재시작 시 접근성 권한을 다시 인증해야 합니다)\n\n2. 모드 선택: 클릭 또는 스와이프\n\n3. 클릭 모드: 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)\n\n4. 스와이프 모드: 제스처 녹화 (화면 스와이프) 또는 수동 매개변수 (시작/종료 좌표 입력) → 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)</string>
+    <string name="usage_instructions_message">첫 사용:\n\n1. 상단의 두 버튼을 눌러 접근성 서비스와 오버레이 권한을 활성화하세요 (Android 보안 정책상 앱 재시작 시 접근성 권한을 다시 인증해야 합니다)\n\n2. 모드 선택: 클릭 또는 스와이프, \'프리셋 추가\'를 눌러 설정을 시작할 수 있습니다\n\n3. 클릭 모드: 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)\n\n4. 스와이프 모드: 제스처 녹화 (\'제스처 추가\'를 누르면 백그라운드로 이동하며 알림이 표시됩니다. 대상 앱으로 전환해 알림을 탭한 뒤 손가락으로 스와이프하고, 손을 떼면 종료되어 본 앱으로 돌아옵니다) 또는 수동 매개변수 (시작/종료 좌표 입력) → 지연 시간 설정 → 반복 횟수 설정 → 플로팅 볼 시작 (권한 부족 시 설정 페이지가 표시됩니다)</string>
     <string name="floating_ball_instructions">플로팅 볼 사용법</string>
     <string name="floating_ball_instructions_message">1. 작업을 실행할 앱으로 전환하세요\n\n2. 플로팅 볼을 길게 눌러 드래그하면 이동할 수 있습니다. 드래그 중에는 반투명되어 위치 지정이 쉽습니다\n\n3. 위치를 정한 후 플로팅 볼을 한 번 탭하면 작업을 시작합니다\n\n4. 더블 탭으로 일시정지합니다\n\n참고: 다른 앱에서 이 앱으로 전환하면 플로팅 볼이 자동으로 중지됩니다. 다시 시작 버튼을 탭하여 재개하세요.</string>
 
@@ -201,4 +228,99 @@
     <string name="licenses_third_party">서드파티 구성 요소</string>
     <!-- 라이선스 페이지의 뒤로 버튼 -->
     <string name="action_back">뒤로</string>
+    <string name="record_return_title">제스처 기록됨</string>
+    <string name="record_return_text">탭하여 Click으로 돌아가기</string>
+    <string name="toast_return_blocked">Click으로 자동 복귀하지 못했습니다: 시스템 설정에서 Click의 백그라운드 팝업을 허용하거나 알림을 탭하세요.</string>
+
+    <!-- 노드 그래프 편집기 -->
+    <string name="node_graph_untitled">이름 없는 프로그램</string>
+    <string name="node_graph_rename">이름 변경</string>
+    <string name="node_graph_undo">실행 취소</string>
+    <string name="node_graph_redo">다시 실행</string>
+    <string name="node_graph_copy">복사</string>
+    <string name="node_graph_paste">붙여넣기</string>
+    <string name="node_graph_delete">노드 삭제</string>
+    <string name="node_graph_delete_title">노드 삭제</string>
+    <string name="node_graph_delete_message">선택한 노드를 삭제할까요? 연결된 선도 함께 삭제됩니다.</string>
+    <string name="node_graph_delete_start_locked">시작 노드는 삭제할 수 없습니다</string>
+    <string name="node_graph_new_node">노드 추가</string>
+    <string name="node_graph_selected_count">%1$d개 노드 선택됨</string>
+    <string name="node_graph_hint_multi">드래그하면 함께 이동하고, 삭제하면 선택한 노드가 모두 사라집니다</string>
+    <string name="node_graph_param_title">매개변수</string>
+    <string name="node_graph_close">닫기</string>
+    <string name="node_graph_type_start">시작</string>
+    <string name="node_graph_type_click">클릭</string>
+    <string name="node_graph_type_swipe">스와이프</string>
+    <string name="node_graph_type_delay">지연</string>
+    <string name="node_graph_type_wait">대기</string>
+    <string name="node_graph_type_loop">반복</string>
+    <string name="node_graph_color">색상</string>
+    <string name="node_graph_repeat">반복 횟수</string>
+    <string name="node_graph_gesture_name">제스처 이름</string>
+    <string name="node_graph_action_point">동작 지점</string>
+    <string name="node_graph_pick_point">좌표 선택</string>
+    <string name="node_graph_point_x">X 좌표</string>
+    <string name="node_graph_point_y">Y 좌표</string>
+    <string name="node_graph_start_point">시작점</string>
+    <string name="node_graph_end_point">끝점</string>
+    <string name="node_graph_duration_ms">스와이프 시간(밀리초)</string>
+    <string name="node_graph_delay_ms">지연(밀리초)</string>
+    <string name="node_graph_wait_mode">대기 방식</string>
+    <string name="node_graph_wait_user">사용자가 공을 탭할 때까지</string>
+    <string name="node_graph_wait_time">지정한 시각까지</string>
+    <string name="node_graph_wait_until">시각</string>
+    <string name="node_graph_hour">시</string>
+    <string name="node_graph_minute">분</string>
+    <string name="node_graph_loop_target">되돌아갈 대상</string>
+    <string name="node_graph_loop_count">반복 횟수</string>
+    <string name="node_graph_loop_infinite">0 = 무한 반복</string>
+    <string name="node_graph_start_desc">프로그램은 여기에서 시작합니다</string>
+    <string name="node_graph_pick_click">한 번 탭하여 클릭 좌표를 선택</string>
+    <string name="node_graph_pick_swipe">스와이프하여 시작점과 끝점을 선택</string>
+    <string name="node_graph_step">%1$d단계</string>
+    <string name="node_graph_empty_hint">노드 오른쪽 동그라미를 빈 곳으로 끌면 새 노드가 생기고, 다른 노드로 끌면 연결됩니다</string>
+    <string name="node_graph_thumb_ms">%1$d ms</string>
+    <string name="node_graph_loop_infinite_short">무한</string>
+    <string name="node_graph_start_short">시작점</string>
+
+    <!-- 프로그램 실행 엔진 / 플로팅 볼 -->
+    <string name="program_notification_channel_name">프로그램 실행</string>
+    <string name="program_notification_title">프로그램 실행 중</string>
+    <string name="program_notification_text">단계 실행 중</string>
+    <string name="program_notification_idle">프로그램</string>
+    <string name="program_notification_idle_text">시작 대기</string>
+    <string name="program_toast_need_overlay">플로팅 볼을 표시하려면 오버레이 권한이 필요합니다</string>
+    <string name="program_toast_need_accessibility">프로그램을 실행하려면 접근성 서비스가 필요합니다</string>
+    <string name="program_toast_paused">일시중지했습니다. 볼을 두 번 탭하면 계속합니다</string>
+    <string name="program_toast_resumed">계속합니다</string>
+    <string name="program_toast_waiting">플로팅 볼을 탭하면 계속합니다</string>
+    <string name="program_toast_stopped">프로그램을 중지했습니다</string>
+    <string name="program_toast_not_found">프로그램을 찾을 수 없습니다</string>
+    <string name="program_toast_started">프로그램을 시작했습니다</string>
+    <string name="program_notify_step_start">시작</string>
+    <string name="program_notify_step_click">탭</string>
+    <string name="program_notify_step_swipe">스와이프</string>
+    <string name="program_notify_step_delay">지연</string>
+    <string name="program_notify_step_wait">대기</string>
+    <string name="program_notify_step_loop">반복</string>
+
+    <!-- 프로그램 목록 페이지 -->
+    <string name="program_new">프로그램 추가</string>
+    <string name="program_node_count">노드 %1$d개</string>
+    <string name="program_empty">아직 프로그램이 없습니다. 오른쪽 아래에서 추가하세요</string>
+    <string name="program_rename">이름 변경</string>
+    <string name="program_duplicate">복제</string>
+    <string name="program_delete">프로그램 삭제</string>
+    <string name="program_delete_confirm">「%1$s」을 삭제할까요? 되돌릴 수 없습니다.</string>
+    <string name="program_name_hint">프로그램 이름</string>
+    <string name="node_graph_run">실행</string>
+    <string name="node_graph_stop">중지</string>
+    <string name="program_default_name">프로그램 %1$d</string>
+    <string name="program_copy_suffix">%1$s 복사본</string>
+    <string name="edge_error_no_source">시작 노드가 없습니다</string>
+    <string name="edge_error_no_target">대상 노드가 없습니다</string>
+    <string name="edge_error_self">자기 자신에는 연결할 수 없습니다</string>
+    <string name="edge_error_to_start">시작 노드에는 연결할 수 없습니다</string>
+    <string name="edge_error_duplicate">이 두 노드는 이미 연결되어 있습니다</string>
+    <string name="edge_error_loop_single_out">루프 노드는 출력선을 하나만 가질 수 있습니다</string>
 </resources>

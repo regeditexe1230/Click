@@ -21,6 +21,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,14 +55,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -71,6 +79,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import com.yjc.click.AppBackground
 import com.yjc.click.ImageLoader
 import com.yjc.click.R
@@ -79,6 +88,10 @@ import com.yjc.click.UpdateStore
 import com.yjc.click.ui.UpdateDialog
 import com.yjc.click.ui.licenses.LicensesPage
 import com.yjc.click.ui.licenses.LicensesPageContent
+import com.yjc.click.ui.program.LocalProgramFlip
+import com.yjc.click.ui.program.ProgramFlipOverlay
+import com.yjc.click.ui.program.ProgramFlipState
+import com.yjc.click.ui.program.programListTurnstile
 import com.yjc.click.ui.theme.AppTheme
 import com.yjc.click.ui.theme.ClickText
 import com.yjc.click.ui.theme.PlatformEasing
@@ -91,6 +104,14 @@ enum class MainTab { HOME, PROGRAM, SETTINGS }
 
 /** 整页过渡用的缓动：cubic-bezier(0.2, 0, 0, 1)（进入快、收尾缓） */
 private val ExpandEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+/** 程序页磁贴翻转的时长：必须和 ProgramScreen.FLIP_MS 一致，两条栏才和 3D 动画同一条时间轴。 */
+/**
+ * 两条栏收起/放回的时长。
+ * WIN8 档（默认）进场是 367ms（PerfSpec：affected 位移 367ms delay 0），栏用同一个数才和卡片同步。
+ * FLIP 档是 600ms，要和 ProgramScreen.FLIP_MS 一致 —— 切回 FLIP 时这里也要改成 600。
+ */
+private const val BAR_FLIP_MS = 367
 
 /**
  * 应用外壳：旧 activity_main.xml（顶栏 + 页面 + BottomNavigationView）的 Compose 版本。
@@ -119,6 +140,9 @@ fun MainScaffold(
     homeContent: @Composable () -> Unit,
     programContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
+    promptContent: @Composable () -> Unit = {},
+    /** 程序页打开节点图时为 true：底栏一起收起，把整屏让给画布（含翻转放大动画）。 */
+    programFullScreen: Boolean = false,
 ) {
     val surface = MaterialTheme.colorScheme.surface
 
@@ -165,21 +189,77 @@ fun MainScaffold(
     //       底栏向下收起 380ms，把整屏让给许可页。
     // 返回：整体反向——外壳从左侧 10% 滑回 + 延迟 126ms 的 162ms 淡入，底栏 420ms 升回。
     val licensesVisible = LicensesPage.visible
+    // 程序页打开节点图时底栏也要收起：翻转放大的画布要铺满整屏
+    // 用户：3D 翻转动画和顶栏底栏动画要同步 —— 两条栏的翻转和高度收起都跟 ProgramScreen 的
+    // FLIP_MS 用同一条时间轴（600ms FastOutSlowInEasing），不再一个先动一个延迟 360ms。
+    val barFlipTop by animateFloatAsState(
+        targetValue = if (programFullScreen) 1f else 0f,
+        animationSpec = tween(BAR_FLIP_MS, easing = FastOutSlowInEasing),
+        label = "barFlipTop",
+    )
+    val barFlipBottom by animateFloatAsState(
+        targetValue = if (programFullScreen) 1f else 0f,
+        animationSpec = tween(BAR_FLIP_MS, easing = FastOutSlowInEasing),
+        label = "barFlipBottom",
+    )
+
     val shellSlide = remember { Animatable(if (licensesVisible) 1f else 0f) }
     val shellAlpha = remember { Animatable(if (licensesVisible) 0f else 1f) }
+    // 许可页那条（380/420ms，原样保留）
     val barRetract = remember { Animatable(if (licensesVisible) 1f else 0f) }
-    LaunchedEffect(licensesVisible) {
+    // 程序页翻转那条：单独一条，才能和 3D 翻转同为 600ms；两条取大值给底栏/顶栏做高度收起
+    val flipRetract = remember { Animatable(if (programFullScreen) 1f else 0f) }
+    LaunchedEffect(licensesVisible, programFullScreen) {
+        launch { shellSlide.animateTo(if (licensesVisible) 1f else 0f, tween(360, easing = ExpandEasing)) }
+        launch {
+            barRetract.animateTo(
+                if (licensesVisible) 1f else 0f,
+                tween(if (licensesVisible) 380 else 420, easing = FastOutSlowInEasing),
+            )
+        }
         if (licensesVisible) {
-            launch { shellSlide.animateTo(1f, tween(360, easing = ExpandEasing)) }
-            launch { barRetract.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
             shellAlpha.animateTo(0f, tween(126, easing = LinearEasing))
         } else {
-            launch { shellSlide.animateTo(0f, tween(360, easing = ExpandEasing)) }
-            launch { barRetract.animateTo(0f, tween(420, easing = FastOutSlowInEasing)) }
             delay(126)
             shellAlpha.animateTo(1f, tween(162, easing = LinearEasing))
         }
     }
+    LaunchedEffect(programFullScreen) {
+        flipRetract.animateTo(
+            if (programFullScreen) 1f else 0f,
+            tween(BAR_FLIP_MS, easing = FastOutSlowInEasing),
+        )
+    }
+    val retract = maxOf(barRetract.value, flipRetract.value)
+
+    // 翻转层是**窗口级**的：状态放在外壳这一层（在两条栏和页面之外），
+    // 由 MainScaffold 自己渲染成最上面的一层，程序页只负责驱动它。
+    // 这样顶栏底栏收起/展开引起的页面重排不会把翻转中的卡片带着一起动（实测会漂 224px），
+    // 节点图的揭示窗口也是整个窗口（3200）而不是页面那点高度（2528）。
+    val programFlip = remember { ProgramFlipState() }
+
+    /**
+     * 页面内容区自己的窗口位置。
+     * turnstile 的转轴给的是**窗口坐标**（屏幕左外侧 40px、屏幕中线），而变换是加在页面这一层上的，
+     * 图层局部坐标里得把这一层的左上角减掉，轴心才对得上。
+     */
+    var pageOrigin by remember { mutableStateOf(Offset.Zero) }
+
+    // 两条栏在动画期间**只做视觉收起，不改布局高度**：布局高度一动，整页就会重排，
+    // 列表里其它卡片会跟着上下移动 —— 而用户要的是「只有被点的那张卡片动」。
+    // 所以：视觉用的 retract 照旧一路跟着动画走，真正把高度收掉等动画放完（600ms + 40ms 余量）再做。
+    var barsCollapsed by remember { mutableStateOf(programFullScreen) }
+    LaunchedEffect(programFullScreen) {
+        if (programFullScreen) {
+            delay(BAR_FLIP_MS.toLong() + 40L)
+            barsCollapsed = true
+        } else {
+            barsCollapsed = false
+        }
+    }
+    // 只有许可页那条（barRetract）才允许立刻动布局高度。程序页那 600ms 里 layoutRetract 必须保持 0，
+    // 否则页面照样重排（实测：起飞 1 秒后列表已经被顶上去 12px，再往后就是原来那 224px）。
+    val layoutRetract = maxOf(barRetract.value, if (barsCollapsed) 1f else 0f)
 
     // 应用背景：选中预设里的图 + 两个透明度（整屏铺满，顶栏/底栏压在上面）
     val backgroundPath = AppBackground.imagePath
@@ -198,7 +278,14 @@ fun MainScaffold(
     val updateContext = LocalContext.current
     val updateScope = rememberCoroutineScope()
 
-    Box(modifier = Modifier.fillMaxSize().background(surface)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(surface)
+            // turnstile 的转轴在「屏幕中线」、透视系数要乘屏宽，所以窗口尺寸得先交给翻转状态：
+            // 动画一起步就能算，不用等覆盖层第一次测量（否则第一帧算不出来会闪一下）
+            .onSizeChanged { programFlip.window = it },
+    ) {
         if (backgroundImage != null) {
             Image(
                 bitmap = backgroundImage,
@@ -231,10 +318,15 @@ fun MainScaffold(
                 .imePadding(),
         ) {
             TopBar(
+                flip = barFlipTop,
                 title = displayedTitle,
                 alpha = titleAlpha.value,
                 surface = surface,
                 barAlpha = barAlpha,
+                // 程序页翻出去 / 节点图期间顶栏跟着底栏一起收起（同样收高度 + 上移）
+                retract = retract,
+                // 布局高度要等动画放完再收（动画期间只做视觉收起）—— 见 barsCollapsed
+                layoutRetract = layoutRetract,
                 // 许可页打开时顶栏跟着页面一起左移 + 淡出
                 modifier = Modifier.graphicsLayer {
                     translationX = -0.1f * size.width * shellSlide.value
@@ -246,11 +338,19 @@ fun MainScaffold(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    // 用户：3D 翻转动画要压在顶栏底栏上面。Column 里后画的盖先画的，底栏本来就画在页面之后，
+                    // 所以这里给页面抬一层：翻转中的卡片从两条栏上面飞过去，而不是被底栏压住
+                    .zIndex(1f)
                     // 许可页打开时页面左移 10% + 淡出（底栏单独做向下收起）
                     .graphicsLayer {
                         translationX = -0.1f * size.width * shellSlide.value
                         alpha = shellAlpha.value
-                    },
+                    }
+                    // turnstile 档：打开节点图时整页跟着图页一起转（列表页 0° → −50°，128ms），
+                    // 轴心在窗口坐标里，所以先把这一层自己的窗口左上角量出来交给它换算。
+                    // 角度为 0（其他档 / 静止态）时这一层什么都不做，点击命中和没有它一样。
+                    .onGloballyPositioned { pageOrigin = it.boundsInRoot().topLeft }
+                    .programListTurnstile(programFlip, pageOrigin.x, pageOrigin.y),
             ) {
                 SettingsHost(
                     visible = selectedTab == MainTab.SETTINGS,
@@ -278,7 +378,12 @@ fun MainScaffold(
                     when (tab) {
                         // 页面本身不画底色：应用背景图要能透出来（没设图时下层外壳的 surface 同色）
                         MainTab.HOME -> Box(Modifier.fillMaxSize()) { homeContent() }
-                        MainTab.PROGRAM -> Box(Modifier.fillMaxSize()) { programContent() }
+                        MainTab.PROGRAM -> Box(Modifier.fillMaxSize()) {
+                            // 程序页不自己画翻转层：它驱动 programFlip，画的是最外层那个 ProgramFlipOverlay
+                            CompositionLocalProvider(LocalProgramFlip provides programFlip) {
+                                programContent()
+                            }
+                        }
                         // 设置页由常驻的 Fragment 宿主呈现（避免重复创建 Fragment）
                         MainTab.SETTINGS -> Box(Modifier.fillMaxSize())
                     }
@@ -286,12 +391,16 @@ fun MainScaffold(
             }
 
             BottomBar(
+
+                flip = barFlipBottom,
                 selectedTab = selectedTab,
                 onSelectTab = onSelectTab,
                 surface = surface,
                 barAlpha = barAlpha,
                 translationY = with(LocalDensity.current) { (entrance.value * 80.dp.toPx()).toInt() },
-                retract = barRetract.value,
+                retract = retract,
+                // 同上：布局高度等动画放完再收
+                layoutRetract = layoutRetract,
             )
         }
 
@@ -348,6 +457,14 @@ fun MainScaffold(
                 onLater = { UpdateStore.dismissDialog() },
             )
         }
+
+        // 说明类弹窗（通知权限 / 悬浮通知 / 后台弹出界面）：和更新弹窗同一套 Compose 样式
+        promptContent()
+
+        // ---- 窗口级翻转动画层 ----
+        // 画在最上面（两条栏、页面、弹窗之后），所以「只有被点的那张卡片动、图从卡片里长出来」
+        // 这件事完全不受页面重排影响：这里在动画期间一动不动。
+        ProgramFlipOverlay(programFlip)
     }
 }
 
@@ -403,14 +520,32 @@ private fun TopBar(
     alpha: Float,
     surface: Color,
     barAlpha: Float = 1f,
+    retract: Float = 0f,
+    layoutRetract: Float = retract,   // 布局高度用的收起量：动画期间保持 0，动画放完才收（避免页面重排）
+    flip: Float = 0f,   // 用户：顶栏底栏也要翻
     modifier: Modifier = Modifier,
 ) {
+    // 和底栏一样：收起时必须把高度也压到 0，只做 translationY 会在顶上留一条空档。
+    // 但**状态栏那一条要留着**：全压掉的话下面的内容会顶到状态栏里。
+    val statusInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            // 展开时保持原来的 96dp（顶栏本来就含状态栏那一条，多补会把页面顶下去），
+            // 收起时才留下状态栏的高度
+            .height((96.dp * (1f - layoutRetract.coerceIn(0f, 1f))).coerceAtLeast(statusInset))
+            .clipToBounds(),
+    ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(96.dp)
             // 有背景图时这里是半透明的（不透明度跟黑色遮罩联动），图从状态栏一路透上来
             .background(surface.copy(alpha = barAlpha))
+            // 向上滑出自己的高度（含状态栏），和底栏同时开始、同时结束
+            // 用户：两条栏都要「从下面/上面伸缩」，不是从左边缘横扫过去 —— 改成绕水平轴往后倒：
+            // 顶栏以顶边为轴、下边缘往后翻（rotationX 负 = 栏体转离观察者），看起来是往屏幕上沿收进去
+            .graphicsLayer { translationY = -retract * 96.dp.toPx(); transformOrigin = TransformOrigin(0.5f, 0f); rotationX = -90f * flip }
             .then(modifier),
     ) {
         // 旧布局：96dp 容器内居中一个 MaterialToolbar（64dp，顶部再补状态栏 padding），
@@ -421,6 +556,7 @@ private fun TopBar(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 16.dp, top = 44.95.dp).alpha(alpha),
         )
+    }
     }
 }
 
@@ -435,46 +571,61 @@ private fun BottomBar(
     translationY: Int,
     barAlpha: Float = 1f,
     retract: Float = 0f,
+    layoutRetract: Float = retract,   // 布局高度用的收起量：动画期间保持 0，动画放完才收（避免页面重排）
+    flip: Float = 0f,   // 用户：顶栏底栏也要翻
 ) {
     // 旧版 BottomNavigationView 是带 3dp tonalElevation 的 Material 组件：
     // 实测底栏底色 = 表面色叠加 8% primary（浅色 [241,233,247]、深色 [35,32,43]），
     // 与页面背景（[254,247,255] / [20,18,24]）明显不同，这里按同一公式合成。
     // 有背景图时整条半透明（不透明度跟黑色遮罩联动），图从下面透出来。
     val barColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(surface)
-    Row(
+    // 收起时必须把高度也压到 0：只做 translationY 的话，底栏原来占的那条布局位置会留白
+    // （打开节点图时画布下方会露出一条底栏高的空档）
+    val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val fullHeight = 80.dp + navInset
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(barColor.copy(alpha = barAlpha))
-            .windowInsetsPadding(WindowInsets.navigationBars)
-            .height(80.dp)
-            .offsetY(translationY)
-            // 许可页打开时整条向下收起（滑出自己的高度，含系统导航栏内边距）
-            .graphicsLayer { this.translationY = retract * size.height },
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Start,
+            .height(fullHeight * (1f - layoutRetract.coerceIn(0f, 1f)))
+            .clipToBounds(),
     ) {
-        BottomBarItem(
-            label = stringResource(R.string.nav_home),
-            iconRes = R.drawable.animated_home_icon,
-            selected = selectedTab == MainTab.HOME,
-            modifier = Modifier.weight(1f).testTag("nav_home"),
-            onClick = { onSelectTab(MainTab.HOME) },
-        )
-        BottomBarItem(
-            label = stringResource(R.string.nav_program),
-            iconRes = R.drawable.ic_program,
-            selected = selectedTab == MainTab.PROGRAM,
-            modifier = Modifier.weight(1f).testTag("nav_program"),
-            popScale = selectedTab == MainTab.PROGRAM,
-            onClick = { onSelectTab(MainTab.PROGRAM) },
-        )
-        BottomBarItem(
-            label = stringResource(R.string.nav_settings),
-            iconRes = R.drawable.animated_settings_icon,
-            selected = selectedTab == MainTab.SETTINGS,
-            modifier = Modifier.weight(1f).testTag("nav_settings"),
-            onClick = { onSelectTab(MainTab.SETTINGS) },
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(barColor.copy(alpha = barAlpha))
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .height(80.dp)
+                .offsetY(translationY)
+                // 许可页/节点图打开时整条向下滑出自己的高度（含系统导航栏内边距）
+                // 用户：底栏要「从下面伸缩」—— 以底边为轴向后倒（rotationX 正 = 栏体转离观察者），
+                // 视觉上就是往下沿收进去，而不是原来绕左边缘横扫（那个看起来是从右边过来）
+                .graphicsLayer { this.translationY = retract * fullHeight.toPx(); transformOrigin = TransformOrigin(0.5f, 1f); rotationX = 90f * flip },
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            BottomBarItem(
+                label = stringResource(R.string.nav_home),
+                iconRes = R.drawable.animated_home_icon,
+                selected = selectedTab == MainTab.HOME,
+                modifier = Modifier.weight(1f).testTag("nav_home"),
+                onClick = { onSelectTab(MainTab.HOME) },
+            )
+            BottomBarItem(
+                label = stringResource(R.string.nav_program),
+                iconRes = R.drawable.ic_program,
+                selected = selectedTab == MainTab.PROGRAM,
+                modifier = Modifier.weight(1f).testTag("nav_program"),
+                popScale = selectedTab == MainTab.PROGRAM,
+                onClick = { onSelectTab(MainTab.PROGRAM) },
+            )
+            BottomBarItem(
+                label = stringResource(R.string.nav_settings),
+                iconRes = R.drawable.animated_settings_icon,
+                selected = selectedTab == MainTab.SETTINGS,
+                modifier = Modifier.weight(1f).testTag("nav_settings"),
+                onClick = { onSelectTab(MainTab.SETTINGS) },
+            )
+        }
     }
 }
 

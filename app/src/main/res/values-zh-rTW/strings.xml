@@ -9,7 +9,18 @@
     <string name="notification_running">執行中</string>
     <string name="notification_idle">點擊懸浮球執行操作</string>
     <string name="notification_title">懸浮球運行中</string>
+    <string name="notification_click_service_running">Click 服務執行中</string>
+    <string name="notification_preparing_recording">正在準備錄製手勢，點按回到 Click</string>
     <string name="notification_action_stop">停止</string>
+
+    <!-- 手勢錄製通知（點「新增手勢」後單獨發的高優先級通知） -->
+    <string name="record_notification_channel_name">手勢錄製</string>
+    <string name="record_notification_title">點此開始錄製手勢</string>
+    <string name="record_notification_text_pending">切到目標應用後點這則通知，再滑動手指</string>
+    <string name="record_notification_title_recording">正在錄製手勢</string>
+    <string name="record_notification_text_recording">鬆手即結束，隨後自動返回 Click</string>
+    <string name="notification_action_cancel">取消</string>
+    <string name="recording_overlay_hint">請在螢幕上滑動手指錄製手勢\n完成後鬆手即可</string>
 
     <!-- Toast訊息 -->
     <string name="toast_drag_to_position">請先拖動懸浮球設到點擊位置</string>
@@ -23,7 +34,20 @@
     <string name="toast_need_accessibility_for_record">需要無障礙服務才能錄製手勢</string>
     <string name="toast_need_accessibility">需要無障礙服務才能執行</string>
     <string name="toast_accessibility_revoked">無障礙服務已關閉，已停止執行</string>
-    <string name="toast_swipe_to_record">請在螢幕上滑動手指錄製手勢</string>
+    <string name="toast_record_switch_to_app">已發出錄製通知，切到目標應用後點它開始錄製</string>
+    <!-- 通知權限被拒時的說明框（點確定跳系統通知設定） -->
+    <string name="notification_permission_title">需要通知權限</string>
+    <string name="notification_permission_message">手勢錄製是靠一則通知啟動的：點「新增手勢」後會發出一則通知，你切到目標應用後點它才開始錄製。\n\n請允許 Click 傳送通知，否則錄製無法使用。</string>
+    <string name="notification_permission_confirm">去開啟</string>
+    <string name="notification_heads_up_title">開啟懸浮通知</string>
+    <string name="notification_heads_up_message">「手勢錄製」這則通知目前是靜默的：你切到目標應用後，錄製提示不會浮到螢幕上，會找不到開始錄製的入口。\n\n請到通知設定裡把這則通知改成「懸浮通知」（橫幅）。</string>
+    <string name="notification_heads_up_confirm">去開啟</string>
+    <string name="dialog_dont_ask_again">不再提醒</string>
+    <string name="back_popup_title">需要「背景彈出介面」權限</string>
+    <string name="back_popup_message">上次錄完手勢後，Click 沒能自己跳回前景 —— 被系統的「背景彈出介面」權限擋住了。\n\n請到「權限管理 → 其他權限」把「背景彈出介面」設為「永遠允許」，之後錄完就會自動回到 Click。</string>
+    <string name="back_popup_confirm">去開啟</string>
+    <string name="toast_record_too_short">手勢太短，未儲存</string>
+    <string name="toast_record_timeout">錄製逾時，已退出</string>
     <string name="toast_floating_started">懸浮球已啟動</string>
 
     <!-- 狀態文字 -->
@@ -31,8 +55,6 @@
     <string name="status_overlay">懸浮窗權限：%s</string>
     <string name="status_enabled">✅ 已開啟</string>
     <string name="status_disabled">❌ 未開啟</string>
-    <string name="status_gesture_recorded">已錄製手勢：%d個點，%dms</string>
-    <string name="status_gesture_not_recorded">尚未錄製手勢</string>
 
     <!-- 對話框 -->
     <string name="accessibility_service_description">螢幕點擊和滑動操作的模擬點擊輔助服務</string>
@@ -61,8 +83,6 @@
     <string name="end_y">終點 Y (縱向座標)</string>
     <string name="swipe_duration">滑動耗時(毫秒)</string>
 
-    <string name="record_gesture">錄製手勢 (在螢幕上滑動)</string>
-    <string name="recording_overlay_hint">請在螢幕上滑動手指錄製手勢\n完成後鬆手即可</string>
     <string name="floating_ball_content_description">懸浮球</string>
 
     <string name="execution_settings">執行設定</string>
@@ -75,17 +95,13 @@
     <string name="start_floating_ball">啟動懸浮球</string>
     <string name="stop_floating_ball">停止懸浮球</string>
 
-    <string name="program_page">程式</string>
-    <string name="under_development">此頁面正在開發中...</string>
 
-    <string name="settings">設定</string>
     <string name="text_section">文字</string>
     <string name="language">語言</string>
     <string name="change_app_language">變更應用語言</string>
     <string name="follow_system">跟隨系統</string>
     <string name="font">字型</string>
     <string name="change_app_font">變更應用字型</string>
-    <string name="default_font">預設</string>
     <string name="personalization_section">個人化</string>
     <string name="color_scheme">色彩配置</string>
     <string name="color_scheme_desc">深色模式、淺色模式或跟隨系統</string>
@@ -95,7 +111,6 @@
     <string name="color_desc">更改應用主題顏色</string>
     <string name="dynamic_color">動態取色</string>
     <string name="dynamic_color_desc">從系統主題應用動態配色</string>
-    <string name="theme_color">主題顏色</string>
     <string name="color_purple">紫色</string>
     <string name="color_blue">藍色</string>
     <string name="color_red">紅色</string>
@@ -112,10 +127,23 @@
     <string name="delete_preset_confirm">確定要刪除「%s」嗎？</string>
     <string name="add_image">新增圖片</string>
     <string name="remove_image">刪除圖片</string>
+
+    <string name="add_gesture">新增手勢</string>
+    <string name="gesture_name">手勢%1$s</string>
+    <string name="gesture_points_duration">%1$d 個點 · %2$d 毫秒</string>
+    <string name="delete_gesture">刪除手勢</string>
+    <string name="delete_gesture_confirm">確定要刪除「%1$s」嗎？</string>
+    <string name="rename_gesture">重新命名手勢</string>
+    <string name="rename_preset">重新命名預設</string>
+    <string name="rename_field">名稱</string>
+    <string name="manual_preset_summary">(%1$s,%2$s) → (%3$s,%4$s) · %5$s 毫秒</string>
+    <string name="manual_preset_unset">未設定</string>
+    <string name="save">儲存</string>
+    <string name="undo">復原</string>
+    <string name="redo">重做</string>
     <string name="image_alpha">圖片透明度</string>
     <string name="image_scrim_light">白色遮罩</string>
     <string name="image_scrim_dark">黑色遮罩</string>
-    <string name="image_invalid">不是有效的圖片檔</string>
     <string name="image_read_error">無法讀取圖片檔</string>
 
     <string name="update_section">更新</string>
@@ -158,7 +186,7 @@
     <string name="security_warning">安全警告</string>
     <string name="security_warning_message">請確認此軟體是從github下載獲得，從其他地方下載此軟體可能會含有惡意程式碼，請謹慎授予無障礙服務權限</string>
     <string name="usage_instructions">使用說明</string>
-    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（在螢幕滑動）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
+    <string name="usage_instructions_message">首次使用：\n\n1. 開啟無障礙服務和懸浮視窗權限，點擊軟體上方兩個按鈕即可跳轉設定頁（無障礙權限由於安卓安全機制每次重啟軟體需重新授權）\n\n2. 選擇滑動模式：點擊或滑動，然後點擊新增預設，即可開始設定\n\n3. 點擊模式：設定點擊延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）\n\n4. 滑動模式：手勢錄製（點「新增手勢」後退到背景並發出通知，切到目標應用後點通知開始錄製，滑動手指，鬆手即結束並自動返回本應用）或手動參數（填寫起點終點座標）→設定延遲→設定重複次數→啟動懸浮球（缺權限會彈出授權設定頁）</string>
     <string name="floating_ball_instructions">懸浮球使用說明</string>
     <string name="floating_ball_instructions_message">1.切到想執行操作的應用\n\n2.按住懸浮球拖動即可拖動懸浮球，可拖動到想執行操作的位置，拖動時懸浮球會半透明，以便定位\n\n3.拖動完畢後點擊一下懸浮球即可開始操作\n\n4.雙擊懸浮球可暫停操作\n\n注意：從一個應用切回本軟體時懸浮球會自動停止，恢復可以再點擊啟動懸浮球按鈕</string>
 
@@ -201,4 +229,99 @@
     <string name="licenses_third_party">第三方元件</string>
     <!-- 授權整頁的返回按鈕 -->
     <string name="action_back">返回</string>
+    <string name="record_return_title">手勢已錄製</string>
+    <string name="record_return_text">點此回到 Click</string>
+    <string name="toast_return_blocked">未能自動回到 Click：請在系統設定允許 Click「背景彈出介面」，或點通知回到 Click</string>
+
+    <!-- 節點圖編輯器 -->
+    <string name="node_graph_untitled">未命名程式</string>
+    <string name="node_graph_rename">重新命名</string>
+    <string name="node_graph_undo">復原</string>
+    <string name="node_graph_redo">重做</string>
+    <string name="node_graph_copy">複製</string>
+    <string name="node_graph_paste">貼上</string>
+    <string name="node_graph_delete">刪除節點</string>
+    <string name="node_graph_delete_title">刪除節點</string>
+    <string name="node_graph_delete_message">確定要刪除選取的節點嗎？相關連線會一併刪除。</string>
+    <string name="node_graph_delete_start_locked">開始節點不能刪除</string>
+    <string name="node_graph_new_node">新增節點</string>
+    <string name="node_graph_selected_count">已選 %1$d 個節點</string>
+    <string name="node_graph_hint_multi">拖動可整體移動，刪除會移除全部選取的節點</string>
+    <string name="node_graph_param_title">參數</string>
+    <string name="node_graph_close">關閉</string>
+    <string name="node_graph_type_start">開始</string>
+    <string name="node_graph_type_click">點擊</string>
+    <string name="node_graph_type_swipe">滑動</string>
+    <string name="node_graph_type_delay">延時</string>
+    <string name="node_graph_type_wait">等待</string>
+    <string name="node_graph_type_loop">迴圈</string>
+    <string name="node_graph_color">顏色</string>
+    <string name="node_graph_repeat">重複次數</string>
+    <string name="node_graph_gesture_name">手勢名稱</string>
+    <string name="node_graph_action_point">動作點</string>
+    <string name="node_graph_pick_point">取點</string>
+    <string name="node_graph_point_x">X 座標</string>
+    <string name="node_graph_point_y">Y 座標</string>
+    <string name="node_graph_start_point">起點</string>
+    <string name="node_graph_end_point">終點</string>
+    <string name="node_graph_duration_ms">滑動時長（毫秒）</string>
+    <string name="node_graph_delay_ms">延時（毫秒）</string>
+    <string name="node_graph_wait_mode">等待方式</string>
+    <string name="node_graph_wait_user">等使用者點球</string>
+    <string name="node_graph_wait_time">等到時刻</string>
+    <string name="node_graph_wait_until">時刻</string>
+    <string name="node_graph_hour">時</string>
+    <string name="node_graph_minute">分</string>
+    <string name="node_graph_loop_target">回跳目標</string>
+    <string name="node_graph_loop_count">迴圈次數</string>
+    <string name="node_graph_loop_infinite">0 = 無限迴圈</string>
+    <string name="node_graph_start_desc">程式從這裡開始</string>
+    <string name="node_graph_pick_click">點一下取點擊座標</string>
+    <string name="node_graph_pick_swipe">滑一下取滑動起終點</string>
+    <string name="node_graph_step">第 %1$d 步</string>
+    <string name="node_graph_empty_hint">拖動節點右側的圓點到空白處可以新增節點，拖到另一個節點上即可連線</string>
+    <string name="node_graph_thumb_ms">%1$d ms</string>
+    <string name="node_graph_loop_infinite_short">無限</string>
+    <string name="node_graph_start_short">起點</string>
+
+    <!-- 程式執行引擎 / 懸浮球 -->
+    <string name="program_notification_channel_name">程式執行</string>
+    <string name="program_notification_title">程式執行中</string>
+    <string name="program_notification_text">正在執行步驟</string>
+    <string name="program_notification_idle">程式</string>
+    <string name="program_notification_idle_text">等待開始</string>
+    <string name="program_toast_need_overlay">需要懸浮窗權限才能顯示懸浮球</string>
+    <string name="program_toast_need_accessibility">需要無障礙服務才能執行程式</string>
+    <string name="program_toast_paused">已暫停，雙擊懸浮球繼續</string>
+    <string name="program_toast_resumed">已繼續</string>
+    <string name="program_toast_waiting">等待你點擊懸浮球繼續</string>
+    <string name="program_toast_stopped">程式已停止</string>
+    <string name="program_toast_not_found">找不到這個程式</string>
+    <string name="program_toast_started">程式已開始</string>
+    <string name="program_notify_step_start">開始</string>
+    <string name="program_notify_step_click">點擊</string>
+    <string name="program_notify_step_swipe">滑動</string>
+    <string name="program_notify_step_delay">延時</string>
+    <string name="program_notify_step_wait">等待</string>
+    <string name="program_notify_step_loop">迴圈</string>
+
+    <!-- 程式列表頁 -->
+    <string name="program_new">新增程式</string>
+    <string name="program_node_count">%1$d 個節點</string>
+    <string name="program_empty">還沒有程式，點右下角新增</string>
+    <string name="program_rename">重新命名</string>
+    <string name="program_duplicate">複製</string>
+    <string name="program_delete">刪除程式</string>
+    <string name="program_delete_confirm">確定刪除「%1$s」嗎？刪除後無法復原。</string>
+    <string name="program_name_hint">程式名稱</string>
+    <string name="node_graph_run">執行</string>
+    <string name="node_graph_stop">停止</string>
+    <string name="program_default_name">程式 %1$d</string>
+    <string name="program_copy_suffix">%1$s 副本</string>
+    <string name="edge_error_no_source">起點不存在</string>
+    <string name="edge_error_no_target">終點不存在</string>
+    <string name="edge_error_self">不能連到自己</string>
+    <string name="edge_error_to_start">不能連到開始節點</string>
+    <string name="edge_error_duplicate">這兩個節點已經連過了</string>
+    <string name="edge_error_loop_single_out">迴圈節點只能有一條出線</string>
 </resources>

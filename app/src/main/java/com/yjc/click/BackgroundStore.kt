@@ -37,6 +37,8 @@ object BackgroundStore {
         val imagePath: String? = null,
         val imageAlpha: Int = DEFAULT_IMAGE_ALPHA,
         val scrimAlpha: Int = DEFAULT_SCRIM_ALPHA,
+        /** 用户重命名后的自定义名；空串 = 还没改名，用 [displayName] 的自动编号名 */
+        val name: String = "",
     ) {
         /** 内置「默认」预设：不可删除 */
         val isDefault: Boolean get() = id == DEFAULT_PRESET_ID
@@ -74,6 +76,7 @@ object BackgroundStore {
                     imagePath = path,
                     imageAlpha = obj.optInt("image_alpha", DEFAULT_IMAGE_ALPHA).coerceIn(0, 100),
                     scrimAlpha = obj.optInt("scrim_alpha", DEFAULT_SCRIM_ALPHA).coerceIn(0, 100),
+                    name = obj.optString("name").trim(),
                 ),
             )
         }
@@ -109,6 +112,7 @@ object BackgroundStore {
                 preset.imagePath?.let { put("image_path", it) }
                 put("image_alpha", preset.imageAlpha)
                 put("scrim_alpha", preset.scrimAlpha)
+                put("name", preset.name)
             })
         }
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -131,11 +135,13 @@ object BackgroundStore {
     }
 
     /**
-     * 预设显示名：内置「默认」用固定文案，其余是 `预设%1$s`，序号取自 [R.array.preset_numerals]
-     *（中文是「一、二、三…」，其它语言是「1、2、3…」；超出数组长度回落到阿拉伯数字）。
+     * 预设显示名：内置「默认」用固定文案；用户改过名就用自定义名；其余是 `预设%1$s`，
+     * 序号取自 [R.array.preset_numerals]（中文是「一、二、三…」，其它语言是「1、2、3…」；
+     * 超出数组长度回落到阿拉伯数字）。
      */
     fun displayName(context: Context, preset: Preset): String {
         if (preset.isDefault) return context.getString(R.string.preset_default)
+        preset.name.trim().takeIf { it.isNotEmpty() }?.let { return it }
         val numerals = context.resources.getStringArray(R.array.preset_numerals)
         val numeral = numerals.getOrNull(preset.seq - 1) ?: preset.seq.toString()
         return context.getString(R.string.preset_name, numeral)

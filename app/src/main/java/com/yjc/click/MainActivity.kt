@@ -18,8 +18,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontFamily
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.yjc.click.ui.BackPopupPromptDialog
+import com.yjc.click.ui.NotificationPermissionPromptDialog
+import com.yjc.click.ui.RecordingHeadsUpPromptDialog
 import com.yjc.click.ui.home.HomeScreen
 import com.yjc.click.ui.shell.MainScaffold
 import com.yjc.click.ui.shell.MainTab
@@ -28,10 +32,6 @@ import com.yjc.click.ui.theme.ClickTheme
 import com.yjc.click.ui.theme.ThemeReveal
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        var floatTutorialPending = false
-    }
 
     enum class PermissionStep { NONE, ACCESSIBILITY, OVERLAY }
     private var pendingPermissionStep = PermissionStep.NONE
@@ -49,22 +49,67 @@ class MainActivity : AppCompatActivity() {
     private var delayText by mutableStateOf("0")
     private var repeatText by mutableStateOf("1")
     private var infinite by mutableStateOf(false)
-    private var recordedStatus by mutableStateOf("")
-    private var recordedVisible by mutableStateOf(false)
+    private var gesturePresets by mutableStateOf<List<GestureStore.Preset>>(emptyList())
+    private var selectedGestureId by mutableStateOf<String?>(null)
+    private var manualPresets by mutableStateOf<List<ManualStore.Preset>>(emptyList())
+    private var selectedManualId by mutableStateOf<String?>(null)
+    // 二级面板的展开状态与「未保存的编辑」都只活在内存里：返回/切页都还在，退出 App 就没了
+    private var expandedManualIds by mutableStateOf<Set<String>>(emptySet())
+    private var manualDrafts by mutableStateOf<Map<String, ManualStore.Preset>>(emptyMap())
+    private var manualUndo by mutableStateOf<Map<String, List<ManualStore.Preset>>>(emptyMap())
+    private var manualRedo by mutableStateOf<Map<String, List<ManualStore.Preset>>>(emptyMap())
     private var canStart by mutableStateOf(false)
     private var showStartOverlay by mutableStateOf(false)
     private var canStop by mutableStateOf(false)
     private var canRecord by mutableStateOf(false)
     private var isWarningDialogShowing = false
-    private var notificationPermissionAsked = false
+    /**
+     * 是否已经向系统申请过一次通知权限。必须持久化：只有"申请过 + 系统不再允许弹框"
+     * 才能判定用户点过「拒绝且不再提示」，重启应用后依然要能判断出来。
+     */
+    private var notificationPermissionAsked: Boolean
+        get() = getPreferences(Context.MODE_PRIVATE)
+            .getBoolean("notification_permission_asked", false)
+        set(value) {
+            getPreferences(Context.MODE_PRIVATE).edit()
+                .putBoolean("notification_permission_asked", value).apply()
+        }
+    /** 系统权限弹窗正在显示：这时候别再叠我们自己的说明框 */
+    private var notificationRequestInFlight = false
+    /** 说明框是否正在显示，避免 onResume 反复触发时叠出好几个 */
+    private var notificationDialogShowing = false
+    /**
+     * 当前正在显示的说明弹窗。走 Compose 那套（和「发现新版本」更新弹窗同一份样式），
+     * 不再自己拼 View 弹窗，免得样式和别的弹窗对不上。
+     */
+    private var promptKind by mutableStateOf<PromptKind?>(null)
+    /** onCreate 之后的第一轮 onResume 跳过通知检查（那一轮交给 onCreate 去申请） */
+    private var resumedOnce = false
+    /** 「悬浮通知」说明框是否正在显示（点「添加手势」时按需弹，勾过「不再提醒」就不再弹） */
+    private var headsUpDialogShowing = false
+    /** 「后台弹出界面」说明框是否正在显示（回到前台时按需弹） */
+    private var backPopupDialogShowing = false
 
-    /** Android 13+ 通知权限申请（拒绝不影响服务运行，只是前台通知不可见） */
+    /**
+     * Android 13+ 通知权限申请：允许了就结束；被拒就弹我们自己的说明框，
+     * 点「去开启」跳到系统通知设置，回来后 onResume 还会再查一次（直到允许为止）。
+     */
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { granted ->
+        notificationRequestInFlight = false
+        // 允许了也要再看一眼应用级开关：系统权限给了、但用户在设置里把整个应用的通知关掉的情况
+        if (!granted || !canPostNotifications()) {
+            window.decorView.post { showNotificationPermissionDialog() }
+        }
+    }
 
     /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
     private var selectedTab by mutableStateOf(MainTab.HOME)
+    /** 程序页里正在查看的程序 id；非 null 表示节点图全屏（底栏收起）。 */
+    private var openProgramId by mutableStateOf<String?>(null)
+    // 程序页翻转动画是否在播：动画一开始顶栏/底栏就同步收起，而不是等动画放完
+    private var programFlipping by mutableStateOf(false)
 
     /** 首次启动时底栏从底部滑入（旧实现在 onCreate 里对 BottomNavigationView 做 translationY 动画） */
     private var playBottomBarEntrance by mutableStateOf(false)
@@ -131,23 +176,70 @@ class MainActivity : AppCompatActivity() {
                         MainTab.SETTINGS -> getString(R.string.nav_settings)
                     },
                     playEntrance = playBottomBarEntrance,
+                    promptContent = {
+                        when (promptKind) {
+                            PromptKind.NOTIFICATION -> NotificationPermissionPromptDialog(
+                                onConfirm = {
+                                    closePrompt()
+                                    openNotificationSettings()
+                                },
+                                onDismiss = { closePrompt() },
+                            )
+                            PromptKind.HEADS_UP -> RecordingHeadsUpPromptDialog(
+                                onGoOpen = { ignore ->
+                                    if (ignore) PromptFlags.setHeadsUpMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    openRecordingChannelSettings()
+                                },
+                                onLater = { ignore ->
+                                    if (ignore) PromptFlags.setHeadsUpMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    startRecordingSession()
+                                },
+                            )
+                            PromptKind.BACK_POPUP -> BackPopupPromptDialog(
+                                onGoOpen = { ignore ->
+                                    if (ignore) PromptFlags.setBackPopupMuted(this@MainActivity, true)
+                                    closePrompt()
+                                    openBackPopupPermissionSettings()
+                                },
+                                onLater = { ignore ->
+                                    if (ignore) PromptFlags.setBackPopupMuted(this@MainActivity, true)
+                                    closePrompt()
+                                },
+                            )
+                            null -> {}
+                        }
+                    },
+                    // 上下栏收不收，统一听 ProgramScreen 的：点下去那一刻起就 true（3D 翻转和两条栏同时开始），
+                    // 退场动画一开始立刻 false（两条栏跟着反向翻转一起回来）。
+                    // 不能再用 openProgramId != null：退场期间它还是非空的，两条栏会一直等到动画放完才回来。
+                    programFullScreen = programFlipping,
                     settingsContent = { },
-                    programContent = { },
+                    programContent = {
+                        com.yjc.click.ui.program.ProgramScreen(
+                            onOpenProgram = { id -> openProgramId = id },
+                            onCloseProgram = { openProgramId = null },
+                            openProgramId = openProgramId,
+                            onAnimationActive = { programFlipping = it },
+                        )
+                    },
                     homeContent = {
                     HomeScreen(
                     statusText = statusTextValue,
                     isSwipeMode = isSwipeMode,
                     isGestureMode = isGestureMode,
-                    swipeX1 = swipeX1,
-                    swipeY1 = swipeY1,
-                    swipeX2 = swipeX2,
-                    swipeY2 = swipeY2,
-                    swipeDuration = swipeDuration,
+                    manualPresets = manualPresets,
+                    selectedManualId = selectedManualId,
+                    expandedManualIds = expandedManualIds,
+                    manualDrafts = manualDrafts,
+                    manualUndoCounts = manualUndo.mapValues { it.value.size },
+                    manualRedoCounts = manualRedo.mapValues { it.value.size },
                     delay = delayText,
                     repeat = repeatText,
                     infinite = infinite,
-                    recordedStatus = recordedStatus,
-                    recordedVisible = recordedVisible,
+                    gesturePresets = gesturePresets,
+                    selectedGestureId = selectedGestureId,
                     canStart = canStart,
                     showStartOverlay = showStartOverlay,
                     canStop = canStop,
@@ -180,11 +272,16 @@ class MainActivity : AppCompatActivity() {
                             updateStatus()
                         }
                     },
-                    onSwipeX1Change = { swipeX1 = it.numericInput(true); afterInputChange() },
-                    onSwipeY1Change = { swipeY1 = it.numericInput(true); afterInputChange() },
-                    onSwipeX2Change = { swipeX2 = it.numericInput(true); afterInputChange() },
-                    onSwipeY2Change = { swipeY2 = it.numericInput(true); afterInputChange() },
-                    onSwipeDurationChange = { swipeDuration = it.numericInput(); afterInputChange() },
+                    onManualSelect = { id -> selectManualPreset(id) },
+                    onManualToggle = { id -> toggleManualExpanded(id) },
+                    onManualRename = { id -> showManualRenameDialog(id) },
+                    onManualDelete = { id -> confirmDeleteManualPreset(id) },
+                    onManualAdd = { addManualPreset() },
+                    onManualField = { id, field, value -> editManualField(id, field, value) },
+                    onManualUndo = { id -> undoManualEdit(id) },
+                    onManualRedo = { id -> redoManualEdit(id) },
+                    onManualSave = { id -> saveManualPreset(id) },
+                    onManualCancel = { id -> cancelManualEdit(id) },
                     onDelayChange = { delayText = it.numericInput(); afterInputChange() },
                     onRepeatChange = { repeatText = it.numericInput(); afterInputChange() },
                     onInfiniteChange = { infinite = it; saveConfig() },
@@ -194,7 +291,10 @@ class MainActivity : AppCompatActivity() {
                         stopService(Intent(this, FloatingService::class.java))
                         updateStatus()
                     },
-                    onRecord = { startGestureRecording() },
+                    onAddGesture = { startGestureRecording() },
+                    onGestureSelect = { id -> selectGesturePreset(id) },
+                    onGestureRename = { id -> showGestureRenameDialog(id) },
+                    onGestureDelete = { id -> confirmDeleteGesturePreset(id) },
                     )
                     },
                 )
@@ -225,6 +325,8 @@ class MainActivity : AppCompatActivity() {
             infinite = snapshot.infinite
             // 同步一次内存中的运行时配置，避免启动后未改动控件时界面与参数不一致
             saveConfig()
+            // 手势预设也要从磁盘恢复：录好的轨迹不再只活在内存里
+            syncGesturePresets()
         }
 
         // 恢复执行模式状态：仅在旋转/重建时由 savedInstanceState 覆盖，全新启动沿用已持久化的模式
@@ -305,16 +407,27 @@ class MainActivity : AppCompatActivity() {
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
+        // 用户自己回到 App = 放弃这次录制：待录制状态和那条「点此开始录制手势」通知都撤掉
+        FloatingService.cancelPendingRecording(this)
 
-        if (intent.getBooleanExtra("show_float_tutorial", false)) {
-            intent.removeExtra("show_float_tutorial")
-            showFloatTutorialDialog {
-                AppConfig.running = true
-                AppConfig.preventExecution = false
-                startFloatingService()
-            }
-            updateStatus()
-            return
+        // 每次回到前台都查一遍通知权限：用户可能在系统设置里把它撤销了（没重启应用）。
+        // 首轮 onResume 交给 onCreate 去申请，这里跳过，避免两个弹窗叠在一起。
+        if (resumedOnce) {
+            ensureNotificationPermission()
+        } else {
+            resumedOnce = true
+        }
+        // 系统权限弹窗有时候比我们的说明框晚一步才出现：用户在系统弹窗里点了「允许」，
+        // 这个说明框就该自己消失，不用用户再手动关一次。
+        if (notificationDialogShowing && canPostNotifications()) closePrompt()
+
+        // 上次录完没能自己跳回前台（MIUI/HyperOS 的「后台弹出界面」被关）：回来时说明一次。
+        // 那个开关系统不给普通应用读，只能拿「界面回没回来」当判据。
+        // 通知权限的弹窗/系统申请框在的时候先让路（标志留着，下一轮 onResume 再弹），免得两个框叠一起。
+        if (!notificationDialogShowing && !notificationRequestInFlight &&
+            PromptFlags.consumeReturnBlocked(this) && !PromptFlags.isBackPopupMuted(this)
+        ) {
+            window.decorView.post { showBackPopupDialog() }
         }
 
         if (pendingPermissionStep == PermissionStep.ACCESSIBILITY) {
@@ -355,6 +468,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateStatus() {
+        // 手势列表先跟磁盘对齐：服务里刚录完的那条会在这里冒出来，并成为当前手势
+        syncGesturePresets()
+        // 手动参数同理：选中那条的 5 个值就是运行时用的值
+        syncManualPresets()
+
         val serviceEnabled = isServiceEnabled()
         val overlayGranted = hasOverlayPermission()
 
@@ -373,17 +491,196 @@ class MainActivity : AppCompatActivity() {
         showStartOverlay = !startable
         canStop = AppConfig.running
         canRecord = !AppConfig.running
+    }
 
-        val gesture = AppConfig.recordedGesture
-        if (gesture.points.size >= 2) {
-            recordedStatus = getString(R.string.status_gesture_recorded, gesture.points.size, gesture.totalDuration)
-            recordedVisible = true
-        } else if (isSwipeMode && isGestureMode) {
-            recordedStatus = getString(R.string.status_gesture_not_recorded)
-            recordedVisible = true
-        } else {
-            recordedVisible = false
+    /** 从磁盘读手动参数预设，并把选中那条的 5 个值交给运行时配置（手动参数模式执行时用的就是它） */
+    private fun syncManualPresets() {
+        val snapshot = ManualStore.load(this)
+        manualPresets = snapshot.presets
+        selectedManualId = snapshot.selectedId
+        val selected = snapshot.selected
+        swipeX1 = selected?.x1 ?: ""
+        swipeY1 = selected?.y1 ?: ""
+        swipeX2 = selected?.x2 ?: ""
+        swipeY2 = selected?.y2 ?: ""
+        swipeDuration = selected?.duration ?: ""
+        // 必须一起写进运行时配置：否则切换预设或保存编辑后，悬浮球执行用的还是上一次的值
+        saveConfig()
+    }
+
+    private fun selectManualPreset(id: String) {
+        if (selectedManualId == id) return
+        val snapshot = ManualStore.load(this)
+        ManualStore.save(this, ManualStore.Snapshot(snapshot.presets, id))
+        updateStatus()
+    }
+
+    private fun toggleManualExpanded(id: String) {
+        expandedManualIds =
+            if (id in expandedManualIds) expandedManualIds - id else expandedManualIds + id
+    }
+
+    /** 新增预设：5 个值复制当前选中那条（没有选中就给空值），并展开它方便接着改 */
+    private fun addManualPreset() {
+        val snapshot = ManualStore.load(this)
+        val preset = ManualStore.newPreset(snapshot.presets, snapshot.selected)
+        ManualStore.save(this, ManualStore.Snapshot(snapshot.presets + preset, preset.id))
+        expandedManualIds = expandedManualIds + preset.id
+        updateStatus()
+    }
+
+    /** 重命名手动参数预设（清空后确定 = 回到「预设一 / 预设二」这种自动编号名） */
+    private fun showManualRenameDialog(id: String) {
+        val preset = manualPresets.firstOrNull { it.id == id } ?: return
+        RenameDialog.show(this, R.string.rename_preset, ManualStore.displayName(this, preset)) { newName ->
+            val snapshot = ManualStore.load(this)
+            val updated = snapshot.presets.map { if (it.id == id) it.copy(name = newName) else it }
+            ManualStore.save(this, ManualStore.Snapshot(updated, snapshot.selectedId))
+            updateStatus()
         }
+    }
+
+    /** 删除手动参数预设前先确认（与设置页删背景预设同一套弹窗） */
+    private fun confirmDeleteManualPreset(id: String) {
+        val preset = manualPresets.firstOrNull { it.id == id } ?: return
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.delete_preset)
+            .setMessage(getString(R.string.delete_preset_confirm, ManualStore.displayName(this, preset)))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteManualPreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deleteManualPreset(id: String) {
+        val snapshot = ManualStore.load(this)
+        val remaining = snapshot.presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那条 → 落到剩下的第一条（都删完了就是没有）
+        val selected = snapshot.selectedId
+            ?.takeIf { it != id && remaining.any { p -> p.id == it } }
+            ?: remaining.firstOrNull()?.id
+        ManualStore.save(this, ManualStore.Snapshot(remaining, selected))
+        // 这条的编辑草稿和撤销历史一起清掉
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
+        expandedManualIds = expandedManualIds - id
+        updateStatus()
+    }
+
+    /** 面板里改一个字段：把「改之前」的草稿压进撤销栈、清空重做栈（每步一条，最多留 20 步） */
+    private fun editManualField(id: String, field: Int, value: String) {
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        val next = when (field) {
+            0 -> current.copy(x1 = value.numericInput(true))
+            1 -> current.copy(y1 = value.numericInput(true))
+            2 -> current.copy(x2 = value.numericInput(true))
+            3 -> current.copy(y2 = value.numericInput(true))
+            else -> current.copy(duration = value.numericInput())
+        }
+        if (next == current) return
+        manualUndo = manualUndo + (id to ((manualUndo[id] ?: emptyList()) + current).takeLast(20))
+        manualRedo = manualRedo - id
+        manualDrafts = manualDrafts + (id to next)
+    }
+
+    private fun undoManualEdit(id: String) {
+        val stack = manualUndo[id] ?: return
+        if (stack.isEmpty()) return
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        manualUndo = manualUndo + (id to stack.dropLast(1))
+        manualRedo = manualRedo + (id to ((manualRedo[id] ?: emptyList()) + current))
+        manualDrafts = manualDrafts + (id to stack.last())
+    }
+
+    private fun redoManualEdit(id: String) {
+        val stack = manualRedo[id] ?: return
+        if (stack.isEmpty()) return
+        val stored = manualPresets.firstOrNull { it.id == id } ?: return
+        val current = manualDrafts[id] ?: stored
+        manualRedo = manualRedo + (id to stack.dropLast(1))
+        manualUndo = manualUndo + (id to ((manualUndo[id] ?: emptyList()) + current))
+        manualDrafts = manualDrafts + (id to stack.last())
+    }
+
+    /** 保存：写盘 + 让运行时用上新值；面板保持展开、展开状态也留着，撤销历史清空 */
+    private fun saveManualPreset(id: String) {
+        val draft = manualDrafts[id] ?: return
+        val snapshot = ManualStore.load(this)
+        if (snapshot.presets.none { it.id == id }) return
+        ManualStore.save(
+            this,
+            ManualStore.Snapshot(ManualStore.withPreset(snapshot.presets, draft), snapshot.selectedId),
+        )
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
+        updateStatus()
+    }
+
+    /** 取消：丢掉内存里的编辑，面板里显示回已保存的值（面板不收起） */
+    private fun cancelManualEdit(id: String) {
+        manualDrafts = manualDrafts - id
+        manualUndo = manualUndo - id
+        manualRedo = manualRedo - id
+    }
+
+    /** 从磁盘读手势预设列表，并把选中的那条交给运行时配置（执行滑动时用的就是它；没得选就是空手势） */
+    private fun syncGesturePresets() {
+        val snapshot = GestureStore.load(this)
+        gesturePresets = snapshot.presets
+        selectedGestureId = snapshot.selectedId
+        AppConfig.recordedGesture = snapshot.gesture()
+    }
+
+    /** 选中某条手势预设 */
+    private fun selectGesturePreset(id: String) {
+        val snapshot = GestureStore.load(this)
+        if (snapshot.selectedId == id) return
+        GestureStore.save(this, GestureStore.Snapshot(snapshot.presets, id))
+        updateStatus()
+    }
+
+    /** 重命名手势预设：弹窗预填当前名字，清空后确定 = 回到「手势一 / 手势二」这种自动编号名 */
+    private fun showGestureRenameDialog(id: String) {
+        val preset = gesturePresets.firstOrNull { it.id == id } ?: return
+        RenameDialog.show(this, R.string.rename_gesture, GestureStore.displayName(this, preset)) { newName ->
+            val snapshot = GestureStore.load(this)
+            val updated = snapshot.presets.map { if (it.id == id) it.copy(name = newName) else it }
+            GestureStore.save(this, GestureStore.Snapshot(updated, snapshot.selectedId))
+            updateStatus()
+        }
+    }
+
+    /** 删除手势预设前先确认（与设置页删背景预设同一套弹窗） */
+    private fun confirmDeleteGesturePreset(id: String) {
+        val preset = gesturePresets.firstOrNull { it.id == id } ?: return
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(AppTheme.viewContext(this))
+            .setTitle(R.string.delete_gesture)
+            .setMessage(getString(
+                R.string.delete_gesture_confirm,
+                GestureStore.displayName(this, preset),
+            ))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteGesturePreset(id) }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.window?.setWindowAnimations(android.R.style.Animation_Dialog)
+        dialog.show()
+        FontManager.applyFontToDialog(dialog)
+    }
+
+    private fun deleteGesturePreset(id: String) {
+        val snapshot = GestureStore.load(this)
+        val remaining = snapshot.presets.filterNot { it.id == id }
+        // 删掉的正好是选中的那条 → 落到剩下的第一条（都删完了就是没有）
+        val selected = snapshot.selectedId
+            ?.takeIf { it != id && remaining.any { p -> p.id == it } }
+            ?: remaining.firstOrNull()?.id
+        GestureStore.save(this, GestureStore.Snapshot(remaining, selected))
+        updateStatus()
     }
 
     private fun isSwipeConfigValid(): Boolean {
@@ -438,29 +735,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 开始手势录制（旧版 btnRecordGesture 的点击逻辑） */
+    /**
+     * 开始手势录制（新版流程，没有遮罩）：
+     * 发一条高优先级录制通知 → 立刻退到后台/桌面 → 用户切到目标应用点通知开始录制。
+     * 录制时屏幕上会盖一层半透明遮罩来收下这一划，所以需要悬浮窗权限。
+     */
     private fun startGestureRecording() {
-        if (!hasOverlayPermission()) {
-            Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
-            return
-        }
         if (!isServiceEnabled()) {
             Toast.makeText(this, R.string.toast_need_accessibility_for_record, Toast.LENGTH_LONG).show()
             return
         }
+        // 录制靠半透明遮罩收触摸，必须能画在别的应用上层
+        if (!hasOverlayPermission()) {
+            Toast.makeText(this, R.string.toast_need_overlay_for_record, Toast.LENGTH_LONG).show()
+            return
+        }
+        // 录制通知就是这次的入口，通知被禁用的话整个流程走不通 —— 直接弹窗引导开启，
+        // 用户可能是在没重启应用的情况下把权限撤销的，这里 force=true 再问一次
+        if (!canPostNotifications()) {
+            ensureNotificationPermission(force = true)
+            return
+        }
+        // 悬浮通知（横幅）被关掉的话，录制提示浮不出来 —— 这里弹一次说明框。
+        // 放在点「添加手势」的时候检查，而不是每次启动，免得用户还没要录就被拦一下。
+        if (checkRecordingHeadsUpBeforeRecord()) return
+        startRecordingSession()
+    }
+
+    /** 真正开始这次录制：发通知 + 退到后台，等用户切到目标应用去点那条通知 */
+    private fun startRecordingSession() {
+        if (isFinishing) return
         saveConfig()
-        val floatPrefs = getPreferences(Context.MODE_PRIVATE)
-        if (floatPrefs.getBoolean("float_tutorial_done", false).not()) {
-            floatPrefs.edit().putBoolean("float_tutorial_done", true).apply()
-            floatTutorialPending = true
-        }
-        AppConfig.recordRequested = true
         AppConfig.preventExecution = false
-        if (!AppConfig.running) {
-            AppConfig.running = true
-            startFloatingService()
-        }
-        Toast.makeText(this, R.string.toast_swipe_to_record, Toast.LENGTH_SHORT).show()
+        FloatingService.prepareRecording(this)
+        Toast.makeText(this, R.string.toast_record_switch_to_app, Toast.LENGTH_SHORT).show()
+        // 用户要切到目标应用去滑动，本应用不能挡在前面
+        moveTaskToBack(true)
+    }
+
+    private fun canPostNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return false
+        // 13 以下没有运行时权限，但用户仍可能在通知设置里把整个应用关掉
+        return NotificationManagerCompat.from(this).areNotificationsEnabled()
     }
 
     private fun saveConfig() {
@@ -606,17 +925,151 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，否则通知不会显示。
-     * 每个进程只申请一次，避免反复打扰。
+     * Android 13+ 前台服务通知需要 POST_NOTIFICATIONS 运行时权限，被关掉通知的话
+     * 录制流程整个走不通（录制就是靠一条通知启动的）。
+     *
+     * 守门逻辑按用户要求：没有就申请；被拒就弹说明框，点「去开启」跳到系统设置，
+     * 回到前台再查一遍 —— 直到用户真的允许为止。每次启动、每次回到前台、
+     * 以及点「添加手势」时都会走一遍这里。
+     *
+     * @param force 点「添加手势」时用：即使本轮已经问过，也要再提示一次
      */
-    private fun ensureNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (notificationPermissionAsked) return
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) return
-        notificationPermissionAsked = true
-        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    private fun ensureNotificationPermission(force: Boolean = false) {
+        if (canPostNotifications()) return
+        if (notificationRequestInFlight) return
+        // 只有"运行时权限还没给"这一种情况系统弹窗才有用；权限已经给了、但用户在设置里关掉了
+        // 整个应用的通知时，再调系统申请什么都不会发生，只能直接引导去设置页
+        val needsRuntime =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    this, android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+        if (needsRuntime) {
+            // 用户点过「拒绝且不再提示」：rationale 为 false 且已经申请过，系统不会再弹申请框，
+            // 这时候再调 launch 只会立刻回调被拒 —— 直接送到设置页，不再尝试申请
+            val cannotAskAgain = notificationPermissionAsked &&
+                !shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
+            if (cannotAskAgain) {
+                // 点「添加手势」时直接去设置页；启动时的检查还是先给个说明框，
+                // 免得用户一打开应用就被弹到系统设置里
+                if (force) openNotificationSettings() else showNotificationPermissionDialog()
+                return
+            }
+            if (force || !notificationPermissionAsked) {
+                notificationPermissionAsked = true
+                notificationRequestInFlight = true
+                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                return
+            }
+        }
+        // 系统弹窗不会再来（拒绝过两次 / 系统级关闭）→ 只能引导去设置里开
+        showNotificationPermissionDialog()
+    }
+
+    /** 通知权限被拒时的说明框：只有一个「去开启」，点完跳系统设置 */
+    private fun showNotificationPermissionDialog() {
+        if (notificationDialogShowing || isFinishing) return
+        notificationDialogShowing = true
+        promptKind = PromptKind.NOTIFICATION
+    }
+
+    /** 收掉当前说明弹窗（点按钮 / 点外面 / 系统权限已经给了都走这里） */
+    private fun closePrompt() {
+        promptKind = null
+        notificationDialogShowing = false
+        headsUpDialogShowing = false
+        backPopupDialogShowing = false
+    }
+
+    private fun openNotificationSettings() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            )
+        } catch (e: Exception) {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                )
+            } catch (e2: Exception) {
+                Toast.makeText(applicationContext, R.string.notification_permission_title, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * 点「添加手势」时再看一眼录制通道：被改成静默/低重要性的话，切到目标应用后
+     * 录制提示不会浮到屏幕上，用户会找不到开始录制的入口。
+     *
+     * 这个开关应用自己改不了（通道重要性只有用户能改），所以只能提示 + 一键跳到该通道的设置页。
+     * 用户勾过「不再提醒」就不再检查。
+     *
+     * @return true = 说明框已经弹出来了，这次先别往下走
+     */
+    private fun checkRecordingHeadsUpBeforeRecord(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        if (PromptFlags.isHeadsUpMuted(this)) return false
+        if (isFinishing || headsUpDialogShowing) return false
+        if (FloatingService.isRecordingHeadsUpEnabled(this)) return false
+        showRecordingHeadsUpDialog()
+        return true
+    }
+
+    /**
+     * 「悬浮通知」被关掉时的说明框：「去开启」跳到这条通知通道的设置页；
+     * 「取消」= 这次照样录（只是可能不弹横幅，通知栏里那条还在）。
+     * 样式和「发现新版本」弹窗一致（见 ui/PromptDialogs.kt）；
+     * 勾上「不再提醒」（点哪个按钮都算）以后都不再检查。
+     */
+    private fun showRecordingHeadsUpDialog() {
+        if (headsUpDialogShowing || isFinishing) return
+        headsUpDialogShowing = true
+        promptKind = PromptKind.HEADS_UP
+    }
+
+    /**
+     * 上次录制结束时没能自己跳回前台 —— 基本就是 MIUI/HyperOS 的「后台弹出界面」被关了。
+     * 系统没给普通应用读这个开关的接口，所以只能说拿「回没回来」当判据，
+     * 等用户自己回到应用时说明一次，并给一个直达那个权限页的入口。
+     */
+    private fun showBackPopupDialog() {
+        if (backPopupDialogShowing || isFinishing) return
+        backPopupDialogShowing = true
+        promptKind = PromptKind.BACK_POPUP
+    }
+
+    /** 跳到 MIUI/HyperOS 安全中心里本应用的「其他权限」页；非 MIUI 退回应用详情页 */
+    private fun openBackPopupPermissionSettings() {
+        try {
+            startActivity(
+                Intent().setClassName(
+                    "com.miui.securitycenter",
+                    "com.miui.permcenter.permissions.PermissionsEditorActivity"
+                ).putExtra("extra_pkgname", packageName)
+            )
+        } catch (e: Exception) {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                )
+            } catch (e2: Exception) {
+                Toast.makeText(applicationContext, R.string.back_popup_title, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** 跳到「手势录制」这一条通知通道的设置页，比应用通知总页少点几步 */
+    private fun openRecordingChannelSettings() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    .putExtra(Settings.EXTRA_CHANNEL_ID, FloatingService.recordingChannelId())
+            )
+        } catch (e: Exception) {
+            openNotificationSettings()
+        }
     }
 
     private fun isServiceEnabled(): Boolean {
@@ -670,30 +1123,6 @@ class MainActivity : AppCompatActivity() {
         FontManager.applyFontToDialog(dialog)
     }
 
-    private fun decodeFloatTutorialText(): String {
-        val key = "YJCyjc303030."
-        val encoded = byteArrayOf(
-            104.toByte(), 100.toByte(), 166.toByte(), 241.toByte(), 237.toByte(), 134.toByte(), 187.toByte(), 128.toByte(), 213.toByte(), 179.toByte(), 128.toByte(), 214.toByte(), 167.toByte(), 254.toByte(), 162.toByte(), 226.toByte(), 245.toByte(), 140.toByte(), 240.toByte(), 190.toByte(), 212.toByte(), 142.toByte(), 172.toByte(), 212.toByte(), 170.toByte(), 170.toByte(), 188.toByte(), 240.toByte(), 215.toByte(), 158.toByte(), 254.toByte(), 203.toByte(), 57.toByte(), 58.toByte(), 1.toByte(), 30.toByte(), 213.toByte(), 188.toByte(), 167.toByte(), 189.toByte(), 247.toByte(), 204.toByte(), 159.toByte(), 232.toByte(), 207.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 200.toByte(), 210.toByte(), 220.toByte(), 166.toByte(), 243.toByte(), 194.toByte(), 134.toByte(), 190.toByte(), 131.toByte(), 214.toByte(), 191.toByte(), 156.toByte(), 214.toByte(), 165.toByte(), 207.toByte(), 175.toByte(), 201.toByte(), 209.toByte(), 140.toByte(), 225.toByte(), 159.toByte(), 214.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 173.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 156.toByte(), 229.toByte(), 204.toByte(), 213.toByte(), 187.toByte(), 165.toByte(), 213.toByte(), 185.toByte(), 152.toByte(), 203.toByte(), 209.toByte(), 250.toByte(), 165.toByte(), 250.toByte(), 217.toByte(), 133.toByte(), 186.toByte(), 151.toByte(), 219.toByte(), 145.toByte(), 191.toByte(), 214.toByte(), 189.toByte(), 212.toByte(), 174.toByte(), 254.toByte(), 229.toByte(), 141.toByte(), 249.toByte(), 183.toByte(), 212.toByte(), 142.toByte(), 189.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 159.toByte(), 225.toByte(), 245.toByte(), 214.toByte(), 186.toByte(), 155.toByte(), 214.toByte(), 164.toByte(), 134.toByte(), 200.toByte(), 219.toByte(), 230.toByte(), 165.toByte(), 204.toByte(), 196.toByte(), 132.toByte(), 163.toByte(), 179.toByte(), 215.toByte(), 140.toByte(), 169.toByte(), 213.toByte(), 163.toByte(), 211.toByte(), 163.toByte(), 195.toByte(), 246.toByte(), 140.toByte(), 251.toByte(), 189.toByte(), 223.toByte(), 143.toByte(), 188.toByte(), 215.toByte(), 139.toByte(), 139.toByte(), 189.toByte(), 244.toByte(), 252.toByte(), 156.toByte(), 196.toByte(), 249.toByte(), 215.toByte(), 141.toByte(), 190.toByte(), 58.toByte(), 57.toByte(), 3.toByte(), 0.toByte(), 191.toByte(), 193.toByte(), 213.toByte(), 156.toByte(), 224.toByte(), 203.toByte(), 214.toByte(), 158.toByte(), 191.toByte(), 214.toByte(), 156.toByte(), 165.toByte(), 203.toByte(), 201.toByte(), 196.toByte(), 164.toByte(), 251.toByte(), 211.toByte(), 134.toByte(), 180.toByte(), 139.toByte(), 215.toByte(), 136.toByte(), 179.toByte(), 212.toByte(), 150.toByte(), 210.toByte(), 172.toByte(), 193.toByte(), 213.toByte(), 140.toByte(), 214.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 214.toByte(), 189.toByte(), 157.toByte(), 188.toByte(), 197.toByte(), 236.toByte(), 156.toByte(), 214.toByte(), 227.toByte(), 214.toByte(), 151.toByte(), 184.toByte(), 214.toByte(), 160.toByte(), 189.toByte(), 202.toByte(), 228.toByte(), 214.toByte(), 73.toByte(), 115.toByte(), 94.toByte(), 77.toByte(), 214.toByte(), 191.toByte(), 191.toByte(), 213.toByte(), 180.toByte(), 139.toByte(), 200.toByte(), 219.toByte(), 230.toByte(), 165.toByte(), 204.toByte(), 196.toByte(), 132.toByte(), 163.toByte(), 179.toByte(), 214.toByte(), 191.toByte(), 156.toByte(), 214.toByte(), 180.toByte(), 219.toByte(), 175.toByte(), 194.toByte(), 229.toByte(), 140.toByte(), 240.toByte(), 190.toByte(), 212.toByte(), 142.toByte(), 172.toByte(), 57.toByte(), 58.toByte(), 200.toByte(), 234.toByte(), 226.toByte(), 165.toByte(), 253.toByte(), 229.toByte(), 140.toByte(), 143.toByte(), 170.toByte(), 215.toByte(), 139.toByte(), 189.toByte(), 212.toByte(), 150.toByte(), 217.toByte(), 174.toByte(), 251.toByte(), 211.toByte(), 143.toByte(), 217.toByte(), 167.toByte(), 215.toByte(), 167.toByte(), 152.toByte(), 214.toByte(), 184.toByte(), 169.toByte(), 188.toByte(), 209.toByte(), 221.toByte(), 159.toByte(), 246.toByte(), 207.toByte(), 219.toByte(), 141.toByte(), 156.toByte(), 212.toByte(), 136.toByte(), 134.toByte(), 200.toByte(), 206.toByte(), 252.toByte(), 165.toByte(), 251.toByte(), 198.toByte(), 133.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 176.toByte(), 212.toByte(), 146.toByte(), 195.toByte(), 162.toByte(), 196.toByte(), 211.toByte(), 143.toByte(), 233.toByte(), 155.toByte(), 213.toByte(), 178.toByte(), 172.toByte(), 213.toByte(), 157.toByte(), 140.toByte(), 182.toByte(), 246.toByte(), 207.toByte(), 159.toByte(), 235.toByte(), 193.toByte(), 214.toByte(), 148.toByte(), 190.toByte(), 213.toByte(), 188.toByte(), 159.toByte(), 202.toByte(), 226.toByte(), 239.toByte(), 166.toByte(), 255.toByte(), 231.toByte(), 132.toByte(), 177.toByte(), 137.toByte(), 214.toByte(), 183.toByte(), 136.toByte(), 213.toByte(), 190.toByte(), 246.toByte(), 175.toByte(), 201.toByte(), 209.toByte(), 140.toByte(), 225.toByte(), 159.toByte(), 214.toByte(), 134.toByte(), 158.toByte(), 212.toByte(), 160.toByte(), 173.toByte(), 191.toByte(), 198.toByte(), 202.toByte(), 144.toByte(), 248.toByte(), 205.toByte()
-        )
-        val keyBytes = key.toByteArray(Charsets.UTF_8)
-        val decoded = ByteArray(encoded.size) { i ->
-            (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
-        }
-        return String(decoded, Charsets.UTF_8)
-    }
-
-    private fun decodeTutorialText(): String {
-        val key = "YJCyjc303030."
-        val encoded = byteArrayOf(
-            176.toByte(), 236.toByte(), 213.toByte(), 159.toByte(), 198.toByte(), 194.toByte(), 215.toByte(), 141.toByte(), 140.toByte(), 215.toByte(), 167.toByte(), 152.toByte(), 193.toByte(), 229.toByte(), 208.toByte(), 73.toByte(), 115.toByte(), 91.toByte(), 77.toByte(), 19.toByte(), 213.toByte(), 143.toByte(), 176.toByte(), 214.toByte(), 160.toByte(), 129.toByte(), 191.toByte(), 221.toByte(), 227.toByte(), 144.toByte(), 240.toByte(), 255.toByte(), 212.toByte(), 146.toByte(), 190.toByte(), 214.toByte(), 175.toByte(), 189.toByte(), 203.toByte(), 211.toByte(), 235.toByte(), 166.toByte(), 235.toByte(), 230.toByte(), 133.toByte(), 177.toByte(), 156.toByte(), 213.toByte(), 133.toByte(), 157.toByte(), 215.toByte(), 132.toByte(), 206.toByte(), 172.toByte(), 222.toByte(), 250.toByte(), 131.toByte(), 250.toByte(), 163.toByte(), 223.toByte(), 143.toByte(), 188.toByte(), 212.toByte(), 178.toByte(), 151.toByte(), 188.toByte(), 205.toByte(), 248.toByte(), 145.toByte(), 215.toByte(), 204.toByte(), 215.toByte(), 139.toByte(), 133.toByte(), 212.toByte(), 139.toByte(), 186.toByte(), 200.toByte(), 207.toByte(), 243.toByte(), 167.toByte(), 193.toByte(), 206.toByte(), 135.toByte(), 139.toByte(), 154.toByte(), 213.toByte(), 188.toByte(), 186.toByte(), 217.toByte(), 188.toByte(), 247.toByte(), 175.toByte(), 206.toByte(), 202.toByte(), 143.toByte(), 236.toByte(), 156.toByte(), 216.toByte(), 132.toByte(), 131.toByte(), 219.toByte(), 141.toByte(), 130.toByte(), 177.toByte(), 228.toByte(), 253.toByte(), 158.toByte(), 215.toByte(), 205.toByte(), 218.toByte(), 145.toByte(), 134.toByte(), 223.toByte(), 143.toByte(), 184.toByte(), 200.toByte(), 206.toByte(), 234.toByte(), 170.toByte(), 227.toByte(), 246.toByte(), 132.toByte(), 145.toByte(), 189.toByte(), 213.toByte(), 173.toByte(), 176.toByte(), 217.toByte(), 183.toByte(), 201.toByte(), 173.toByte(), 215.toByte(), 200.toByte(), 142.toByte(), 217.toByte(), 189.toByte(), 213.toByte(), 157.toByte(), 185.toByte(), 214.toByte(), 189.toByte(), 189.toByte(), 188.toByte(), 228.toByte(), 202.toByte(), 156.toByte(), 239.toByte(), 203.toByte(), 213.toByte(), 172.toByte(), 137.toByte(), 213.toByte(), 187.toByte(), 134.toByte(), 200.toByte(), 246.toByte(), 197.toByte(), 165.toByte(), 213.toByte(), 203.toByte(), 138.toByte(), 180.toByte(), 189.toByte(), 214.toByte(), 160.toByte(), 156.toByte(), 216.toByte(), 147.toByte(), 246.toByte(), 174.toByte(), 248.toByte(), 207.toByte(), 131.toByte(), 255.toByte(), 179.toByte(), 217.toByte(), 180.toByte(), 189.toByte(), 213.toByte(), 166.toByte(), 158.toByte(), 191.toByte(), 196.toByte(), 203.toByte(), 159.toByte(), 247.toByte(), 224.toByte(), 220.toByte(), 140.toByte(), 186.toByte(), 58.toByte(), 57.toByte(), 2.toByte(), 0.toByte(), 121.toByte(), 163.toByte(), 195.toByte(), 240.toByte(), 140.toByte(), 232.toByte(), 154.toByte(), 214.toByte(), 136.toByte(), 161.toByte(), 214.toByte(), 186.toByte(), 134.toByte(), 191.toByte(), 226.toByte(), 226.toByte(), 156.toByte(), 214.toByte(), 236.toByte(), 220.toByte(), 140.toByte(), 169.toByte(), 215.toByte(), 177.toByte(), 137.toByte(), 203.toByte(), 222.toByte(), 241.toByte(), 165.toByte(), 241.toByte(), 252.toByte(), 133.toByte(), 136.toByte(), 161.toByte(), 214.toByte(), 186.toByte(), 155.toByte(), 58.toByte(), 36.toByte(), 106.toByte(), 100.toByte(), 99.toByte(), 158.toByte(), 232.toByte(), 218.toByte(), 214.toByte(), 183.toByte(), 136.toByte(), 214.toByte(), 155.toByte(), 145.toByte(), 203.toByte(), 229.toByte(), 197.toByte(), 172.toByte(), 197.toByte(), 240.toByte(), 139.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 157.toByte(), 215.toByte(), 172.toByte(), 224.toByte(), 175.toByte(), 196.toByte(), 194.toByte(), 143.toByte(), 216.toByte(), 133.toByte(), 214.toByte(), 164.toByte(), 134.toByte(), 209.toByte(), 182.toByte(), 188.toByte(), 177.toByte(), 228.toByte(), 253.toByte(), 158.toByte(), 215.toByte(), 205.toByte(), 218.toByte(), 183.toByte(), 190.toByte(), 213.toByte(), 151.toByte(), 189.toByte(), 200.toByte(), 245.toByte(), 235.toByte(), 165.toByte(), 236.toByte(), 218.toByte(), 129.toByte(), 181.toByte(), 162.toByte(), 214.toByte(), 160.toByte(), 156.toByte(), 213.toByte(), 164.toByte(), 241.toByte(), 172.toByte(), 193.toByte(), 213.toByte(), 140.toByte(), 214.toByte(), 157.toByte(), 215.toByte(), 163.toByte(), 179.toByte(), 220.toByte(), 140.toByte(), 166.toByte(), 190.toByte(), 246.toByte(), 249.toByte(), 159.toByte(), 247.toByte(), 224.toByte(), 218.toByte(), 169.toByte(), 163.toByte(), 212.toByte(), 143.toByte(), 170.toByte(), 203.toByte(), 229.toByte(), 243.toByte(), 166.toByte(), 254.toByte(), 208.toByte(), 133.toByte(), 189.toByte(), 184.toByte(), 213.toByte(), 173.toByte(), 176.toByte(), 216.toByte(), 128.toByte(), 231.toByte(), 173.toByte(), 254.toByte(), 215.toByte(), 131.toByte(), 194.toByte(), 134.toByte(), 223.toByte(), 143.toByte(), 185.toByte(), 57.toByte(), 58.toByte(), 26.toByte(), 119.toByte(), 106.toByte(), 165.toByte(), 194.toByte(), 251.toByte(), 134.toByte(), 185.toByte(), 152.toByte(), 213.toByte(), 152.toByte(), 146.toByte(), 213.toByte(), 146.toByte(), 214.toByte(), 165.toByte(), 255.toByte(), 227.toByte(), 140.toByte(), 234.toByte(), 184.toByte(), 213.toByte(), 185.toByte(), 143.toByte(), 214.toByte(), 141.toByte(), 187.toByte(), 188.toByte(), 194.toByte(), 245.toByte(), 150.toByte(), 214.toByte(), 235.toByte(), 214.toByte(), 172.toByte(), 155.toByte(), 213.toByte(), 130.toByte(), 191.toByte(), 203.toByte(), 224.toByte(), 223.toByte(), 165.toByte(), 194.toByte(), 251.toByte(), 134.toByte(), 185.toByte(), 152.toByte(), 220.toByte(), 140.toByte(), 186.toByte(), 214.toByte(), 166.toByte(), 207.toByte(), 172.toByte(), 202.toByte(), 242.toByte(), 143.toByte(), 233.toByte(), 155.toByte(), 213.toByte(), 188.toByte(), 178.toByte(), 213.toByte(), 165.toByte(), 158.toByte(), 182.toByte(), 246.toByte(), 203.toByte(), 156.toByte(), 203.toByte(), 200.toByte(), 214.toByte(), 182.toByte(), 170.toByte(), 216.toByte(), 134.toByte(), 135.toByte(), 201.toByte(), 219.toByte(), 243.toByte(), 164.toByte(), 194.toByte(), 226.toByte(), 132.toByte(), 177.toByte(), 137.toByte(), 214.toByte(), 173.toByte(), 163.toByte(), 214.toByte(), 142.toByte(), 222.toByte(), 165.toByte(), 255.toByte(), 240.toByte(), 136.toByte(), 229.toByte(), 161.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 188.toByte(), 241.toByte(), 245.toByte(), 159.toByte(), 253.toByte(), 213.toByte(), 209.toByte(), 182.toByte(), 161.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 201.toByte(), 228.toByte(), 228.toByte(), 170.toByte(), 254.toByte(), 231.toByte(), 134.toByte(), 151.toByte(), 189.toByte(), 213.toByte(), 156.toByte(), 146.toByte(), 214.toByte(), 187.toByte(), 233.toByte(), 168.toByte(), 197.toByte(), 235.toByte(), 143.toByte(), 243.toByte(), 156.toByte(), 213.toByte(), 185.toByte(), 152.toByte(), 213.toByte(), 178.toByte(), 130.toByte(), 191.toByte(), 255.toByte(), 237.toByte(), 158.toByte(), 250.toByte(), 224.toByte(), 220.toByte(), 140.toByte(), 187.toByte(), 215.toByte(), 143.toByte(), 138.toByte(), 200.toByte(), 196.toByte(), 201.toByte(), 170.toByte(), 224.toByte(), 250.toByte(), 135.toByte(), 143.toByte(), 170.toByte(), 214.toByte(), 140.toByte(), 138.toByte(), 213.toByte(), 169.toByte(), 227.toByte(), 172.toByte(), 205.toByte(), 241.toByte(), 140.toByte(), 254.toByte(), 176.toByte(), 216.toByte(), 157.toByte(), 142.toByte(), 212.toByte(), 141.toByte(), 128.toByte(), 176.toByte(), 235.toByte(), 246.toByte(), 150.toByte(), 214.toByte(), 234.toByte()
-        )
-        val keyBytes = key.toByteArray(Charsets.UTF_8)
-        val decoded = ByteArray(encoded.size) { i ->
-            (encoded[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
-        }
-        return String(decoded, Charsets.UTF_8)
-    }
-
     private fun applyLanguage() {
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val localeCode = prefs.getString("app_locale", "")
@@ -718,3 +1147,6 @@ class MainActivity : AppCompatActivity() {
         return if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
     }
 }
+
+/** 当前要显示的说明弹窗；样式与「发现新版本」更新弹窗一致（见 ui/PromptDialogs.kt） */
+private enum class PromptKind { NOTIFICATION, HEADS_UP, BACK_POPUP }
