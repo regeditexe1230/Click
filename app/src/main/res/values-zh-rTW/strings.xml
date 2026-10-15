@@ -232,4 +232,96 @@
     <string name="record_return_title">手勢已錄製</string>
     <string name="record_return_text">點此回到 Click</string>
     <string name="toast_return_blocked">未能自動回到 Click：請在系統設定允許 Click「背景彈出介面」，或點通知回到 Click</string>
+
+    <!-- 節點圖編輯器 -->
+    <string name="node_graph_untitled">未命名程式</string>
+    <string name="node_graph_rename">重新命名</string>
+    <string name="node_graph_undo">復原</string>
+    <string name="node_graph_redo">重做</string>
+    <string name="node_graph_copy">複製</string>
+    <string name="node_graph_paste">貼上</string>
+    <string name="node_graph_delete">刪除節點</string>
+    <string name="node_graph_delete_title">刪除節點</string>
+    <string name="node_graph_delete_message">確定要刪除選取的節點嗎？相關連線會一併刪除。</string>
+    <string name="node_graph_delete_start_locked">開始節點不能刪除</string>
+    <string name="node_graph_new_node">新增節點</string>
+    <string name="node_graph_selected_count">已選 %1$d 個節點</string>
+    <string name="node_graph_hint_multi">拖動可整體移動，刪除會移除全部選取的節點</string>
+    <string name="node_graph_param_title">參數</string>
+    <string name="node_graph_close">關閉</string>
+    <string name="node_graph_type_start">開始</string>
+    <string name="node_graph_type_click">點擊</string>
+    <string name="node_graph_type_swipe">滑動</string>
+    <string name="node_graph_type_delay">延時</string>
+    <string name="node_graph_type_wait">等待</string>
+    <string name="node_graph_type_loop">迴圈</string>
+    <string name="node_graph_color">顏色</string>
+    <string name="node_graph_repeat">重複次數</string>
+    <string name="node_graph_gesture_name">手勢名稱</string>
+    <string name="node_graph_action_point">動作點</string>
+    <string name="node_graph_pick_point">取點</string>
+    <string name="node_graph_point_x">X 座標</string>
+    <string name="node_graph_point_y">Y 座標</string>
+    <string name="node_graph_start_point">起點</string>
+    <string name="node_graph_end_point">終點</string>
+    <string name="node_graph_duration_ms">滑動時長（毫秒）</string>
+    <string name="node_graph_delay_ms">延時（毫秒）</string>
+    <string name="node_graph_wait_mode">等待方式</string>
+    <string name="node_graph_wait_user">等使用者點球</string>
+    <string name="node_graph_wait_time">等到時刻</string>
+    <string name="node_graph_wait_until">時刻</string>
+    <string name="node_graph_hour">時</string>
+    <string name="node_graph_minute">分</string>
+    <string name="node_graph_loop_target">回跳目標</string>
+    <string name="node_graph_loop_count">迴圈次數</string>
+    <string name="node_graph_loop_infinite">0 = 無限迴圈</string>
+    <string name="node_graph_start_desc">程式從這裡開始</string>
+    <string name="node_graph_pick_click">點一下取點擊座標</string>
+    <string name="node_graph_pick_swipe">滑一下取滑動起終點</string>
+    <string name="node_graph_step">第 %1$d 步</string>
+    <string name="node_graph_empty_hint">拖動節點右側的圓點到空白處可以新增節點，拖到另一個節點上即可連線</string>
+    <string name="node_graph_thumb_ms">%1$d ms</string>
+    <string name="node_graph_loop_infinite_short">無限</string>
+    <string name="node_graph_start_short">起點</string>
+
+    <!-- 程式執行引擎 / 懸浮球 -->
+    <string name="program_notification_channel_name">程式執行</string>
+    <string name="program_notification_title">程式執行中</string>
+    <string name="program_notification_text">正在執行步驟</string>
+    <string name="program_notification_idle">程式</string>
+    <string name="program_notification_idle_text">等待開始</string>
+    <string name="program_toast_need_overlay">需要懸浮窗權限才能顯示懸浮球</string>
+    <string name="program_toast_need_accessibility">需要無障礙服務才能執行程式</string>
+    <string name="program_toast_paused">已暫停，雙擊懸浮球繼續</string>
+    <string name="program_toast_resumed">已繼續</string>
+    <string name="program_toast_waiting">等待你點擊懸浮球繼續</string>
+    <string name="program_toast_stopped">程式已停止</string>
+    <string name="program_toast_not_found">找不到這個程式</string>
+    <string name="program_toast_started">程式已開始</string>
+    <string name="program_notify_step_start">開始</string>
+    <string name="program_notify_step_click">點擊</string>
+    <string name="program_notify_step_swipe">滑動</string>
+    <string name="program_notify_step_delay">延時</string>
+    <string name="program_notify_step_wait">等待</string>
+    <string name="program_notify_step_loop">迴圈</string>
+
+    <!-- 程式列表頁 -->
+    <string name="program_new">新增程式</string>
+    <string name="program_node_count">%1$d 個節點</string>
+    <string name="program_empty">還沒有程式，點右下角新增</string>
+    <string name="program_rename">重新命名</string>
+    <string name="program_duplicate">複製</string>
+    <string name="program_delete">刪除程式</string>
+    <string name="program_delete_confirm">確定刪除「%1$s」嗎？刪除後無法復原。</string>
+    <string name="program_name_hint">程式名稱</string>
+    <string name="node_graph_run">執行</string>
+    <string name="node_graph_stop">停止</string>
+    <string name="program_default_name">程式 %1$d</string>
+    <string name="program_copy_suffix">%1$s 副本</string>
+    <string name="edge_error_no_source">起點不存在</string>
+    <string name="edge_error_no_target">終點不存在</string>
+    <string name="edge_error_self">不能連到自己</string>
+    <string name="edge_error_to_start">不能連到開始節點</string>
+    <string name="edge_error_duplicate">這兩個節點已經連過了</string>
+    <string name="edge_error_loop_single_out">迴圈節點只能有一條出線</string>
 </resources>

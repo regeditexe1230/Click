@@ -106,6 +106,10 @@ class MainActivity : AppCompatActivity() {
 
     /** 当前底部导航页（旧实现用 BottomNavigationView 选中项 + 三个 View 的显隐） */
     private var selectedTab by mutableStateOf(MainTab.HOME)
+    /** 程序页里正在查看的程序 id；非 null 表示节点图全屏（底栏收起）。 */
+    private var openProgramId by mutableStateOf<String?>(null)
+    // 程序页翻转动画是否在播：动画一开始顶栏/底栏就同步收起，而不是等动画放完
+    private var programFlipping by mutableStateOf(false)
 
     /** 首次启动时底栏从底部滑入（旧实现在 onCreate 里对 BottomNavigationView 做 translationY 动画） */
     private var playBottomBarEntrance by mutableStateOf(false)
@@ -207,8 +211,19 @@ class MainActivity : AppCompatActivity() {
                             null -> {}
                         }
                     },
+                    // 上下栏收不收，统一听 ProgramScreen 的：点下去那一刻起就 true（3D 翻转和两条栏同时开始），
+                    // 退场动画一开始立刻 false（两条栏跟着反向翻转一起回来）。
+                    // 不能再用 openProgramId != null：退场期间它还是非空的，两条栏会一直等到动画放完才回来。
+                    programFullScreen = programFlipping,
                     settingsContent = { },
-                    programContent = { },
+                    programContent = {
+                        com.yjc.click.ui.program.ProgramScreen(
+                            onOpenProgram = { id -> openProgramId = id },
+                            onCloseProgram = { openProgramId = null },
+                            openProgramId = openProgramId,
+                            onAnimationActive = { programFlipping = it },
+                        )
+                    },
                     homeContent = {
                     HomeScreen(
                     statusText = statusTextValue,

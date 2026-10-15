@@ -248,4 +248,96 @@
     <string name="record_return_title">Gesture recorded</string>
     <string name="record_return_text">Tap to return to Click</string>
     <string name="toast_return_blocked">Unable to return to Click automatically. Allow background pop-up for Click in system settings, or tap the notification.</string>
+
+    <!-- Node graph editor -->
+    <string name="node_graph_untitled">Untitled program</string>
+    <string name="node_graph_rename">Rename</string>
+    <string name="node_graph_undo">Undo</string>
+    <string name="node_graph_redo">Redo</string>
+    <string name="node_graph_copy">Copy</string>
+    <string name="node_graph_paste">Paste</string>
+    <string name="node_graph_delete">Delete node</string>
+    <string name="node_graph_delete_title">Delete nodes</string>
+    <string name="node_graph_delete_message">Delete the selected nodes? Their connections are removed too.</string>
+    <string name="node_graph_delete_start_locked">The start node cannot be deleted</string>
+    <string name="node_graph_new_node">New node</string>
+    <string name="node_graph_selected_count">%1$d nodes selected</string>
+    <string name="node_graph_hint_multi">Drag to move them together; delete removes all selected nodes</string>
+    <string name="node_graph_param_title">Parameters</string>
+    <string name="node_graph_close">Close</string>
+    <string name="node_graph_type_start">Start</string>
+    <string name="node_graph_type_click">Tap</string>
+    <string name="node_graph_type_swipe">Swipe</string>
+    <string name="node_graph_type_delay">Delay</string>
+    <string name="node_graph_type_wait">Wait</string>
+    <string name="node_graph_type_loop">Loop</string>
+    <string name="node_graph_color">Color</string>
+    <string name="node_graph_repeat">Repeat</string>
+    <string name="node_graph_gesture_name">Gesture name</string>
+    <string name="node_graph_action_point">Action point</string>
+    <string name="node_graph_pick_point">Pick</string>
+    <string name="node_graph_point_x">X</string>
+    <string name="node_graph_point_y">Y</string>
+    <string name="node_graph_start_point">Start point</string>
+    <string name="node_graph_end_point">End point</string>
+    <string name="node_graph_duration_ms">Duration (ms)</string>
+    <string name="node_graph_delay_ms">Delay (ms)</string>
+    <string name="node_graph_wait_mode">Wait for</string>
+    <string name="node_graph_wait_user">User taps the ball</string>
+    <string name="node_graph_wait_time">A time of day</string>
+    <string name="node_graph_wait_until">Time</string>
+    <string name="node_graph_hour">Hour</string>
+    <string name="node_graph_minute">Minute</string>
+    <string name="node_graph_loop_target">Jump back to</string>
+    <string name="node_graph_loop_count">Loop count</string>
+    <string name="node_graph_loop_infinite">0 = infinite</string>
+    <string name="node_graph_start_desc">The program starts here</string>
+    <string name="node_graph_pick_click">Tap once to pick the tap position</string>
+    <string name="node_graph_pick_swipe">Swipe to pick the start and end points</string>
+    <string name="node_graph_step">Step %1$d</string>
+    <string name="node_graph_empty_hint">Drag the dot on a node right edge onto empty canvas to create a node, or onto another node to connect</string>
+    <string name="node_graph_thumb_ms">%1$d ms</string>
+    <string name="node_graph_loop_infinite_short">infinite</string>
+    <string name="node_graph_start_short">start</string>
+
+    <!-- Program engine / floating balls -->
+    <string name="program_notification_channel_name">Program running</string>
+    <string name="program_notification_title">Program running</string>
+    <string name="program_notification_text">Executing a step</string>
+    <string name="program_notification_idle">Program</string>
+    <string name="program_notification_idle_text">Waiting to start</string>
+    <string name="program_toast_need_overlay">Overlay permission is required to show the floating ball</string>
+    <string name="program_toast_need_accessibility">The accessibility service is required to run a program</string>
+    <string name="program_toast_paused">Paused, double tap the ball to resume</string>
+    <string name="program_toast_resumed">Resumed</string>
+    <string name="program_toast_waiting">Tap the floating ball to continue</string>
+    <string name="program_toast_stopped">Program stopped</string>
+    <string name="program_toast_not_found">Program not found</string>
+    <string name="program_toast_started">Program started</string>
+    <string name="program_notify_step_start">Start</string>
+    <string name="program_notify_step_click">Tap</string>
+    <string name="program_notify_step_swipe">Swipe</string>
+    <string name="program_notify_step_delay">Delay</string>
+    <string name="program_notify_step_wait">Wait</string>
+    <string name="program_notify_step_loop">Loop</string>
+
+    <!-- Program list page -->
+    <string name="program_new">New program</string>
+    <string name="program_node_count">%1$d nodes</string>
+    <string name="program_empty">No programs yet. Tap the button in the lower right to add one.</string>
+    <string name="program_rename">Rename</string>
+    <string name="program_duplicate">Duplicate</string>
+    <string name="program_delete">Delete program</string>
+    <string name="program_delete_confirm">Delete 「%1$s」? This cannot be undone.</string>
+    <string name="program_name_hint">Program name</string>
+    <string name="node_graph_run">Run</string>
+    <string name="node_graph_stop">Stop</string>
+    <string name="program_default_name">Program %1$d</string>
+    <string name="program_copy_suffix">%1$s copy</string>
+    <string name="edge_error_no_source">Source node missing</string>
+    <string name="edge_error_no_target">Target node missing</string>
+    <string name="edge_error_self">A node cannot connect to itself</string>
+    <string name="edge_error_to_start">Cannot connect to the Start node</string>
+    <string name="edge_error_duplicate">These two nodes are already connected</string>
+    <string name="edge_error_loop_single_out">A Loop node can only have one outgoing wire</string>
 </resources>

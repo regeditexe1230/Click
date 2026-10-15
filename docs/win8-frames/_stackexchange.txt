@@ -1,0 +1,248 @@
+=== Q27821464  [score 0] Windows Phone and Windows 8.1 Mouse Press Tile Effects
+URL: https://stackoverflow.com/questions/27821464/windows-phone-and-windows-8-1-mouse-press-tile-effects
+--- QUESTION BODY ---
+On both windows and windows phone, the tiles on the start screen animate when the user clicks on them.
+For example, if you're using windows 8 (or 8.1), open the start menu and click on a tile, you will see that the tile gets 'pushed back' depending on where the tile was clicked.
+Is there a framework or dll where I can make use of these effects on my WPF controls?
+Ideally I'd like to use it on custom tiles that I am creating. So when the user clicks on a tile, then the tile is animated accordingly, just like you'd expect like clicking on a tile on the windows start screen.
+
+--- ANSWER [score 0, accepted=False] ---
+MahApps
+ and/or 
+M:UI
+ will be useful for you.
+
+--- ANSWER [score 0, accepted=True] ---
+You can try this: 
+https://mareinsula.wordpress.com/2011/08/04/wpf-tilt-effect-behavior/
+Or you can use 
+TiltEffect
+ from WPToolkit, but there's no 
+PlaneProjection
+ in WPF, so you need to use 
+Planerator
+ or something else.
+
+=== Q10437327  [score 1] How can I flip an image-button inside a Windows 8 Metro live tile?
+URL: https://stackoverflow.com/questions/10437327/how-can-i-flip-an-image-button-inside-a-windows-8-metro-live-tile
+--- QUESTION BODY ---
+I have some image buttons inside a Win8 Metro live tile (in a grid), and Metro makes it easy to animate the whole tile, but not items inside of it. What's the easiest way to do a "flip" animation on individual image-buttons (or at least images) periodically? Should I use 
+createPeekAnimation
+? I'm open to using either C# or HTML5.
+
+--- ANSWER [score 2, accepted=True] ---
+This is not supported. There are only tile templates that you can use. You can't do custom animations inside of a tile.
+
+=== Q18611046  [score 1] Implement Windows 8 Tile &quot;Click&quot; animation with css3
+URL: https://stackoverflow.com/questions/18611046/implement-windows-8-tile-click-animation-with-css3
+--- QUESTION BODY ---
+If you see the video over here:
+http://msdn.microsoft.com/en-us/library/windows/apps/br212680.aspx
+, you will notice that the 2nd tile scales down immediately, stays scaled-down for few milliseconds then comes up to normal state.
+I tried to mimic this behaviour by reducing the width and height by 2px on 
+:active
+ and gave 
+background-size: cover
+. But I am not able to create the delay in scaling back to normal with this approach.
+This should be possible with CSS3 animations but I am not able to map out an approach.
+Can anyone give me a direction to go from here?
+EDIT:
+ Here's a jsfiddle of what I have tried:  
+http://jsfiddle.net/p3Wbh/
+ 
+** EDIT: **: Updated the jsfiddle: 
+http://jsfiddle.net/p3Wbh/1/
+ with jQuery implementation for the "held down" effect. Looking for a way to do this in css3.
+
+--- ANSWER [score 0, accepted=False] ---
+Since you are looking for javascript / winJS I can explain it ... but the css3 property I don't know about that ..
+Pleas ego through the Gestures link
+Gestures
+Here use 
+1 -> MSPointerDown
+2 -> MSPointerUp
+3 -> MSPointerOver
+4 -> MSPointerOut
+Animate your tile by setting css properties in these events .. :) I hope this works for you .....
+Like in pointer down add the css you wrote for that pressed look and in pointer up or move add the animation + css for unpressed look ... 
+Hope the suggestion helps :)
+
+=== Q17669629  [score 1] Image flip animation in windows 8?
+URL: https://stackoverflow.com/questions/17669629/image-flip-animation-in-windows-8
+--- QUESTION BODY ---
+I need to show the images continuously like projection flip animation like the below link having sample.
+http://www.silverlightbuzz.com/2009/10/14/using-the-3d-tools-to-animate-in-blend/
+How to implement the above sample second animation .There are two types of animations we can see in above link .How to implement second one in windows 8 like that?
+The dlls 
+System.Windows.Interactivity and Microsoft.Expression.Interactions
+ are n't useful in windows 8.Then how to do this animation in windows 8?
+EDIT:
+<UserControl.Resources>
+        <Storyboard x:Name="Storyboard1" RepeatBehavior="Forever">
+            <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="rectangle" Storyboard.TargetProperty="(UIElement.Projection).(PlaneProjection.RotationY)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:00.5000000" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:01.5000000" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:02" Value="90"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="rectangle1" Storyboard.TargetProperty="(UIElement.Projection).(PlaneProjection.RotationX)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="-90"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:02" Value="-90"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:02.5000000" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:03.5000000" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="rectangle1" Storyboard.TargetProperty="(UIElement.Projection).(PlaneProjection.RotationY)">
+                <EasingDoubleKeyFrame KeyTime="00:00:03.5000000" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:04" Value="90"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="rectangle" Storyboard.TargetProperty="(UIElement.Projection).(PlaneProjection.RotationX)">
+                <EasingDoubleKeyFrame KeyTime="00:00:00" Value="-90"/>
+                <EasingDoubleKeyFrame KeyTime="00:00:00.5000000" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+    </UserControl.Resources>
+<Grid x:Name="LayoutRoot" Background="Black">
+            <Rectangle x:Name="rectangle1" RadiusX="12" RadiusY="12" Height="300" HorizontalAlignment="Center" VerticalAlignment="Center" Width="300">
+                <Rectangle.Projection>
+                    <PlaneProjection RotationX="-90"/>
+                </Rectangle.Projection>
+                <Rectangle.Fill>
+                    <ImageBrush ImageSource="/Assets/7.png"/>
+                </Rectangle.Fill>
+            </Rectangle>
+            <Rectangle x:Name="rectangle" RadiusX="12" RadiusY="12" Height="300" HorizontalAlignment="Center" VerticalAlignment="Center" Width="300">
+                <Rectangle.Projection>
+                    <PlaneProjection RotationX="-90"/>
+                </Rectangle.Projection>
+                <Rectangle.Fill>
+                    <ImageBrush ImageSource="/Assets/8.png"/>
+                </Rectangle.Fill>
+            </Rectangle>
+        <Button x:Name="StartAnimation" 
+                Content="Start Animation"
+                Grid.Row="1" 
+                Width="163"
+                Height="61" Margin="0,65,0,24" Click="StartAnimation_Click" />
+    </Grid>
+
+--- ANSWER [score 1, accepted=True] ---
+link
+  that you should follow..it will tell you how make storyboard for animation ..and when you save your storyboard in blend then a stoyboard will automatically come in page.resources section and you can begin it in your code behind whereever you want to..just right''
+    StoryboardName.begin();
+i ma giving you this link it is very difficult to give you all information step by step as it requires ui use..hope this helps you..
+ok fine i have done something that might helps you..like i have binded your rectangle fill to a property  that you can change at any time through code .like you can use dispatchertimer and after fixed interval you can change the image of your rectangle like this..
+<Rectangle x:Name="rectangle1" RadiusX="12" RadiusY="12" Height="300" HorizontalAlignment="Center" VerticalAlignment="Center" Width="300">
+        <Rectangle.Projection>
+            <PlaneProjection RotationX="-90"/>
+        </Rectangle.Projection>
+        <Rectangle.Fill>
+            <ImageBrush ImageSource="{Binding hello1}"/>
+        </Rectangle.Fill>
+    </Rectangle>
+in your page .cs do this..
+public sealed partial class MainPage : Page , INotifyPropertyChanged
+{
+    public MainPage()
+    {
+        this.InitializeComponent();
+        DispatcherTimerSetup();
+     //   hello1 = "/Assets/4.jpeg";
+         hello1 = new ImageBrush();
+        hello1.ImageSource =
+            new BitmapImage(
+                new Uri(BaseUri, "Assets/1.jpg")
+            );
+        this.DataContext = this;
+    }
+    DispatcherTimer dispatcherTimer;
+    DateTimeOffset startTime;
+    DateTimeOffset lastTime;
+    DateTimeOffset stopTime;
+    int timesTicked = 1;
+    int timesToTick = 10;
+    public void DispatcherTimerSetup()
+    {
+        dispatcherTimer = new DispatcherTimer();
+        dispatcherTimer.Tick += dispatcherTimer_Tick;
+        dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
+        //IsEnabled defaults to false
+  //      TimerLog.Text += "dispatcherTimer.IsEnabled = " + dispatcherTimer.IsEnabled + "\n";
+        startTime = DateTimeOffset.Now;
+        lastTime = startTime;
+    //    TimerLog.Text += "Calling dispatcherTimer.Start()\n";
+        dispatcherTimer.Start();
+        //IsEnabled should now be true after calling start
+      //  TimerLog.Text += "dispatcherTimer.IsEnabled = " + dispatcherTimer.IsEnabled + "\n";
+    }
+    void dispatcherTimer_Tick(object sender, object e)
+    {
+        rectangle.Fill = hello1;
+    }
+    private ImageBrush hello;
+    public ImageBrush hello1
+    {
+        get
+        {
+            return hello;
+        }
+        set
+        {
+            hello = value;
+            FirePropertyChanged("hello1");
+        }
+    }
+    /// <summary>
+    /// Invoked when this page is about to be displayed in a Frame.
+    /// </summary>
+    /// <param name="e">Event data that describes how this page was reached.  The Parameter
+    /// property is typically used to configure the page.</param>
+    private void StartAnimation_Click_1(object sender, RoutedEventArgs e)
+    {
+        Storyboard1.Begin();
+      //  Storyboard1.GetCurrentTime =
+      //  Storyboard1.
+      //  double sd = Storyboard1.GetCurrentTime;
+    }
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void FirePropertyChanged(string propertyName)
+    {
+        if (this.PropertyChanged != null)
+        {
+            this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+}
+you can modify it according to your need..hope this will help you..
+
+=== Q34181536  [score 0] Flip Image continuously like tile in windows phone 8.1 store app
+URL: https://stackoverflow.com/questions/34181536/flip-image-continuously-like-tile-in-windows-phone-8-1-store-app
+--- QUESTION BODY ---
+I have one image in Grid. I want to give 
+image
+ a continuous 
+flip
+ effect like tiles in home screen. Also on tap 
+tilt
+ effect. How can we achieve this? any good start?
+Thanks
+
+--- ANSWER [score 1, accepted=False] ---
+http://phone.codeplex.com
+ is the official toolkit for Windows Phone apps, this kit includes new components, functionalities and more. Effects like 
+Effects – SlideInEffect, TiltEffect and TurnstileFeatherEffect
+ are available
+Also you can use 
+HubTile
+ for flip effect for tile image in your application
+
+--- ANSWER [score 0, accepted=False] ---
+You can try FlipView :
+                
+                
+                
+                
+                
+                
+                
+            
+You can Change title effect by FlipView.SelectIndex

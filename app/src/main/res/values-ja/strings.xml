@@ -231,4 +231,96 @@
     <string name="record_return_title">ジェスチャーを記録しました</string>
     <string name="record_return_text">タップして Click に戻る</string>
     <string name="toast_return_blocked">Click に自動で戻れませんでした：システム設定で Click の「バックグラウンドでのポップアップ」を許可するか、通知をタップして戻ってください。</string>
+
+    <!-- ノードグラフエディタ -->
+    <string name="node_graph_untitled">無題のプログラム</string>
+    <string name="node_graph_rename">名前を変更</string>
+    <string name="node_graph_undo">元に戻す</string>
+    <string name="node_graph_redo">やり直す</string>
+    <string name="node_graph_copy">コピー</string>
+    <string name="node_graph_paste">貼り付け</string>
+    <string name="node_graph_delete">ノードを削除</string>
+    <string name="node_graph_delete_title">ノードを削除</string>
+    <string name="node_graph_delete_message">選択したノードを削除しますか？関連する接続も一緒に削除されます。</string>
+    <string name="node_graph_delete_start_locked">開始ノードは削除できません</string>
+    <string name="node_graph_new_node">ノードを追加</string>
+    <string name="node_graph_selected_count">%1$d 個のノードを選択中</string>
+    <string name="node_graph_hint_multi">ドラッグでまとめて移動、削除で選択中のノードをすべて削除します</string>
+    <string name="node_graph_param_title">パラメータ</string>
+    <string name="node_graph_close">閉じる</string>
+    <string name="node_graph_type_start">開始</string>
+    <string name="node_graph_type_click">タップ</string>
+    <string name="node_graph_type_swipe">スワイプ</string>
+    <string name="node_graph_type_delay">遅延</string>
+    <string name="node_graph_type_wait">待機</string>
+    <string name="node_graph_type_loop">ループ</string>
+    <string name="node_graph_color">色</string>
+    <string name="node_graph_repeat">繰り返し回数</string>
+    <string name="node_graph_gesture_name">ジェスチャー名</string>
+    <string name="node_graph_action_point">動作点</string>
+    <string name="node_graph_pick_point">取得</string>
+    <string name="node_graph_point_x">X 座標</string>
+    <string name="node_graph_point_y">Y 座標</string>
+    <string name="node_graph_start_point">始点</string>
+    <string name="node_graph_end_point">終点</string>
+    <string name="node_graph_duration_ms">スワイプ時間（ミリ秒）</string>
+    <string name="node_graph_delay_ms">遅延（ミリ秒）</string>
+    <string name="node_graph_wait_mode">待機方法</string>
+    <string name="node_graph_wait_user">ユーザーがボールをタップするまで</string>
+    <string name="node_graph_wait_time">指定した時刻まで</string>
+    <string name="node_graph_wait_until">時刻</string>
+    <string name="node_graph_hour">時</string>
+    <string name="node_graph_minute">分</string>
+    <string name="node_graph_loop_target">戻り先</string>
+    <string name="node_graph_loop_count">ループ回数</string>
+    <string name="node_graph_loop_infinite">0 = 無限ループ</string>
+    <string name="node_graph_start_desc">プログラムはここから始まります</string>
+    <string name="node_graph_pick_click">一度タップしてタップ座標を取得</string>
+    <string name="node_graph_pick_swipe">スワイプして始点と終点を取得</string>
+    <string name="node_graph_step">ステップ %1$d</string>
+    <string name="node_graph_empty_hint">ノード右側の丸を空白へドラッグすると新規作成、他のノードへドラッグすると接続できます</string>
+    <string name="node_graph_thumb_ms">%1$d ms</string>
+    <string name="node_graph_loop_infinite_short">無限</string>
+    <string name="node_graph_start_short">開始点</string>
+
+    <!-- プログラム実行エンジン / フローティングボール -->
+    <string name="program_notification_channel_name">プログラム実行</string>
+    <string name="program_notification_title">プログラム実行中</string>
+    <string name="program_notification_text">ステップを実行中</string>
+    <string name="program_notification_idle">プログラム</string>
+    <string name="program_notification_idle_text">開始待ち</string>
+    <string name="program_toast_need_overlay">フローティングボールの表示にはオーバーレイ権限が必要です</string>
+    <string name="program_toast_need_accessibility">プログラムの実行にはユーザー補助サービスが必要です</string>
+    <string name="program_toast_paused">一時停止しました。ボールをダブルタップで再開</string>
+    <string name="program_toast_resumed">再開しました</string>
+    <string name="program_toast_waiting">フローティングボールをタップすると続行します</string>
+    <string name="program_toast_stopped">プログラムを停止しました</string>
+    <string name="program_toast_not_found">プログラムが見つかりません</string>
+    <string name="program_toast_started">プログラムを開始しました</string>
+    <string name="program_notify_step_start">開始</string>
+    <string name="program_notify_step_click">タップ</string>
+    <string name="program_notify_step_swipe">スワイプ</string>
+    <string name="program_notify_step_delay">遅延</string>
+    <string name="program_notify_step_wait">待機</string>
+    <string name="program_notify_step_loop">ループ</string>
+
+    <!-- プログラム一覧ページ -->
+    <string name="program_new">プログラムを追加</string>
+    <string name="program_node_count">%1$d 個のノード</string>
+    <string name="program_empty">プログラムがまだありません。右下から追加してください</string>
+    <string name="program_rename">名前を変更</string>
+    <string name="program_duplicate">複製</string>
+    <string name="program_delete">プログラムを削除</string>
+    <string name="program_delete_confirm">「%1$s」を削除しますか？元に戻せません。</string>
+    <string name="program_name_hint">プログラム名</string>
+    <string name="node_graph_run">実行</string>
+    <string name="node_graph_stop">停止</string>
+    <string name="program_default_name">プログラム %1$d</string>
+    <string name="program_copy_suffix">%1$s のコピー</string>
+    <string name="edge_error_no_source">起点ノードがありません</string>
+    <string name="edge_error_no_target">終点ノードがありません</string>
+    <string name="edge_error_self">自分自身には接続できません</string>
+    <string name="edge_error_to_start">開始ノードには接続できません</string>
+    <string name="edge_error_duplicate">この2つのノードはすでに接続済みです</string>
+    <string name="edge_error_loop_single_out">ループノードの出力は1本だけです</string>
 </resources>

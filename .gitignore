@@ -23,3 +23,7 @@ replay_pid*.log
 /icon.png
 /about.png
 temp_*
+
+# 真机抓帧/截图取证：体积巨大（GB 级），只留在本机，不入库
+tools/captures/
+tools/__pycache__/
