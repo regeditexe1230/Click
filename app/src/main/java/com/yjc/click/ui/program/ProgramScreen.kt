@@ -235,10 +235,10 @@ fun ProgramScreen(
             // 退出收尾时会整张卡片（含右下角三个按钮）在一帧里蹦回来 —— 就是用户报的「按钮突然出现」。
             // 只有 EXPAND / FLIP 那两档才会在动画层重画同一张卡片，那时才该藏本体。
             // 慢放抓帧：frame24→25 时 (56,378,1384,720) 这块有 77.66% 像素在一帧内变化，正是这张卡片。
-            pageFlippingId = if (FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE) null else flip.flipId,
+            pageFlippingId = if (FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE) null else flip.flipId,
             programs = programs,
             listState = listState,
-            // 只让被点的磁贴自己翻+放大（Windows 8 磁贴那种），列表本身一动不动：
+            // 只让被点的磁贴自己翻+放大（磁贴翻转 磁贴那种），列表本身一动不动：
             // 之前这里跟着淡出，看起来像「整个界面在动」
             listAlpha = 1f,
             draggingId = draggingId,
@@ -311,7 +311,7 @@ fun ProgramScreen(
             }
         }
 
-        // ---- 翻转覆盖层（Win8 磁贴原地翻转）已提到窗口级 ----
+        // ---- 翻转覆盖层（flip 磁贴原地翻转）已提到窗口级 ----
         // 它现在由外壳渲染（MainScaffold 里的 ProgramFlipOverlay，状态就是上面那个 flip）。
         // 提层的原因：动画层留在这个 Box 里的话，顶栏底栏一收（布局高度真的变了）整页会重排，
         // 翻转中的卡片跟着上移 224px；节点图的可见范围也被页面高度卡在 2528 而不是整屏 3200。
@@ -569,46 +569,46 @@ private fun turnstileListAlpha(p: Float, entering: Boolean): Float {
 }
 
 /**
- * WIN8 档：p（线性时间轴 0..1）处的「窗口」生长量。
+ * flip 档：p（线性时间轴 0..1）处的「窗口」生长量。
  * 进场：367ms 里一路长完，招牌曲线 —— 没有旋转、没有翻面，就是卡片矩形长到全屏。
  * 退场：前 167ms 只淡出、窗口一动不动；之后 367ms 才收回，用退场曲线。总 534ms。
  */
-private fun win8Grow(p: Float, entering: Boolean): Float {
+private fun tileGrow(p: Float, entering: Boolean): Float {
     val q = p.coerceIn(0f, 1f)
     return if (entering) {
-        WIN8_EASE.transform(q)
+        FLIP_EASE.transform(q)
     } else {
-        val start = WIN8_FADE_DELAY_EXIT + WIN8_FADE_MS
-        val t = ((q * WIN8_EXIT_MS - start) / WIN8_MOVE_MS).coerceIn(0f, 1f)
-        1f - WIN8_EASE_EXIT.transform(t)
+        val start = FLIP_FADE_DELAY_EXIT + FLIP_FADE_MS
+        val t = ((q * FLIP_EXIT_MS - start) / FLIP_MOVE_MS).coerceIn(0f, 1f)
+        1f - FLIP_EASE_EXIT.transform(t)
     }
 }
 
 /**
- * WIN8 档：p 处节点图的不透明度（revealed / hidden 两条时间轴）。
+ * flip 档：p 处节点图的不透明度（revealed / hidden 两条时间轴）。
  * 进场：延迟 200ms 再花 167ms 淡入；退场：立刻花 167ms 淡出。都用招牌曲线。
  */
-private fun win8Alpha(p: Float, entering: Boolean): Float {
+private fun tileAlpha(p: Float, entering: Boolean): Float {
     val q = p.coerceIn(0f, 1f)
     return if (entering) {
-        val t = ((q * WIN8_ENTER_MS - WIN8_FADE_DELAY_ENTER) / WIN8_FADE_MS).coerceIn(0f, 1f)
-        WIN8_EASE.transform(t)
+        val t = ((q * FLIP_ENTER_MS - FLIP_FADE_DELAY_ENTER) / FLIP_FADE_MS).coerceIn(0f, 1f)
+        FLIP_EASE.transform(t)
     } else {
-        val t = ((q * WIN8_EXIT_MS - WIN8_FADE_DELAY_EXIT) / WIN8_FADE_MS).coerceIn(0f, 1f)
-        1f - WIN8_EASE.transform(t)
+        val t = ((q * FLIP_EXIT_MS - FLIP_FADE_DELAY_EXIT) / FLIP_FADE_MS).coerceIn(0f, 1f)
+        1f - FLIP_EASE.transform(t)
     }
 }
 
 /**
  * 窗口生长曲线：0 → 1 的「窗口」生长量。
  *
- * WIN8 档走 WinJS 的两条时间轴（见 [win8Grow]）。
+ * flip 档走 WinJS 的两条时间轴（见 [flipGrow]）。
  * FLIP 档：[HANDOFF] 之前先长 [HANDOFF_GROW]，让「翻」和「长大」真的是同一段运动；交接那一刻的窗口
  * 正好等于正面的矩形。之后再把剩下的长完，两段都用先快后慢 —— 接缝处速度对得上，不会一顿。
  */
 private fun flipGrow(p: Float, entering: Boolean): Float =
     if (FLIP_PROFILE == FlipProfile.EXPAND) {
-        win8Grow(p, entering)
+        tileGrow(p, entering)
     } else if (p <= HANDOFF) {
         HANDOFF_GROW * FastOutSlowInEasing.transform((p / HANDOFF).coerceIn(0f, 1f))
     } else {
@@ -654,14 +654,14 @@ private fun GraphReveal(
 ) {
     val density = LocalDensity.current
     val cornerPx = with(density) { TILE_CORNER_DP.dp.toPx() }
-    val win8 = FLIP_PROFILE == FlipProfile.EXPAND
-    val turnstile = FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE
+    val flip = FLIP_PROFILE == FlipProfile.EXPAND
+    val turnstile = FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE
     Box(
         modifier = Modifier
             .fillMaxSize()
             // EXPAND：整层不透明度按 WinJS 的 revealed / hidden 时间轴走 —— 进场延迟 200ms 再淡入 167ms，
             // 退场立刻淡出 167ms。alpha 只在 layer 块里读，所以动画期间这一层一次都不重组。
-            .graphicsLayer { if (win8) alpha = win8Alpha(progress.value, entering) }
+            .graphicsLayer { if (flip) alpha = tileAlpha(progress.value, entering) }
             .drawWithContent {
                 // turnstile 档：图页就是「整页转进来」，不裁剪、也不分阶段揭示 ——
                 // 旋转和不透明度都在外面那层 turnstileLayer 里做。
@@ -672,7 +672,7 @@ private fun GraphReveal(
                 }
                 val p = progress.value
                 // FLIP：正面还没转到 90°（还没交班），背面一点都不露。EXPAND：从 0 就开始长（只是还很淡）
-                if (!win8 && p < HANDOFF) return@drawWithContent
+                if (!flip && p < HANDOFF) return@drawWithContent
                 // 长满整屏就彻底不裁了（也省掉一次路径裁剪）
                 if (p >= 1f) {
                     this@drawWithContent.drawContent()
@@ -715,7 +715,7 @@ private fun GraphReveal(
  * 也就是右边缘转进屏幕里。用 setPolyToPoly 得到的是一个真正的射影变换，
  * 卡片里的文字、圆点、按钮会跟着一起做透视缩短，不是简单地把矩形压扁。
  *
- * WIN8 档：没有翻转、也没有透视 —— 这张卡片就是「长出来的那块底」，节点图在它上面淡入（见 GraphReveal）；
+ * flip 档：没有翻转、也没有透视 —— 这张卡片就是「长出来的那块底」，节点图在它上面淡入（见 GraphReveal）；
  * 唯一残留的姿态是按下时那点缩放，在进场头 100ms 里线性展开，和列表里那次松手回弹接得上。
  *
  * 所有动画值都只在 draw / layer 阶段读（composition 里只读 p 决定「画不画」），
@@ -732,15 +732,15 @@ private fun FlipFront(
     window: IntSize,
 ) {
     val p = progress.value
-    val win8 = FLIP_PROFILE == FlipProfile.EXPAND
-    // FLIP：过了 90° 就交给背面了。WIN8：从头画到尾（节点图只是在它上面淡入）
-    if (!win8 && p >= HANDOFF) return
+    val flip = FLIP_PROFILE == FlipProfile.EXPAND
+    // FLIP：过了 90° 就交给背面了。flip：从头画到尾（节点图只是在它上面淡入）
+    if (!flip && p >= HANDOFF) return
     val density = LocalDensity.current
     val rect = flipRect(p, frame, window, entering)
-    // WIN8：进场头 100ms 把按下那点缩放线性放掉 —— 和列表里那次「先等 200ms、再 100ms 线性回弹」
+    // flip：进场头 100ms 把按下那点缩放线性放掉 —— 和列表里那次「先等 200ms、再 100ms 线性回弹」
     // 是同一条时间表（单位是规格毫秒，所以放慢倍数不影响比例）
-    val unwind = if (win8 && entering) {
-        (((p * WIN8_ENTER_MS) - PRESS_UNWIND_DELAY_MS) / PRESS_UNWIND_MS).coerceIn(0f, 1f)
+    val unwind = if (flip && entering) {
+        (((p * FLIP_ENTER_MS) - PRESS_UNWIND_DELAY_MS) / PRESS_UNWIND_MS).coerceIn(0f, 1f)
     } else {
         0f
     }
@@ -755,7 +755,7 @@ private fun FlipFront(
                 height = with(density) { (rect.bottom - rect.top).toDp() },
             )
             .graphicsLayer {
-                if (win8) {
+                if (flip) {
                     // 从按下姿态接着走：只有缩放，线性回到中性
                     val s = 1f + (tilt.scale - 1f) * (1f - unwind)
                     scaleX = s
@@ -763,8 +763,8 @@ private fun FlipFront(
                 }
             }
             .drawWithContent {
-                if (win8) {
-                    // WIN8 不做透视：就是一块实实在在长大的卡片
+                if (flip) {
+                    // flip 不做透视：就是一块实实在在长大的卡片
                     this@drawWithContent.drawContent()
                     return@drawWithContent
                 }
@@ -854,7 +854,7 @@ internal class ProgramFlipState {
 
     /**
      * 这一次动画是进场还是退场。
-     * WIN8 档的位移、淡入淡出是两条时间轴（进场先位移后淡入、退场先淡出后位移），
+     * flip 档的位移、淡入淡出是两条时间轴（进场先位移后淡入、退场先淡出后位移），
      * 光看进度值分不出来，所以显式记着；上下栏要不要按「图已打开」处理也按它报。
      */
     var entering by mutableStateOf(true)
@@ -866,7 +866,7 @@ internal class ProgramFlipState {
 
     /**
      * turnstile 档：列表页此刻该有的旋转角 / 不透明度。
-     * 列表页在 MainScaffold 那边（要跟图页一起转才是 Win8 那种「整页转场」），这里只负责算数值。
+     * 列表页在 MainScaffold 那边（要跟图页一起转才是 flip 那种「整页转场」），这里只负责算数值。
      */
     val listAngle: Float
         get() = if (turnstileActive) turnstileListAngle(progress.value, entering) else 0f
@@ -882,7 +882,7 @@ internal class ProgramFlipState {
         get() = if (turnstileActive) turnstileGraphAlpha(progress.value, entering) else 1f
 
     private val turnstileActive: Boolean
-        get() = FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE && (openId != null || flipId != null)
+        get() = FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE && (openId != null || flipId != null)
 
     // ---- 窄板档（SLAB）：列表页缩退 + 页板转开成窄板停一拍 + 扫满带残角收平 ----
 
@@ -1019,15 +1019,15 @@ internal class ProgramFlipState {
     }
 
     /**
-     * 这一次动画的时长。默认档（WIN8_TURNSTILE）两个方向都是 300ms（图页那条；列表页的 128ms 跑在前段）。
+     * 这一次动画的时长。默认档（FLIP_TURNSTILE）两个方向都是 300ms（图页那条；列表页的 128ms 跑在前段）。
      * [FLIP_PROFILE] 切到 EXPAND（磁贴长大）时是进场 367 / 退场 534ms，切到 FLIP 时是恒定 [FLIP_MS]。
      */
     private fun durationMs(targetValue: Float): Int =
-        SLOWMO * if (FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE) {
+        SLOWMO * if (FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE) {
             // turnstile：进场 = 图页那条 300ms；退场 = 列表页那条 300ms（图页那 128ms 跑在前段）
             TURNSTILE_IN_MS
         } else if (FLIP_PROFILE == FlipProfile.EXPAND) {
-            if (targetValue > HANDOFF) WIN8_ENTER_MS else WIN8_EXIT_MS
+            if (targetValue > HANDOFF) FLIP_ENTER_MS else FLIP_EXIT_MS
         } else if (FLIP_PROFILE == FlipProfile.GROW) {
             if (targetValue > HANDOFF) GROW_TOTAL_MS.toInt() else GROW_EXIT_MS
         } else if (FLIP_PROFILE == FlipProfile.SLAB) {
@@ -1047,8 +1047,8 @@ internal class ProgramFlipState {
         val ms = durationMs(targetValue)
         s.launch {
             if (entering) progress.snapTo(0f)
-            // WIN8 的时间轴必须是**线性**的：两条时间轴各自的曲线与延迟（招牌曲线 / 退场曲线）
-            // 都在 win8Grow / win8Alpha 里自己算，Animatable 只负责把 0..1 均匀走完。
+            // flip 的时间轴必须是**线性**的：两条时间轴各自的曲线与延迟（招牌曲线 / 退场曲线）
+            // 都在 flipGrow / flipAlpha 里自己算，Animatable 只负责把 0..1 均匀走完。
             progress.animateTo(
                 targetValue,
                 tween(
@@ -1126,7 +1126,7 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
         // 这一层自己的窗口左上角：turnstileLayer 要的是图层局部坐标里的轴心，
         // 写死 (0,0) 只在「overlay 真的贴在窗口原点」时才对 —— 以实测为准（tick 日志里会打出来）
         var layerOrigin by remember { mutableStateOf(Offset.Zero) }
-        if (FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE) {
+        if (FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1268,7 +1268,7 @@ internal data class CardFrame(
 /**
  * 按下姿态：**只有缩放**。
  *
- * 用户明确不要 Win8 磁贴「鼠标长按」那种透视变形（原来的 rotationX / rotationY / 轴心 / 变暗
+ * 用户明确不要 flip 磁贴「鼠标长按」那种透视变形（原来的 rotationX / rotationY / 轴心 / 变暗
  * 那一整条 TiltEffect 链已经删掉），所以这里只剩一个缩放值：按下缩一点、按住放大一点、松手回 1。
  * 点开卡片时把它交给动画层，进场动画从这个缩放接着走 —— 回弹和进场不打架。
  */
@@ -1277,10 +1277,10 @@ internal data class CardTilt(
 )
 
 /**
- * 动画档位（默认档是 [WIN8_TURNSTILE]，改下面 `FLIP_PROFILE` 这一行就能切档）。
- * - [WIN8_TURNSTILE] **当前默认**：Win8 页面转场的本体 —— 整页绕「屏幕左外侧 40px 的竖轴」转，
+ * 动画档位（默认档是 [FLIP_TURNSTILE]，改下面 `FLIP_PROFILE` 这一行就能切档）。
+ * - [FLIP_TURNSTILE] **当前默认**：flip 页面转场的本体 —— 整页绕「屏幕左外侧 40px 的竖轴」转，
  *   图页 80°→0°（300ms）+ 列表页 0°→−50°（128ms），退场反过来；用自算射影映射（poly-to-poly）实现。
- * - [EXPAND]：卡片矩形长到全屏 + 节点图在裁剪窗口里淡入（上一版的 Win8 磁贴语义，按下只有缩放）；
+ * - [EXPAND]：卡片矩形长到全屏 + 节点图在裁剪窗口里淡入（上一版的 flip 磁贴语义，按下只有缩放）；
  * - [FLIP]：卡片绕自身竖中轴转 180° 交班给背面，600ms 强透视（更早的一版）。
  * 三档共用同一套结构：覆盖层在窗口级、两条栏动画期间不改布局、卡片矩形快照 + 裁剪揭示。
  */
@@ -1288,11 +1288,11 @@ private val FLIP_PROFILE = FlipProfile.GROW
 
 /**
  * 三档动画，一行可切（lead 要求给用户留后路）：
- * - [WIN8_TURNSTILE]：Win8 页面转场的本体 —— 整页绕「屏幕左外侧 40px 的竖轴」转（见 TURNSTILE_*），默认档；
+ * - [FLIP_TURNSTILE]：flip 页面转场的本体 —— 整页绕「屏幕左外侧 40px 的竖轴」转（见 TURNSTILE_*），默认档；
  * - [EXPAND]：卡片矩形长到全屏 + 节点图在裁剪窗口里淡入（上一版）；
  * - [FLIP]：卡片绕自身竖中轴转 180° 交班给背面 + 自算射影透视，600ms。
  */
-private enum class FlipProfile { WIN8_TURNSTILE, EXPAND, FLIP, SLAB, GROW }
+private enum class FlipProfile { FLIP_TURNSTILE, EXPAND, FLIP, SLAB, GROW }
 
 /** [FlipProfile.FLIP] 档专用：总时长（毫秒）。其余两档各用自己的时间轴，不读它。 */
 private const val FLIP_MS = 600
@@ -1330,13 +1330,13 @@ private const val STUCK_MS = 400L
 // 退出 = backward（列表页 −50°→0°，同时图页 0°→80°）。两边同时起步，图页那条 128ms 先跑完。
 //
 // 透视：官方 perspective(600px)。**CSS px 是设备无关单位 ≡ Android dp**：
-// 本机 1440px / density 3 = 480dp 宽，正好就是 Win8 手机端那个 480 宽的视口，
+// 本机 1440px / density 3 = 480dp 宽，正好就是 flip 手机端那个 480 宽的视口，
 // 所以 600px ≡ 600.dp（本机 1800px），跟「按屏宽 1.25 倍」是同一个数，但 dp 才是它本来的语义。
 // 必须随密度换算：1440px 宽若直接把 600 当 px 用，退场 −50° 时分母 P − d·sinθ 会变号
 // （点跑到观察者身后），数学上是病态的。
 // BackwardOut 官方单用 perspective(800px) ⇒ 那条 800.dp（本机 2400px）。
 // 投影缩放 scale(d) = P / (P + d·sinθ)，d = x − originX：d 从 120px（屏最左）到 1560px（屏最右）；
-// 80° 时（P=1800）左 0.9384 / 右 0.5395 ⇒ 左右边缘高度比 = 1.7393，与 Win8 手机端逐位一致。
+// 80° 时（P=1800）左 0.9384 / 右 0.5395 ⇒ 左右边缘高度比 = 1.7393，与 flip 手机端逐位一致。
 // （早前按 px 取 −40/P=1800 得 1.7710，差 1.8%，属二阶误差 —— 现在按 dp 走。）
 // rotationY 取正 = 右边缘转进屏幕里（远离观察者、变小），正是用户在 30 题里选的方向。
 // ---------------------------------------------------------------------------
@@ -1444,27 +1444,27 @@ private const val HANDOFF = 0.5f
  */
 private const val HANDOFF_GROW = 0.16f
 
-// ---- WIN8 档：逐字照 WinJS 的 expand / collapse 语义 ----
+// ---- flip 档：逐字照 WinJS 的 expand / collapse 语义 ----
 /** 进场：卡片矩形 367ms 长到全屏；节点图在窗口里 167ms 淡入、延迟 200ms（因为有 affected 元素）⇒ 总 367ms。 */
-private const val WIN8_ENTER_MS = 367
+private const val FLIP_ENTER_MS = 367
 
 /** 退场：节点图 167ms 淡出（延迟 0），卡片矩形 367ms 收回、延迟 167ms ⇒ 总 534ms。 */
-private const val WIN8_EXIT_MS = 534
+private const val FLIP_EXIT_MS = 534
 
 /** 位移（卡片矩形长大 / 收回）与淡入淡出的时长。 */
-private const val WIN8_MOVE_MS = 367
-private const val WIN8_FADE_MS = 167
-private const val WIN8_FADE_DELAY_ENTER = 200
-private const val WIN8_FADE_DELAY_EXIT = 0
+private const val FLIP_MOVE_MS = 367
+private const val FLIP_FADE_MS = 167
+private const val FLIP_FADE_DELAY_ENTER = 200
+private const val FLIP_FADE_DELAY_EXIT = 0
 
 /** 招牌曲线：WinJS 的 cubic-bezier(0.1, 0.9, 0.2, 1)。 */
-private val WIN8_EASE = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
+private val FLIP_EASE = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
 
 /** 退场曲线：WinJS 的 cubic-bezier(0.11, 0.5, 0.24, 0.96)，整个 WinJS 只有两处用它。 */
-private val WIN8_EASE_EXIT = CubicBezierEasing(0.11f, 0.5f, 0.24f, 0.96f)
+private val FLIP_EASE_EXIT = CubicBezierEasing(0.11f, 0.5f, 0.24f, 0.96f)
 
 /**
- * 按下姿态：用户明确不要 Win8 磁贴那套「鼠标长按」变形（原来的 TILT_MAX_DEG 17.1887°、
+ * 按下姿态：用户明确不要 flip 磁贴那套「鼠标长按」变形（原来的 TILT_MAX_DEG 17.1887°、
  * 后退缩小 0.965、变暗 0.06、朝屏幕中心偏的轴心 0.22 —— 整条 TiltEffect 链已删除）。
  * 现在只有两个缩放值：按下缩一点、长按放大一点。
  */
@@ -1472,7 +1472,7 @@ private val WIN8_EASE_EXIT = CubicBezierEasing(0.11f, 0.5f, 0.24f, 0.96f)
 /** 长按（≥500ms）后的缩放：单纯放大，不倾斜、不变暗。 */
 private const val PRESS_HOLD_SCALE = 1.06f
 
-/** 松手后先等 200ms，再用 100ms 线性回弹（沿用 Win8 TiltEffect 的 ACTION_UP 时间表，只作用于缩放）。 */
+/** 松手后先等 200ms，再用 100ms 线性回弹（沿用 flip TiltEffect 的 ACTION_UP 时间表，只作用于缩放）。 */
 private const val PRESS_UNWIND_DELAY_MS = 200L
 private const val PRESS_UNWIND_MS = 100
 
@@ -1678,7 +1678,7 @@ private fun ProgramEntry(
     val gapPx = with(density) { CARD_GAP_DP.dp.toPx() }
     val scale by animateFloatAsState(
         // 只有缩放：按下缩一点、按住/长按放大一点、拖起来再大一点，松手回 1。
-        // （原来那条 Win8 TiltEffect：rotationX/rotationY + 轴心 + 变暗，用户明确不要，已删）
+        // （原来那条 flip TiltEffect：rotationX/rotationY + 轴心 + 变暗，用户明确不要，已删）
         targetValue = when {
             dragging -> 1.03f
             heldLong -> PRESS_HOLD_SCALE
@@ -1750,7 +1750,7 @@ private fun ProgramEntry(
                     )
                     .graphicsLayer {
                         // 只有缩放：按下缩一点、长按放大一点，松手回 1。
-                        // 没有倾斜、没有透视、没有变暗 —— 用户明确不要 Win8 磁贴那套按下变形。
+                        // 没有倾斜、没有透视、没有变暗 —— 用户明确不要 flip 磁贴那套按下变形。
                         scaleX = scale
                         scaleY = scale
                         // EXPAND / FLIP 档：正在翻出去的这张本体藏起来，屏幕上只剩动画层里的同一张卡片，
@@ -1879,7 +1879,7 @@ private fun ProgramColorPreview(program: Program?) {
 private fun Modifier.programTileGestures(
     onTap: () -> Unit,
     onLongPress: () -> Unit,
-    /** 按下 / 抬起，外加按下点在卡片里的位置（Win8 的倾斜姿态要用它算） */
+    /** 按下 / 抬起，外加按下点在卡片里的位置（flip 的倾斜姿态要用它算） */
     onPressChange: (Boolean, Offset) -> Unit,
     dragThresholdPx: Float,
     onDragStart: (grabOffsetY: Float) -> Unit,
