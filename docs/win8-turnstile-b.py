@@ -96,16 +96,19 @@ def main():
 
     # ---------- §8.2.1 单位语义：CSS px = dp ----------
     print("\n[§8.2.1] 单位语义：WinJS 的 px 是 CSS px = 设备无关单位 = dp")
-    print("  本机 1440px / density 3 = 480dp  ->  常量读作 perspective(600dp) / hinge -40dp")
-    print("  %-14s %-12s %-12s %-12s %-12s" % ("caliber", "W", "P", "hinge", "left/right"))
-    for name, Wd, Pd, hg in (("dp (ours)", 480.0, 600.0, 40.0),
-                             ("px on device", 1440.0, 1800.0, 120.0),
+    print("  本机 1440px / density 3.5 = 411.43dp（§8.2.3 勘误；旧文写 density 3 = 480dp 是错的）")
+    print("  -> 常量读作 perspective(600dp) / hinge -40dp；本机 px = 2100 / -140 / (P_OUT) 2800")
+    print("  %-16s %-12s %-12s %-12s %-12s" % ("caliber", "W", "P", "hinge", "left/right"))
+    for name, Wd, Pd, hg in (("dp REF 480", 480.0, 600.0, 40.0),
+                             ("dp REAL 411.43", 411.4285714, 600.0, 40.0),
+                             ("px on device", 1440.0, 2100.0, 140.0),
                              ("px desktop1366", 1366.0, 600.0, 40.0)):
         l = Pd / (Pd + hg * math.sin(math.radians(THETA_FWD)))
         r = Pd / (Pd + (Wd + hg) * math.sin(math.radians(THETA_FWD)))
-        print("  %-14s %-12.0f %-12.0f %-12.0f %-12.4f" % (name, Wd, Pd, hg, l / r))
-    print("  -> dp 口径与 px-on-device 口径给出同一个 1.7393（三者同比例缩放，比值严格不变）")
-    print("     => 目标比值 = 1.7393（Lead 口径）；A 的 3.1039 是 1366px 桌面口径，数不错但不是我们的口径。")
+        print("  %-16s %-12.2f %-12.0f %-12.0f %-12.4f" % (name, Wd, Pd, hg, l / r))
+    print("  -> dp 参考机 480 与 px-on-device（三者同比例缩放）都给出 1.7393（比值严格不变）")
+    print("  -> ★本机真值 W=411.43dp 给出 1.6337 —— 这才是装机后该量到的数")
+    print("     A 的 3.1039 是 1366px 桌面口径，数不错但不是我们的口径。")
 
     # ---------- 标度不变性 ----------
     print("\n[§8.2.2] 标度不变性的限定条件")
@@ -169,14 +172,16 @@ def main():
           (W + HINGE, P_DEFAULT + (W + HINGE) * math.sin(math.radians(THETA_EXIT))))
     print("  不退化条件：W <= P/|sin(theta)| - 40（单位必须与 P 一致）")
     print("  %-16s %-10s %-10s %-12s %-12s %-8s" % ("caliber", "W", "P", "d_right", "P-d*|sin|", "ok?"))
-    for name, Wd, Pd, hg in (("dp (ours)", 480.0, 600.0, 40.0),
-                             ("px on device", 1440.0, 1800.0, 120.0),
-                             ("px, P=600 WRONG", 1440.0, 600.0, 120.0)):
+    for name, Wd, Pd, hg in (("dp REF 480", 480.0, 600.0, 40.0),
+                             ("dp REAL 411.43", 411.4285714, 600.0, 40.0),
+                             ("px on device", 1440.0, 2100.0, 140.0),
+                             ("px, P=600 WRONG", 1440.0, 600.0, 140.0)):
         d = Wd + hg
         margin = Pd - d * abs(math.sin(math.radians(THETA_EXIT)))
-        print("  %-16s %-10.0f %-10.0f %-12.0f %-12.1f %-8s" %
+        print("  %-16s %-10.2f %-10.0f %-12.1f %-12.1f %-8s" %
               (name, Wd, Pd, d, margin, "OK" if margin > 0 else "DEGENERATE"))
-    print("  dp 口径上限 W <= %.1f dp；本机 480dp 安全（余量 %.1f dp）" % (wmax, wmax - 480.0))
+    print("  dp 口径上限 W <= %.1f dp；本机 411.43dp 安全（余量 %.1f dp；480dp 参考机余量 %.1f dp）"
+          % (wmax, wmax - 411.4285714, wmax - 480.0))
     print("  => 引用退场比值必须同时声明屏宽与 P 的单位；'600px' 直接搬到 1440px 屏上必然越界。")
 
 

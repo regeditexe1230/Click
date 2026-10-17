@@ -10,13 +10,13 @@ import java.util.UUID
  * 「程序」系统的数据模型。
  *
  * 术语：一个程序 = 一个预设 = 一张有向图。
- * - 图里必有一个 START 节点（自带，紫色悬浮球，只出不进）。
+ * - START 节点（开始块）是**可选**的、最多一个，由用户从底部积木托盘拖出来（见 docs/node-tray-spec.md）。
  * - 没有「结束」节点：一个节点没有出线，这条支线就跑完了。
  * - 一个节点有多条出线 = 并行支线，真正同时执行（靠多指手势）。
  * - 不汇合：每条支线各自跑到头。
  */
 enum class ProgramNodeType {
-    /** 每个程序自带的起点，紫色球，只出不进。 */
+    /** 开始块：用户从托盘拖出来的起点，紫色球，只出不进；一个程序最多一个。 */
     START,
 
     /** 点击一个坐标，可重复。 */
@@ -233,22 +233,13 @@ data class Program(
                 updatedAt = o.optLong("updatedAt", System.currentTimeMillis()),
             )
         }
-        /** 新程序：带一个开始节点。 */
-        fun create(name: String): Program {
-            val start = ProgramNode(
-                id = ProgramNode.newId(),
-                type = ProgramNodeType.START,
-                x = 120f,
-                y = 240f,
-                color = PROGRAM_COLORS[0],
-            )
-            return Program(
-                id = ProgramNode.newId(),
-                name = name,
-                nodes = listOf(start),
-                edges = emptyList(),
-            )
-        }
+        /** 新程序：**空画布**（开始块由用户从底部托盘拖出来，不再预置）。 */
+        fun create(name: String): Program = Program(
+            id = ProgramNode.newId(),
+            name = name,
+            nodes = emptyList(),
+            edges = emptyList(),
+        )
     }
 }
 

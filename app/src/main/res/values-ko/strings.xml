@@ -278,7 +278,7 @@
     <string name="node_graph_pick_click">한 번 탭하여 클릭 좌표를 선택</string>
     <string name="node_graph_pick_swipe">스와이프하여 시작점과 끝점을 선택</string>
     <string name="node_graph_step">%1$d단계</string>
-    <string name="node_graph_empty_hint">노드 오른쪽 동그라미를 빈 곳으로 끌면 새 노드가 생기고, 다른 노드로 끌면 연결됩니다</string>
+    <string name="node_graph_empty_hint">아래 트레이에서 블록을 끌어다 놓아 시작하세요</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">무한</string>
     <string name="node_graph_start_short">시작점</string>
@@ -296,6 +296,7 @@
     <string name="program_toast_waiting">플로팅 볼을 탭하면 계속합니다</string>
     <string name="program_toast_stopped">프로그램을 중지했습니다</string>
     <string name="program_toast_not_found">프로그램을 찾을 수 없습니다</string>
+    <string name="program_toast_no_start">먼저 시작 블록을 꺼내세요</string>
     <string name="program_toast_started">프로그램을 시작했습니다</string>
     <string name="program_notify_step_start">시작</string>
     <string name="program_notify_step_click">탭</string>
@@ -314,6 +315,14 @@
     <string name="program_delete_confirm">「%1$s」을 삭제할까요? 되돌릴 수 없습니다.</string>
     <string name="program_name_hint">프로그램 이름</string>
     <string name="node_graph_run">실행</string>
+    <!-- 하단 블록 트레이 (Scratch 스타일, docs/node-tray-spec.md 참고) -->
+    <string name="node_tray_title">블록</string>
+    <string name="node_tray_category_event">이벤트</string>
+    <string name="node_tray_category_action">동작</string>
+    <string name="node_tray_category_control">제어</string>
+    <string name="node_tray_collapse">블록 트레이 접기</string>
+    <string name="node_tray_expand">블록 트레이 펼치기</string>
+    <string name="node_tray_has_start">시작 블록이 이미 있습니다</string>
     <string name="node_graph_stop">중지</string>
     <string name="program_default_name">프로그램 %1$d</string>
     <string name="program_copy_suffix">%1$s 복사본</string>

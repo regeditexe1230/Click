@@ -278,7 +278,7 @@
     <string name="node_graph_pick_click">一度タップしてタップ座標を取得</string>
     <string name="node_graph_pick_swipe">スワイプして始点と終点を取得</string>
     <string name="node_graph_step">ステップ %1$d</string>
-    <string name="node_graph_empty_hint">ノード右側の丸を空白へドラッグすると新規作成、他のノードへドラッグすると接続できます</string>
+    <string name="node_graph_empty_hint">下のトレイからブロックをドラッグして組み立てを始めましょう</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">無限</string>
     <string name="node_graph_start_short">開始点</string>
@@ -296,6 +296,7 @@
     <string name="program_toast_waiting">フローティングボールをタップすると続行します</string>
     <string name="program_toast_stopped">プログラムを停止しました</string>
     <string name="program_toast_not_found">プログラムが見つかりません</string>
+    <string name="program_toast_no_start">まず開始ブロックをトレイから出してください</string>
     <string name="program_toast_started">プログラムを開始しました</string>
     <string name="program_notify_step_start">開始</string>
     <string name="program_notify_step_click">タップ</string>
@@ -314,6 +315,14 @@
     <string name="program_delete_confirm">「%1$s」を削除しますか？元に戻せません。</string>
     <string name="program_name_hint">プログラム名</string>
     <string name="node_graph_run">実行</string>
+    <!-- 下部ブロックトレイ（Scratch 風、docs/node-tray-spec.md 参照） -->
+    <string name="node_tray_title">ブロック</string>
+    <string name="node_tray_category_event">イベント</string>
+    <string name="node_tray_category_action">アクション</string>
+    <string name="node_tray_category_control">制御</string>
+    <string name="node_tray_collapse">ブロックトレイをたたむ</string>
+    <string name="node_tray_expand">ブロックトレイを展開</string>
+    <string name="node_tray_has_start">開始ブロックはすでにあります</string>
     <string name="node_graph_stop">停止</string>
     <string name="program_default_name">プログラム %1$d</string>
     <string name="program_copy_suffix">%1$s のコピー</string>

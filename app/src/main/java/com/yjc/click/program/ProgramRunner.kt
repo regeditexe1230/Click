@@ -53,6 +53,12 @@ class ProgramRunner(
         /** 支线结束（球消失）。 */
         fun onBranchEnd(branchId: String)
 
+        /**
+         * 程序里没有开始块：给用户一句**看得见**的提示（托盘化之后新程序是空画布，
+         * 用户很可能直接点运行，这时不能什么都不发生，见 docs/node-tray-spec.md §7）。
+         */
+        fun onNoStart()
+
         /** 所有支线都跑完了。 */
         fun onAllDone()
     }
@@ -122,6 +128,7 @@ class ProgramRunner(
         if (startNode == null) {
             Log.e(TAG, "start: no START node, program=${program.id}")
             stopped = true
+            listener.onNoStart()
             listener.onAllDone()
             return
         }

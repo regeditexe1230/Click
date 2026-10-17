@@ -19,9 +19,11 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +50,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
+import com.yjc.click.program.ProgramNode
 import com.yjc.click.program.ProgramNodeType
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -80,8 +83,6 @@ private val GraphErrorRed = Color(0xFFD32F2F)
 @Composable
 internal fun NodeGraphCanvas(
     state: NodeGraphState,
-    /** 松手落在空白处：弹出「新建节点」菜单（参数是画布落点与该线的源节点 id，选中后自动连线）。 */
-    onRequestNewNode: (canvas: Offset, fromId: String) -> Unit,
     /** 松手落在另一个节点上且校验通过：连上这条线。 */
     onConnect: (fromId: String, toId: String) -> Unit,
     /** 校验不通过：目标节点变红抖一下 + 底部弹一行提示。 */
@@ -92,7 +93,7 @@ internal fun NodeGraphCanvas(
     val scope = rememberCoroutineScope()
 
     // pointerInput 的 lambda 不该因为回调变化而重启，用 latest 兜住最新的回调
-    val latest = rememberUpdatedState(Triple(onRequestNewNode, onConnect, onConnectFailed))
+    val latest = rememberUpdatedState(onConnect to onConnectFailed)
     // 连线失败原因是资源 id，画布这边翻成文案（模型层不持有资源）
     val context = LocalContext.current
 
@@ -337,7 +338,6 @@ internal fun NodeGraphCanvas(
                         Gesture.PORT -> {
                             val fromId = portFrom
                             val target = dropTarget
-                            val drop = portPoint
                             portFrom = null
                             portPoint = null
                             dropTarget = null
@@ -348,14 +348,13 @@ internal fun NodeGraphCanvas(
                                     if (err != null) {
                                         // 非法连接：目标节点红一下抖一下 + 底部提示，不连线
                                         playShake(target.nodeId)
-                                        latest.value.third(target.nodeId, context.getString(err.res))
+                                        latest.value.second(target.nodeId, context.getString(err.res))
                                     } else {
-                                        latest.value.second(fromId, target.nodeId)
+                                        latest.value.first(fromId, target.nodeId)
                                     }
-                                } else if (drop != null) {
-                                    // 落在空白处 → 弹「新建节点」菜单，选中后自动连上（开始节点也允许这样长出新分支）
-                                    latest.value.first(drop, fromId)
                                 }
+                                // 落在空白处什么都不做：新建节点的入口已经改成底部积木托盘
+                                // （见 docs/node-tray-spec.md §1／§5），这里不再弹菜单、也不新建。
                             }
                         }
 
@@ -422,34 +421,50 @@ internal fun NodeGraphCanvas(
                 }
             }
 
-            // 节点卡片
+            // 节点卡片 + 它自己的接线柱放在**同一个 Box（同一层）**里：
+            // 以前端口是在下面那个 fillMaxSize 覆盖层里「遍历所有节点一次性画」的，z 序与所属节点脱钩
+            // ⇒ 所有端口恒定压在所有卡片之上（用户报「每个节点的接线柱应该和节点一起，不是始终置于顶层」）。
+            // 现在卡片与端口同层、端口紧随卡片之后绘制，后画的节点自然盖住先画节点的端口；
+            // 命中判定（PORT_TOUCH_DP 那套按距离命中）在别处、与这一层无关，未动。
             // 注意：内容层的 graphicsLayer 已经负责缩放平移；画布单位就是 dp@1×，
             // 所以这里的偏移**直接给 .dp**（乘 density 由布局完成）。用 .toDp() 的话等于把画布单位
             // 当成像素，真机上卡片会比模型小 density 倍 —— 端口、连线和命中判定就全错位了。
-            state.program.nodes.forEach { node ->
-                NodeCard(
-                    node = node,
-                    stepIndex = steps[node.id],
-                    selected = node.id in state.selectedIds,
-                    connectTarget = dropTarget?.nodeId == node.id,
-                    shakeProgress = if (errorNode == node.id) shake.value else 0f,
-                    modifier = Modifier
-                        .offset(x = node.x.dp, y = node.y.dp)
-                        .testTag("node_" + node.id)
-                        .semantics { testTagsAsResourceId = true },
-                )
-            }
-
-            // 接线柱（端口圆点）画在卡片**之上**的独立 Canvas 里：
-            // 手绘圆点不会被卡片盖住，也不会随缩放变成几个像素；
-            // 左边缘 = 输入端口、右边缘 = 输出端口，同一侧多个端口竖直等距排列。
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawPorts(
-                    state = state,
-                    ringColor = portRing,
-                    densityScale = density.density,
-                )
-            }
+            // 选中的（含正在拖动的：按下即选中，见上面的 pressedNodeId 分支）排到最后绘制 = 最顶层；
+            // sortedBy 是**稳定排序** ⇒ 未选中节点之间的先后完全不变。
+            // key(node.id) 必须在：列表顺序一变，没有 key 的话 Compose 会按位置复用组合，
+            // 卡片内部状态（抖动动画 / testTag / 语义）会跟着位置错位。
+            state.program.nodes
+                .sortedBy { if (it.id in state.selectedIds) 1 else 0 }
+                .forEach { node ->
+                    key(node.id) {
+                        Box(
+                            modifier = Modifier
+                                .offset(x = node.x.dp, y = node.y.dp)
+                                .size(NodeGraphMetrics.CARD_W.dp, NodeGraphMetrics.CARD_H.dp),
+                        ) {
+                            NodeCard(
+                                node = node,
+                                stepIndex = steps[node.id],
+                                selected = node.id in state.selectedIds,
+                                connectTarget = dropTarget?.nodeId == node.id,
+                                shakeProgress = if (errorNode == node.id) shake.value else 0f,
+                                modifier = Modifier
+                                    .testTag("node_" + node.id)
+                                    .semantics { testTagsAsResourceId = true },
+                            )
+                            // 端口圆点：圆心是**相对本节点**的偏移；圆点允许溢出这个 132×84dp 的盒子，
+                            // Compose 默认不裁剪绘制内容（只有 clip / graphicsLayer(clip = true) 才裁）。
+                            Canvas(modifier = Modifier.matchParentSize()) {
+                                drawNodePorts(
+                                    node = node,
+                                    state = state,
+                                    ringColor = portRing,
+                                    densityScale = density.density,
+                                )
+                            }
+                        }
+                    }
+                }
 
             // 框选矩形（画布坐标 × density → 层内像素）
             val rect = marquee
@@ -578,29 +593,34 @@ private fun DrawScope.drawArrowHead(tip: Offset, toward: Offset, color: Color, l
 }
 
 /**
- * 接线柱（端口圆点）：直接手绘在内容层的 Canvas 里，不生成 Compose 元素。
+ * 接线柱（端口圆点）：手绘在**该节点自己的** Canvas 里（与卡片同层，见节点卡片的绘制处），
+ * 所以端口的 z 序跟着节点走、会被后面的节点盖住；不生成 Compose 元素。
  *
  * 每个端口 = 外圈 [ringColor]（onSurface，高对比）+ 内部填充节点自己的颜色，
  * 半径按**屏幕像素**算（层内半径 = 屏幕半径 / scale），所以画布缩到 0.5× 时圆点大小不变、
  * 依旧清清楚楚；选中时按 [NodeGraphMetrics.PORT_SELECTED_SCALE] 放大一点。
+ * 坐标用**相对该节点**的偏移（父 Canvas 的原点就是卡片左上角）。
  */
-private fun DrawScope.drawPorts(state: NodeGraphState, ringColor: Color, densityScale: Float) {
+private fun DrawScope.drawNodePorts(
+    node: ProgramNode,
+    state: NodeGraphState,
+    ringColor: Color,
+    densityScale: Float,
+) {
     val scale = state.scale
-    state.program.nodes.forEach { node ->
-        val accent = programColor(node.color)
-        val selected = node.id in state.selectedIds
-        val radius = portRadiusPx(densityScale, selected) / scale
-        val ringWidth = portRingPx(densityScale) / scale
-        portCenters(node).forEach { center ->
-            val c = Offset(center.x * densityScale, center.y * densityScale)
-            drawCircle(color = accent, radius = radius - ringWidth / 2f, center = c)
-            drawCircle(
-                color = ringColor,
-                radius = radius,
-                center = c,
-                style = Stroke(width = ringWidth),
-            )
-        }
+    val accent = programColor(node.color)
+    val selected = node.id in state.selectedIds
+    val radius = portRadiusPx(densityScale, selected) / scale
+    val ringWidth = portRingPx(densityScale) / scale
+    portCenters(node).forEach { center ->
+        val c = Offset((center.x - node.x) * densityScale, (center.y - node.y) * densityScale)
+        drawCircle(color = accent, radius = radius - ringWidth / 2f, center = c)
+        drawCircle(
+            color = ringColor,
+            radius = radius,
+            center = c,
+            style = Stroke(width = ringWidth),
+        )
     }
 }
 

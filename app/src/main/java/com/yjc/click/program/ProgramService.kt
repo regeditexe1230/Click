@@ -240,6 +240,11 @@ class ProgramService : Service() {
             mainScope.launch { removeBranchBall(branchId) }
         }
 
+        /** 没有开始块：一句可见的提示（新程序是空画布，用户可能直接点运行）。 */
+        override fun onNoStart() {
+            mainScope.launch { toast(R.string.program_toast_no_start) }
+        }
+
         override fun onAllDone() {
             mainScope.launch {
                 Log.d(TAG, "all branches done")
@@ -380,6 +385,7 @@ class ProgramService : Service() {
         val node = program.start
         if (node == null) {
             Log.e(TAG, "showStartBall: no START node")
+            toast(R.string.program_toast_no_start)
             return
         }
         removeStartBall()
@@ -803,6 +809,16 @@ class ProgramService : Service() {
             val app = context.applicationContext
             if (!Settings.canDrawOverlays(app)) {
                 toast(app, R.string.program_toast_need_overlay)
+                return
+            }
+            val program = ProgramStore.load(app, programId)
+            if (program == null) {
+                toast(app, R.string.program_toast_not_found)
+                return
+            }
+            // 没有开始块就别挂球：直接给一句看得见的提示（新程序是空画布，见 docs/node-tray-spec.md §7）
+            if (program.start == null) {
+                toast(app, R.string.program_toast_no_start)
                 return
             }
             val running = instance

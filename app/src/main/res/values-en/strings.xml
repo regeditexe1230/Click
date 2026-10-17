@@ -295,7 +295,7 @@
     <string name="node_graph_pick_click">Tap once to pick the tap position</string>
     <string name="node_graph_pick_swipe">Swipe to pick the start and end points</string>
     <string name="node_graph_step">Step %1$d</string>
-    <string name="node_graph_empty_hint">Drag the dot on a node right edge onto empty canvas to create a node, or onto another node to connect</string>
+    <string name="node_graph_empty_hint">Drag blocks from the tray below to start building</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">infinite</string>
     <string name="node_graph_start_short">start</string>
@@ -313,6 +313,7 @@
     <string name="program_toast_waiting">Tap the floating ball to continue</string>
     <string name="program_toast_stopped">Program stopped</string>
     <string name="program_toast_not_found">Program not found</string>
+    <string name="program_toast_no_start">Drag out a start block first</string>
     <string name="program_toast_started">Program started</string>
     <string name="program_notify_step_start">Start</string>
     <string name="program_notify_step_click">Tap</string>
@@ -331,6 +332,14 @@
     <string name="program_delete_confirm">Delete 「%1$s」? This cannot be undone.</string>
     <string name="program_name_hint">Program name</string>
     <string name="node_graph_run">Run</string>
+    <!-- Bottom block tray (Scratch-style, see docs/node-tray-spec.md) -->
+    <string name="node_tray_title">Blocks</string>
+    <string name="node_tray_category_event">Events</string>
+    <string name="node_tray_category_action">Actions</string>
+    <string name="node_tray_category_control">Control</string>
+    <string name="node_tray_collapse">Collapse block tray</string>
+    <string name="node_tray_expand">Expand block tray</string>
+    <string name="node_tray_has_start">There is already a start block</string>
     <string name="node_graph_stop">Stop</string>
     <string name="program_default_name">Program %1$d</string>
     <string name="program_copy_suffix">%1$s copy</string>

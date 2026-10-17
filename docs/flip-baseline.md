@@ -5,13 +5,20 @@
 
 图例：**[实测]** = 从设备截图上量出来的数；**[估计]** = 由帧间隔推算出来的数，有不确定度。
 
+> **勘误 2026-10-16**（由 `win8-ref` 依 Lead 授权修改）：§1 设备行的 **density 原记为 3，实为 3.5**。
+> 依据：`adb shell wm density` → `Physical density: 560`（⇒ scale 560/160 = 3.5）；
+> `adb shell wm size` → `1440x3200`；`dumpsys display` → `DisplayCutoutParserInfo density={3.5}`。
+> ⇒ 本机屏宽 = 1440 / 3.5 = **411.4286 dp**（不是 480 dp）。
+> **本文件其余数字均为原始 px 测量值，不受 density 影响**，无需改动；
+> 仅当某处把 dp↔px 做换算时才需改用 3.5。详见 `win8-tile-spec.md` §13.9。
+
 ---
 
 ## 1. 测量装置
 
 | 项 | 值 |
 | --- | --- |
-| 设备 | `XKEERWW8YTRWJZ9X`，1440×3200，density 3 **[实测]** |
+| 设备 | `XKEERWW8YTRWJZ9X`，1440×3200，density 3.5（560dpi）**[实测 2026-10-16]** |
 | 页面底色 | `(17,20,24)` **[实测]** |
 | 卡片（ProgramTile）底色 | `(39,42,47)` = `surfaceContainerHigh` **[实测]** |
 | 卡片矩形（列表第 1 张） | `[56,378]–[1384,720]`，即 1328×342 **[实测]** |

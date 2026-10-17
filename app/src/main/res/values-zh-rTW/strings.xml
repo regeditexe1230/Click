@@ -279,7 +279,7 @@
     <string name="node_graph_pick_click">點一下取點擊座標</string>
     <string name="node_graph_pick_swipe">滑一下取滑動起終點</string>
     <string name="node_graph_step">第 %1$d 步</string>
-    <string name="node_graph_empty_hint">拖動節點右側的圓點到空白處可以新增節點，拖到另一個節點上即可連線</string>
+    <string name="node_graph_empty_hint">從下方托盤拖出積木開始搭建</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">無限</string>
     <string name="node_graph_start_short">起點</string>
@@ -297,6 +297,7 @@
     <string name="program_toast_waiting">等待你點擊懸浮球繼續</string>
     <string name="program_toast_stopped">程式已停止</string>
     <string name="program_toast_not_found">找不到這個程式</string>
+    <string name="program_toast_no_start">請先拖出一個開始積木</string>
     <string name="program_toast_started">程式已開始</string>
     <string name="program_notify_step_start">開始</string>
     <string name="program_notify_step_click">點擊</string>
@@ -315,6 +316,14 @@
     <string name="program_delete_confirm">確定刪除「%1$s」嗎？刪除後無法復原。</string>
     <string name="program_name_hint">程式名稱</string>
     <string name="node_graph_run">執行</string>
+    <!-- 底部積木托盤（Scratch 式分類取塊，見 docs/node-tray-spec.md） -->
+    <string name="node_tray_title">積木</string>
+    <string name="node_tray_category_event">事件</string>
+    <string name="node_tray_category_action">動作</string>
+    <string name="node_tray_category_control">控制</string>
+    <string name="node_tray_collapse">收合積木托盤</string>
+    <string name="node_tray_expand">展開積木托盤</string>
+    <string name="node_tray_has_start">已經有開始積木了</string>
     <string name="node_graph_stop">停止</string>
     <string name="program_default_name">程式 %1$d</string>
     <string name="program_copy_suffix">%1$s 副本</string>

@@ -15,16 +15,18 @@ win8-turnstile-oracle-b.py  —  turnstile 的**期望投影坐标表**（给实
 
 单位语义（§8.2.1）：
     WinJS 的 px 是 CSS px = 设备无关单位 = Android 的 dp。
-    本机 1440px / density 3 = 480dp ⇒ 常量读作 perspective(600dp)、铰链 -40dp。
-    下表默认按 dp 输出；要本机 px 就把 DENSITY 乘进去（P 1800 / 铰链 120）。
+    本机 1440px / density **3.5** = **411.43dp**（勘误见 spec §8.2.3；
+    旧文写 density 3 / 480dp 是错的）⇒ 常量读作 perspective(600dp)、铰链 -40dp。
+    下表默认按 dp 输出；要本机 px 就把 density 3.5 乘进去（P 2100 / 铰链 140）。
 
 ⚠️ 判据口径（Lead 已拍板，本文件的默认值就是它）：
-    axis_x = -40dp（本机 -120px）、P_IN = 600dp（本机 1800px）、P_OUT = 800dp（本机 2400px）
-    ⇒ θ=80° 时**目标左右边高比 = 1.7393**。
-    **1.77 作废**（那是"P 缩了、铰链没缩"的半缩口径：铰链固定在屏左缘外 40px = 13.3dp）。
-    实现侧 ProgramScreen.kt:1261/1264/1267 = (-40).dp / 600.dp / 800.dp，正是这一档。
-    验收夹具 docs/flip-harness.md 与 tools/measure_pages.py 的 model @80deg 同步为 1.7393 / axis -120px。
-    ⚠️ 若本文件被喂 1366/768/600 这组参数（A 的桌面口径），会打印 3.1009 —— 那**只作对照**，不是判据。
+    axis_x = -40dp（本机 -140px）、P_IN = 600dp（本机 2100px）、P_OUT = 800dp（本机 2800px）
+    ⇒ 参考机（W=480dp）θ=80° 左右边高比 = **1.7393**；
+      本机（W=411.43dp）θ=80° 左右边高比 = **1.6337**（这是装机后该量到的数）。
+    **1.77 作废**（那是"P 缩了、铰链没缩"的半缩口径：铰链固定在屏左缘外 40px = 11.43dp）。
+    实现侧 ProgramScreen.kt 的 TURNSTILE_ORIGIN_X/PERSPECTIVE_IN/PERSPECTIVE_OUT
+    = (-40).dp / 600.dp / 800.dp，正是这一档。
+    ⚠️ 若本文件被喂 1366/768/600 这组参数（A 的桌面口径），会打印 3.1039 —— 那**只作对照**，不是判据。
 
 判据强度（§9）：
     「左右边高比」是**硬判据**（height = H·P/(P-Z) 与消失点 cy 无关，对 perspective-origin 免疫）。
@@ -47,6 +49,16 @@ win8-turnstile-oracle-b.py  —  turnstile 的**期望投影坐标表**（给实
 
 import math
 import sys
+
+# Windows 控制台/管道默认用 GBK 编码，本文件的表头含「⚠️」等非 GBK 字符，
+# 一旦 stdout 被重定向（`python ... > out.txt` 或 `| Select-Object`）就会
+# UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0'。
+# 这里强制 UTF-8，保证任何 locale 下都能重定向输出（errors='replace' 兜底）。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 HINGE = 40.0        # base.js:16251  offsetLeftLTR = -(40 + left)  ⇒ 铰链在页左外侧 40dp
 BZ_FWD = (0.01, 0.975, 0.4775, 0.9775)   # base.js:17957
@@ -116,9 +128,13 @@ def main():
             HINGE = float(sys.argv[4])
             note = "铰链由第 4 个参数显式给定"
         else:
-            # 不显式给铰链时**按 W 自动同比缩放**，否则会静默算出作废的 1.7710
-            HINGE = 40.0 * (W / 480.0)
-            note = "铰链未给，按 W/480 自动缩放 = %.2f（若要复现 A 的 1366 桌面口径，请显式传 40）" % HINGE
+            # 不显式给铰链时**按 P 自动同比缩放**，否则会静默算出作废的 1.7710。
+            # 用 P 而不是 W 作基准：铰链 40dp 与 P 600dp 是**同一份 dp 常量表**里的两个数，
+            # 因此无论调用者把 P 写成 dp(600) 还是 px(2100)，hinge = 40*P/600 都自洽
+            # （W 单独变时铰链**不该**跟着变 —— 那正是 §8.2.2 说破的不变量陷阱）。
+            HINGE = 40.0 * (P / 600.0)
+            note = ("铰链未给，按 P/15 自动缩放 = %.2f（P=600dp→40dp；P=2100px→140px）"
+                    "；要复现 A 的 1366 桌面口径请显式传 40" % HINGE)
     else:
         W, H, P = 480.0, 754.0, 600.0
         note = "默认 = 判据口径（480dp / P=600dp / 铰链 40dp）"
@@ -131,12 +147,21 @@ def main():
     # 口径自检：把同一个 θ=80° 的起始比值按各种读法都打出来，防止静默用错口径
     s80 = math.sin(math.radians(THETA0))
     _r = lambda w, p, hg: (p / (p + hg * s80)) / (p / (p + (w + hg) * s80))
-    print("判据：本口径 θ=80° 起始左右比 = **%.4f**" % _r(W, P, HINGE))
-    if abs(_r(W, P, HINGE) - 1.7393) > 0.002:
-        print("      ⚠️ 偏离拍板值 1.7393 ⇒ 你多半在用**作废口径**。参考：")
-        print("         · 判据口径 480dp / P=600 / hinge=40        -> 1.7393")
-        print("         · 半缩口径 1440px / P=1800 / hinge=40       -> 1.7710  ← 已作废")
-        print("         · A 桌面口径 1366px / P=600 / hinge=40      -> 3.1009  ← 仅对照")
+    r_now = _r(W, P, HINGE)
+    print("判据：本口径 θ=80° 起始左右比 = **%.4f**" % r_now)
+    KNOWN = ((1.7393, "参考机 W=480dp（Lead 拍板的判据值）"),
+             (1.6337, "★本机真值 W=411.43dp（density 3.5，装机后该量到的数）"),
+             (1.7710, "半缩口径 1440px / P=1800 / hinge=40  ← 已作废"),
+             (3.1009, "A 桌面口径 1366px / P=600 / hinge=40  ← 仅对照"),
+             (3.1039, "A 桌面口径（4 位舍入）"))
+    hit = next((d for v, d in KNOWN if abs(r_now - v) <= 0.002), None)
+    if hit:
+        print("      = 已知口径：%s" % hit)
+    else:
+        print("      [!] 不匹配任何已知口径 ⇒ 你多半在用**作废口径**。参考：")
+        for v, d in KNOWN:
+            print("         · %-52s -> %.4f" % (d, v))
+
     print("=" * 96)
 
     ease = cubic_bezier(*BZ_FWD)

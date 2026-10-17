@@ -11,13 +11,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +54,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -59,6 +66,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
@@ -73,6 +82,7 @@ import com.yjc.click.ui.theme.ClickText
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * 节点图编辑器页面。
@@ -113,14 +123,79 @@ fun NodeGraphScreen(
         onDispose { state.saveNow() }
     }
 
-    // 新建节点菜单：画布落点 + 屏幕落点（菜单要贴着手指弹出）
-    var menuAt by remember { mutableStateOf<NewNodeAnchor?>(null) }
+    // 新建节点菜单已经整体删掉：取块改走底部积木托盘（docs/node-tray-spec.md §1）
     var renameOpen by remember { mutableStateOf(false) }
     var deleteOpen by remember { mutableStateOf(false) }
     // 空画布提示：碰一下屏幕就撤掉，不再挡着看
     var hintDismissed by remember(programId) { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // ---------------------------------------------------------------- 底部积木托盘
+
+    // 展开/收起跨会话记在 prefs 里（默认展开）
+    var trayExpanded by remember(programId) {
+        mutableStateOf(
+            runCatching { com.yjc.click.program.ProgramStore.isTrayExpanded(context) }.getOrDefault(true),
+        )
+    }
+    // 托盘高度 = 屏高的 1/4：按**窗口像素**算，和 spec §7 的验收口径一致（本机 3200px → 800px）。
+    // 这个页面的根 Box 落在状态栏下方（宿主加了 statusBars 内边距），所以整屏高 = 根 Box 高 + 状态栏高。
+    val density = LocalDensity.current
+    var rootSize by remember { mutableStateOf(IntSize.Zero) }
+    val statusBarTop = with(density) { WindowInsets.statusBars.getTop(this).toFloat() }
+    val windowHeightPx = if (rootSize.height > 0) {
+        rootSize.height + statusBarTop
+    } else {
+        LocalConfiguration.current.screenHeightDp * density.density
+    }
+    val trayExpandedHeight = with(density) { (windowHeightPx * TrayMetrics.EXPANDED_FRACTION).toDp() }
+    val trayHeight = if (trayExpanded) trayExpandedHeight else TrayMetrics.COLLAPSED_HEIGHT
+
+    // 正在从托盘里拖的块 + 手指位置（根坐标）：影子块跟着手指走
+    var dragType by remember { mutableStateOf<ProgramNodeType?>(null) }
+    var dragPos by remember { mutableStateOf(Offset.Zero) }
+    // 画布（托盘之上那块可视区）在根坐标里的位置与大小：落点换算要用实测值
+    var canvasTopLeft by remember { mutableStateOf(Offset.Zero) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+
+    /** 根坐标 → 画布坐标。影子和真正落下的节点靠这一条对齐（spec §5）。 */
+    fun toCanvasPoint(root: Offset): Offset = state.toCanvas(root - canvasTopLeft, density.density)
+
+    /** 把一个块放到画布上；[root] 是根坐标下的落点，也是卡片的**中心**（影块就是这么跟手的）。 */
+    fun placeBlock(type: ProgramNodeType, root: Offset) {
+        if (type == ProgramNodeType.START && state.program.start != null) {
+            state.toast = context.getString(R.string.node_tray_has_start)
+            return
+        }
+        val p = toCanvasPoint(root)
+        // 以落点为中心放卡片：影块是居中的，落地后位置才对得上（spec §5，容差 ≤ 一个卡片对角）
+        state.addNode(
+            newNode(
+                type,
+                p.x - NodeGraphMetrics.CARD_W / 2f,
+                p.y - NodeGraphMetrics.CARD_H / 2f,
+            ),
+            connectFrom = null,
+        )
+    }
+
+    /** 点一下 chip：落在画布可视区（托盘之上）的中央。 */
+    fun tapPlaceBlock(type: ProgramNodeType) {
+        if (canvasSize.width <= 0 || canvasSize.height <= 0) return
+        placeBlock(
+            type,
+            Offset(
+                canvasTopLeft.x + canvasSize.width / 2f,
+                canvasTopLeft.y + canvasSize.height / 2f,
+            ),
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onSizeChanged { rootSize = it }
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         // 任何一次按下都算「用户已经上手了」：不消费事件，画布照常收到
         Box(
             modifier = Modifier
@@ -132,18 +207,29 @@ fun NodeGraphScreen(
                     }
                 },
         )
-        NodeGraphCanvas(
-            state = state,
-            onRequestNewNode = { canvasPoint, fromId -> menuAt = NewNodeAnchor(canvasPoint, fromId) },
-            onConnect = { fromId, toId -> state.connect(fromId, toId) },
-            onConnectFailed = { _, reason -> state.toast = reason },
-        )
-
-        // 空画布提示（只有开始节点时）
-        if (!hintDismissed && state.program.nodes.size <= 1) {
-            NodeGraphEmptyHint(
-                modifier = Modifier.align(Alignment.Center).width(240.dp),
+        // 画布只铺「托盘之上」那一块：托盘区域天然不会把手势漏给画布（不会边拖块边平移），
+        // 空提示也自动按可视区居中（lead m02771 的第 2、4 条）
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = trayHeight)
+                .onGloballyPositioned {
+                    canvasTopLeft = it.boundsInRoot().topLeft
+                    canvasSize = it.size
+                },
+        ) {
+            NodeGraphCanvas(
+                state = state,
+                onConnect = { fromId, toId -> state.connect(fromId, toId) },
+                onConnectFailed = { _, reason -> state.toast = reason },
             )
+
+            // 空画布提示（新程序就是空画布：一个节点都没有）
+            if (!hintDismissed && state.program.nodes.isEmpty()) {
+                NodeGraphEmptyHint(
+                    modifier = Modifier.align(Alignment.Center).width(240.dp),
+                )
+            }
         }
 
         // 运行状态：点工具条上的运行按钮 = 放开始球（切到目标应用后点球开始跑），跑起来后按钮变停止
@@ -157,7 +243,52 @@ fun NodeGraphScreen(
         }
     }
 
-    NodeGraphToolbar(
+        // 底部积木托盘：常驻，展开态占屏高 1/4
+        NodeGraphTray(
+            expanded = trayExpanded,
+            expandedHeight = trayExpandedHeight,
+            running = running,
+            hasStart = state.program.start != null,
+            onExpandedChange = { expanded ->
+                trayExpanded = expanded
+                runCatching { com.yjc.click.program.ProgramStore.setTrayExpanded(context, expanded) }
+            },
+            onTapBlock = { type -> tapPlaceBlock(type) },
+            onDragStart = { type, pos ->
+                dragType = type
+                dragPos = pos
+            },
+            onDrag = { pos -> dragPos = pos },
+            onDragEnd = { pos ->
+                val type = dragType
+                dragType = null
+                // 手指还在画布可视区里才算数：拖回托盘 / 拖出边界都什么都不创建（spec §5）
+                val insideX = pos.x >= canvasTopLeft.x && pos.x <= canvasTopLeft.x + canvasSize.width
+                val insideY = pos.y >= canvasTopLeft.y && pos.y <= canvasTopLeft.y + canvasSize.height
+                if (type != null && insideX && insideY) placeBlock(type, pos)
+            },
+            onDragCancel = { dragType = null },
+            // 高度由托盘自己按档位算（展开 = 屏高 1/4、收起 = 只剩拖柄），这里只管贴底与层级
+            modifier = Modifier.align(Alignment.BottomCenter).zIndex(7f),
+        )
+
+        // 跟手的影子块：画在最上层，不吃触摸
+        dragType?.let { type ->
+            TrayBlockGhost(
+                type = type,
+                scale = state.scale,
+                modifier = Modifier
+                    .zIndex(9f)
+                    .offset {
+                        IntOffset(
+                            (dragPos.x - NodeGraphMetrics.CARD_W * density.density * state.scale / 2f).roundToInt(),
+                            (dragPos.y - NodeGraphMetrics.CARD_H * density.density * state.scale / 2f).roundToInt(),
+                        )
+                    },
+            )
+        }
+
+        NodeGraphToolbar(
             title = state.program.name.ifEmpty { stringResource(R.string.node_graph_untitled) },
             canUndo = state.canUndo,
             canRedo = state.canRedo,
@@ -190,7 +321,7 @@ fun NodeGraphScreen(
             NodeGraphToast(
                 text = toast,
                 modifier = Modifier.align(Alignment.BottomCenter)
-                    .padding(bottom = if (state.singleSelected != null) 300.dp else 96.dp),
+                    .padding(bottom = trayHeight + if (state.singleSelected != null) 300.dp else 16.dp),
             )
             LaunchedEffect(toast) {
                 kotlinx.coroutines.delay(2600)
@@ -198,30 +329,16 @@ fun NodeGraphScreen(
             }
         }
 
-        // 底部参数面板：只选中一个节点时升起
+        // 底部参数面板：只选中一个节点时升起（要整体升到托盘之上，不能被托盘盖住）
         val single = state.singleSelected
         if (single != null) {
             NodeGraphParamsPanel(
                 state = state,
                 node = single,
                 onClose = { state.selectedIds = emptySet() },
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = trayHeight),
             )
         }
-    }
-
-    // 新建节点菜单
-    menuAt?.let { anchor ->
-        NewNodeMenu(
-            canvasPoint = anchor.canvas,
-            onDismiss = { menuAt = null },
-            onPick = { type ->
-                menuAt = null
-                val node = newNode(type, anchor.canvas.x, anchor.canvas.y)
-                // 从某个节点的端口拖出来的：建好就自动连上
-                state.addNode(node, connectFrom = anchor.fromId)
-            },
-        )
     }
 
     // 重命名
@@ -289,9 +406,6 @@ fun NodeGraphScreen(
         )
     }
 }
-
-/** 新建节点菜单的锚点（画布坐标 = 新节点位置）。 */
-private data class NewNodeAnchor(val canvas: Offset, val fromId: String)
 
 // ---------------------------------------------------------------- 工具条
 
@@ -406,70 +520,6 @@ private fun ToolbarIcon(
             tint = tint,
             modifier = Modifier.size(20.dp),
         )
-    }
-}
-
-// ---------------------------------------------------------------- 新建节点菜单
-
-/** 「新建节点」菜单：点击 / 滑动 / 延时 / 等待 / 循环。 */
-@Composable
-private fun NewNodeMenu(
-    canvasPoint: Offset,
-    onDismiss: () -> Unit,
-    onPick: (ProgramNodeType) -> Unit,
-) {
-    val types = listOf(
-        ProgramNodeType.CLICK,
-        ProgramNodeType.SWIPE,
-        ProgramNodeType.DELAY,
-        ProgramNodeType.WAIT,
-        ProgramNodeType.LOOP,
-    )
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 点空白关掉菜单
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { onDismiss() },
-        )
-        DropdownMenu(
-            expanded = true,
-            onDismissRequest = onDismiss,
-            modifier = Modifier.width(180.dp),
-        ) {
-            DropdownMenuItem(
-                text = {
-                    ClickText(
-                        stringResource(R.string.node_graph_new_node),
-                        13.sp,
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                enabled = false,
-                onClick = {},
-            )
-            types.forEach { type ->
-                DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(programColor(defaultColorFor(type))),
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            ClickText(
-                                stringResource(typeNameRes(type)),
-                                14.sp,
-                                MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    },
-                    onClick = { onPick(type) },
-                )
-            }
-        }
     }
 }
 

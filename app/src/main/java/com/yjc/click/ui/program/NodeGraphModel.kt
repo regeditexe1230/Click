@@ -207,14 +207,12 @@ internal class NodeGraphState(val context: Context, initial: Program) {
 
     fun addNode(node: ProgramNode, connectFrom: String?) {
         perform { p ->
-            val start = p.start
-            val edge = when {
-                // 从某个节点的端口拖到空白处新建：直接连上这一条
-                connectFrom != null && p.node(connectFrom) != null -> ProgramEdge(connectFrom, node.id)
-                // 否则：开始节点长出来的第一条线自动接上，免得用户还要自己连一次
-                connectFrom == null && start != null && p.edges.isEmpty() && node.type != ProgramNodeType.START ->
-                    ProgramEdge(start.id, node.id)
-                else -> null
+            // 托盘化之后不再自动连线：开始块拖出来时自己是不带线的，用户想要「开始 → 第一块」
+            // 得自己连一次（原来这里会把开始节点长出来的第一条线自动接上，见 docs/node-tray-spec.md §1）。
+            val edge = if (connectFrom != null && p.node(connectFrom) != null) {
+                ProgramEdge(connectFrom, node.id)
+            } else {
+                null
             }
             p.copy(
                 nodes = p.nodes + node,
