@@ -254,9 +254,13 @@ internal class NodeGraphState(val context: Context, initial: Program) {
         apply { p -> p.copy(nodes = p.nodes.map { if (it.id == id) it.copy(x = it.x + dx, y = it.y + dy) else it }) }
     }
 
-    /** 删除选中的节点（START 永远不删），连带删掉相关连线。返回是否真的删了东西。 */
+    /** 删除选中的节点（开始节点也可以删），连带删掉相关连线。返回是否真的删了东西。 */
     fun deleteSelected(): Boolean {
-        val ids = selectedIds.filter { id -> program.nodes.firstOrNull { it.id == id }?.type != ProgramNodeType.START }
+        // 用户要求「开始节点可以被删除」：这里以前把 START 过滤掉（保护性拦截），现在放开。
+        // 删掉后 program.start == null ⇒ 托盘「事件 / 开始」块自动恢复亮度（hasStart 是响应式的），
+        // 运行时由 ProgramRunner 给「请先拖出一个开始块」提示；与 ProgramStore 那次一次性迁移
+        // （prefs 里已有标记）无关，不会再把开始节点补回来。
+        val ids = selectedIds.filter { id -> program.nodes.any { it.id == id } }
         if (ids.isEmpty()) return false
         perform { p ->
             p.copy(

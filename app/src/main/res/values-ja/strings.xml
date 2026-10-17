@@ -278,7 +278,7 @@
     <string name="node_graph_pick_click">一度タップしてタップ座標を取得</string>
     <string name="node_graph_pick_swipe">スワイプして始点と終点を取得</string>
     <string name="node_graph_step">ステップ %1$d</string>
-    <string name="node_graph_empty_hint">下のトレイからブロックをドラッグして組み立てを始めましょう</string>
+    <string name="node_graph_empty_hint">トレイからブロックをドラッグして組み立てを始めましょう</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">無限</string>
     <string name="node_graph_start_short">開始点</string>

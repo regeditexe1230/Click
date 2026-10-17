@@ -295,7 +295,7 @@
     <string name="node_graph_pick_click">Tap once to pick the tap position</string>
     <string name="node_graph_pick_swipe">Swipe to pick the start and end points</string>
     <string name="node_graph_step">Step %1$d</string>
-    <string name="node_graph_empty_hint">Drag blocks from the tray below to start building</string>
+    <string name="node_graph_empty_hint">Drag blocks from the tray to start building</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">infinite</string>
     <string name="node_graph_start_short">start</string>

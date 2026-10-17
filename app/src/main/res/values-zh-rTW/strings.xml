@@ -279,7 +279,7 @@
     <string name="node_graph_pick_click">點一下取點擊座標</string>
     <string name="node_graph_pick_swipe">滑一下取滑動起終點</string>
     <string name="node_graph_step">第 %1$d 步</string>
-    <string name="node_graph_empty_hint">從下方托盤拖出積木開始搭建</string>
+    <string name="node_graph_empty_hint">從托盤拖出積木開始搭建</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">無限</string>
     <string name="node_graph_start_short">起點</string>

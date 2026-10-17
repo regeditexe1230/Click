@@ -1,9 +1,8 @@
 package com.yjc.click.ui.program
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,7 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -50,6 +53,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -106,8 +110,6 @@ internal object TrayMetrics {
     /** 松手吸附阈值（spec §8.1：50%）。 */
     const val SNAP_THRESHOLD = 0.5f
 
-    /** 两档之间吸附动画时长。 */
-    const val SETTLE_MS = 220
 }
 
 /** 托盘的三个分类（spec §2）。 */
@@ -140,17 +142,23 @@ private val TRAY_BLOCK_NODES: Map<ProgramNodeType, ProgramNode> =
  * **只有拖柄区域能上下拖**（spec §8.1）：`BottomSheetScaffold` 那种整面板拖动会和
  * 「长按块卡片向上拖出」抢手势，所以纵向拖动只挂在拖柄上。
  *
+ * 横屏（[horizontal] = true）时整体转成**屏幕右侧的侧栏**：展开 = 向左变宽到窗口宽 1/4，
+ * 收起 = 只剩一条竖拖柄；分类 chip 竖排一列、块竖向排列；交互口径与竖屏完全一致。
+ *
  * @param expanded 当前停靠档（持久化在 prefs 里，由调用方负责）
- * @param expandedHeight 展开档的面板总高（= 屏高 1/4，调用方按窗口像素算好给进来）
+ * @param expandedSize 展开档的尺寸：竖屏 = 展开高（屏高 1/4），横屏 = 展开宽（窗口宽 1/4）
+ * @param horizontal 横屏侧栏模式（false = 现在这套底部托盘，一个像素都不变）
  * @param running 程序运行中：托盘可见但块不可拖、不可新建
- * @param hasStart 程序里已经有开始块了：开始块变灰（点一下只给提示）
+ * @param onSizeChange 面板实时尺寸回调（竖屏=高、横屏=宽；拖动/回弹的每一帧都会回调）
  */
 @Composable
 internal fun NodeGraphTray(
     expanded: Boolean,
-    expandedHeight: Dp,
+    expandedSize: Dp,
     running: Boolean,
-    hasStart: Boolean,
+    horizontal: Boolean = false,
+    onSizeChange: (Dp) -> Unit = {},
+    onBoundsChange: (androidx.compose.ui.geometry.Rect) -> Unit = {},
     onExpandedChange: (Boolean) -> Unit,
     onTapBlock: (ProgramNodeType) -> Unit,
     onDragStart: (ProgramNodeType, Offset) -> Unit,
@@ -160,17 +168,22 @@ internal fun NodeGraphTray(
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
-    // 底部让给系统手势区（本机 navigationBars = [0,3144][1440,3200]，即 inset 56px = 16dp）：
-    // 收起条和块列表都不许压进手势区，否则从屏幕底部上滑会被拖柄抢走 = 用户报的「容易误触」。
-    val navBottomPx = with(density) {
-        maxOf(
-            WindowInsets.navigationBars.getBottom(this).toFloat(),
-            TrayMetrics.MIN_BOTTOM_GUARD.toPx(),
-        )
+    // 让给系统手势区：竖屏看底部 inset（本机 [0,3144][1440,3200] ⇒ 56px = 16dp），
+    // 横屏手势条在侧边 ⇒ 看右侧 inset。收起条与块列表都不许压进手势区
+    // （否则从屏幕边缘上滑/侧滑会被拖柄抢走 = 用户报的「容易误触」）。
+    val navInsetPx = with(density) {
+        val raw = if (horizontal) {
+            // getRight 需要布局方向（RTL 时右侧是 start）
+            WindowInsets.navigationBars.getRight(this, LocalLayoutDirection.current)
+        } else {
+            WindowInsets.navigationBars.getBottom(this)
+        }
+        maxOf(raw.toFloat(), TrayMetrics.MIN_BOTTOM_GUARD.toPx())
     }
-    val navBottomDp = with(density) { navBottomPx.toDp() }
-    val collapsedPx = with(density) { TrayMetrics.COLLAPSED_HEIGHT.toPx() } + navBottomPx
-    val expandedPx = with(density) { expandedHeight.toPx() }
+    val navInsetDp = with(density) { navInsetPx.toDp() }
+    val collapsedPx = with(density) { TrayMetrics.COLLAPSED_HEIGHT.toPx() }
+    // 竖屏 expandedSize = 展开高；横屏 = 展开宽（都是窗口尺寸的 1/4，由调用方算好）
+    val expandedPx = with(density) { expandedSize.toPx() }
     val span = (expandedPx - collapsedPx).coerceAtLeast(1f)
 
     // live：面板当前处在 0（收起）..1（展开）之间的位置；拖动直接改它，松手后动画吸附
@@ -191,24 +204,172 @@ internal fun NodeGraphTray(
             animate(
                 initialValue = live,
                 targetValue = target,
-                animationSpec = tween(TrayMetrics.SETTLE_MS, easing = FastOutSlowInEasing),
+                // MD3 弹簧：dampingRatio 0.75 ⇒ 轻微过冲、一次就归位（不是生硬停住）。
+                // 只有「松手后的收尾」走弹簧；手指拖动时 live 由手势直接写（1:1 跟手）。
+                animationSpec = spring(dampingRatio = 0.75f, stiffness = 500f),
             ) { value, _ -> live = value }
         }
     }
 
-    val shape = RoundedCornerShape(topStart = TrayMetrics.TOP_RADIUS, topEnd = TrayMetrics.TOP_RADIUS)
+    // 面板当前的实时尺寸（收起尺寸 + 展开跨度 × live）：手指拖动和弹簧回弹的每一帧都回传给屏幕，
+    // 参数面板据此跟着一起动，始终贴在托盘内侧边缘（竖屏=上沿、横屏=左沿）。
+    val liveSize = with(density) { (collapsedPx + span * live).toDp() }
+    LaunchedEffect(liveSize) { onSizeChange(liveSize) }
+
+    // 竖屏是底部面板（顶部圆角）；横屏是右侧侧栏（靠右，所以圆角在左侧）
+    val shape = if (horizontal) {
+        RoundedCornerShape(topStart = TrayMetrics.TOP_RADIUS, bottomStart = TrayMetrics.TOP_RADIUS)
+    } else {
+        RoundedCornerShape(topStart = TrayMetrics.TOP_RADIUS, topEnd = TrayMetrics.TOP_RADIUS)
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = shape,
         // 和画布明确分层：圆角 + 阴影 + 提亮的 surface（修掉 v1「与画布同色无分界」）
         shadowElevation = 8.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(with(density) { (collapsedPx + span * live).toDp() }),
+        // 系统栏那一条让到面板**外面**：托盘外沿必须贴住窗口内沿（3 键导航下窗口只有 2274px，
+        // 面板若再按整屏算就会伸进导航栏、被裁掉一条）。尺寸本身 = 窗口长边/4，见 NodeGraphScreen。
+        modifier = if (horizontal) {
+            modifier.padding(end = navInsetDp).fillMaxHeight().width(liveSize)
+                .onGloballyPositioned { onBoundsChange(it.boundsInRoot()) }
+        } else {
+            modifier.padding(bottom = navInsetDp).fillMaxWidth().height(liveSize)
+                .onGloballyPositioned { onBoundsChange(it.boundsInRoot()) }
+        },
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(bottom = navBottomDp)) {
-            // ---------------- 拖柄（唯一可上下拖的区域） ----------------
+        if (horizontal) {
+            // ================= 横屏：屏幕右侧侧栏 =================
+            // 拖柄在**左沿**：手势从竖向改成横向（口径不变：向左拖 = 展开变宽）
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .width(TrayMetrics.COLLAPSED_HEIGHT)
+                        .fillMaxHeight()
+                        .pointerInput(span, expanded) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                val slop = viewConfiguration.touchSlop
+                                var lastX = down.position.x
+                                var moved = 0f
+                                var isDragging = false
+                                var lifted = false
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                    if (change.changedToUpIgnoreConsumed()) {
+                                        lifted = true
+                                        break
+                                    }
+                                    if (change.isConsumed) break
+                                    val dx = change.position.x - lastX
+                                    lastX = change.position.x
+                                    moved += kotlin.math.abs(dx)
+                                    if (!isDragging && moved > slop) {
+                                        isDragging = true
+                                        dragging = true
+                                    }
+                                    if (isDragging) {
+                                        change.consume()
+                                        live = (live - dx / span).coerceIn(0f, 1f)
+                                    }
+                                }
+                                if (!isDragging) {
+                                    if (lifted) onExpandedChange(!expanded)
+                                    return@awaitEachGesture
+                                }
+                                dragging = false
+                                settleTick++
+                                if (lifted) {
+                                    val target = live >= TrayMetrics.SNAP_THRESHOLD
+                                    if (target != expanded) onExpandedChange(target)
+                                }
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // 横屏的拖柄竖杠（32×6dp 转 90°）
+                    Box(
+                        modifier = Modifier
+                            .size(TrayMetrics.HANDLE_H, TrayMetrics.HANDLE_W)
+                            .clip(RoundedCornerShape(TrayMetrics.HANDLE_H / 2))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
+                    )
+                }
+
+                val restPxSide = span * live
+                if (restPxSide > with(density) { TrayMetrics.TAB_ROW_HEIGHT.toPx() }) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(horizontal = TrayMetrics.LIST_PAD_H, vertical = TrayMetrics.LIST_PAD_V),
+                    ) {
+                        // 分类 chip：MD3 侧栏风格，竖排一列
+                        TrayCategory.entries.forEach { c ->
+                            FilterChip(
+                                selected = category == c,
+                                onClick = { category = c },
+                                label = { Text(stringResource(c.labelRes), fontSize = 13.sp) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            if (c != TrayCategory.entries.last()) {
+                                Box(modifier = Modifier.height(TrayMetrics.CHIP_GAP / 2))
+                            }
+                        }
+                        Box(modifier = Modifier.height(TrayMetrics.CHIP_GAP))
+
+                        // 块：竖向排列（每块一行），超出面板高度时面板内部竖向滚动
+                        val blocks = CATEGORY_BLOCKS.getValue(category)
+                        BoxWithConstraints(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                        ) {
+                            val blockW = NodeGraphMetrics.CARD_W.dp + TrayMetrics.PORT_PAD * 2
+                            // 横屏单列：一块一整行，按托盘可用宽等比缩放（用户口径：要完整卡片，
+                            // 宁可小一点；两列会把卡片压到 0.5x，只剩文字，被明确否掉了）。
+                            val colGap = TrayMetrics.CHIP_GAP / 2
+                            val colW = maxWidth
+                            val scale = if (blockW > colW && colW > 0.dp) {
+                                (colW / blockW).coerceIn(0.2f, 1f)
+                            } else {
+                                1f
+                            }
+                            Column(
+                                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(
+                                    TrayMetrics.CHIP_GAP * scale,
+                                    Alignment.Top,
+                                ),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                blocks.forEach { type ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.Top,
+                                    ) {
+                                        TrayBlockItem(
+                                            type = type,
+                                            running = running,
+                                            scale = scale,
+                                            blockW = blockW,
+                                            blockOrigins = blockOrigins,
+                                            onTapBlock = onTapBlock,
+                                            onDragStart = onDragStart,
+                                            onDrag = onDrag,
+                                            onDragEnd = onDragEnd,
+                                            onDragCancel = onDragCancel,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // ---------------- 拖柄（唯一可上下拖的区域） ----------------
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -336,11 +497,7 @@ internal fun NodeGraphTray(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     blocks.forEach { type ->
-                        val dim = when {
-                            running -> 0.45f
-                            type == ProgramNodeType.START && hasStart -> 0.45f
-                            else -> 1f
-                        }
+                        val dim = if (running) 0.45f else 1f
                         Box(
                             modifier = Modifier
                                 .width(blockW * scale)
@@ -351,15 +508,36 @@ internal fun NodeGraphTray(
                                     awaitEachGesture {
                                         val down = awaitFirstDown()
                                         val origin = blockOrigins[type] ?: Offset.Zero
-                                        val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                                            waitForUpOrCancellation()
+                                        // 阈值内 · 三种结局要分开：
+                                        //   抬手（没怎么动）→ 点一下，块落到画布中央；
+                                        //   手指移动超过 touchSlop 或父级（列表滚动）把事件吃掉 → 让给滚动，不拖节点；
+                                        //   按住不动满阈值 → 拖出去。小屏托盘要靠滑动才能看全，所以「快滑 = 滚动」优先。
+                                        var tapped = false
+                                        var cancelled = false
+                                        withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                                            while (true) {
+                                                val ev = awaitPointerEvent()
+                                                val ch = ev.changes.firstOrNull { it.id == down.id }
+                                                if (ch == null || !ch.pressed) {
+                                                    tapped = true
+                                                    return@withTimeoutOrNull
+                                                }
+                                                if (ev.changes.any { it.isConsumed } ||
+                                                    (ch.position - down.position).getDistance() >
+                                                    viewConfiguration.touchSlop
+                                                ) {
+                                                    cancelled = true
+                                                    return@withTimeoutOrNull
+                                                }
+                                            }
                                         }
-                                        if (up != null) {
+                                        if (tapped) {
                                             // 阈值内抬手 = 点一下：落到画布可视区中央
                                             onTapBlock(type)
                                             return@awaitEachGesture
                                         }
-                                        // 长按 = 拖出去：影子块从手指处开始跟手
+                                        if (cancelled) return@awaitEachGesture
+                                        // 按住不动满阈值 = 拖出去：影子块从手指处开始跟手
                                         var pos = origin + down.position
                                         onDragStart(type, pos)
                                         val completed = drag(down.id) { change ->
@@ -395,10 +573,10 @@ internal fun NodeGraphTray(
     }
 }
 }
+}
 
 /**
- * 块卡片：**和画布上完全同一个 Composable**（[NodeCard]）加上同样的端口圆点（spec §8.2）。
- * 端口只保留外观，在托盘里不参与任何交互（不可点、不可连线）。
+ * 块卡片：**和画布上完全同一个 Composable**（[NodeCard]）加上同样的端口圆点（spec §8.2）。 * 端口只保留外观，在托盘里不参与任何交互（不可点、不可连线）。
  */
 @Composable
 internal fun TrayBlockFace(type: ProgramNodeType, alpha: Float = 1f) {
@@ -452,5 +630,87 @@ internal fun TrayBlockGhost(type: ProgramNodeType, scale: Float, modifier: Modif
             },
     ) {
         TrayBlockFace(type = type, alpha = 0.92f)
+    }
+}
+
+/**
+ * 托盘里的一个块（竖屏行内 / 横屏列内共用）：外观 = [TrayBlockFace]，
+ * 点一下 = 落到画布可视区中央，长按 = 拖出去跟手；运行中不可操作、已有开始块时开始块压暗。
+ *
+ * [blockW] 已含左右端口余量，[scale] 只影响绘制尺寸，不影响落点换算。
+ */
+@Composable
+private fun TrayBlockItem(
+    type: ProgramNodeType,
+    running: Boolean,
+    scale: Float,
+    blockW: Dp,
+    blockOrigins: MutableMap<ProgramNodeType, Offset>,
+    onTapBlock: (ProgramNodeType) -> Unit,
+    onDragStart: (ProgramNodeType, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: (Offset) -> Unit,
+    onDragCancel: () -> Unit,
+) {
+    val dim = if (running) 0.45f else 1f
+    Box(
+        modifier = Modifier
+            .width(blockW * scale)
+            .height(NodeGraphMetrics.CARD_H.dp * scale)
+            .onGloballyPositioned { blockOrigins[type] = it.boundsInRoot().topLeft }
+            .pointerInput(type, running) {
+                if (running) return@pointerInput
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    val origin = blockOrigins[type] ?: Offset.Zero
+                    // 阈值内三种结局分开：抬手 = 点一下；移动超 touchSlop / 被列表滚动吃掉 = 让给滚动；
+                    // 按住不动满阈值 = 拖出去。小屏托盘要靠滑动看全，所以「快滑 = 滚动」优先。
+                    var tapped = false
+                    var cancelled = false
+                    withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val ev = awaitPointerEvent()
+                            val ch = ev.changes.firstOrNull { it.id == down.id }
+                            if (ch == null || !ch.pressed) {
+                                tapped = true
+                                return@withTimeoutOrNull
+                            }
+                            if (ev.changes.any { it.isConsumed } ||
+                                (ch.position - down.position).getDistance() > viewConfiguration.touchSlop
+                            ) {
+                                cancelled = true
+                                return@withTimeoutOrNull
+                            }
+                        }
+                    }
+                    if (tapped) {
+                        // 阈值内抬手 = 点一下：落到画布可视区中央
+                        onTapBlock(type)
+                        return@awaitEachGesture
+                    }
+                    if (cancelled) return@awaitEachGesture
+                    // 按住不动满阈值 = 拖出去：影子块从手指处开始跟手
+                    var pos = origin + down.position
+                    onDragStart(type, pos)
+                    val completed = drag(down.id) { change ->
+                        change.consume()
+                        pos = origin + change.position
+                        onDrag(pos)
+                    }
+                    if (completed) onDragEnd(pos) else onDragCancel()
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .requiredSize(blockW, NodeGraphMetrics.CARD_H.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+        ) {
+            TrayBlockFace(type = type, alpha = dim)
+        }
     }
 }

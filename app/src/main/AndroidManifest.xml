@@ -35,7 +35,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="true"
             android:theme="@style/Theme.Click">
             <intent-filter>

@@ -117,8 +117,19 @@ class MainActivity : AppCompatActivity() {
     /** 设置页 Fragment 是否已按需加载（旧实现首次切到设置页才加载） */
     private var settingsFragmentLoaded by mutableStateOf(false)
 
+    /**
+     * 上一次的深浅模式。
+     * 旋转 / 分屏 / 键盘弹出同样会走 onConfigurationChanged，但那些时候**不该**重放主题揭示：
+     * 一是旋转时做全屏圆形揭示本身就是错的交互，二是揭示里用的
+     * `PixelCopy.request(Window, Bitmap, listener, Handler)` 重载要 API 26+，
+     * minSdk 24 的机器上会 NoSuchMethodError 直接崩（旋转必崩）。
+     */
+    private var lastUiNightMode = android.content.res.Configuration.UI_MODE_NIGHT_NO
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lastUiNightMode = resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK
 
         // 应用语言设置
         applyLanguage()
@@ -365,6 +376,16 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
+        // 只有「系统深浅模式真的变了」才重放主题（抓屏 + 圆形揭示）。
+        // 旋转 / 分屏 / 键盘等配置变化也会进这里，但走揭示既不符合交互预期，
+        // 又会在 API 24 上因 PixelCopy 的 Window 重载缺失而崩溃（见 lastUiNightMode 注释）。
+        // 这个提前 return 只在「配置变了但 uiMode 没变」时生效，而那种情况旧代码
+        // 根本不会走到这里（旧 configChanges 不含 orientation，旋转会重建 Activity），
+        // 所以在真机上它等价于无操作、不改变任何既有行为；请勿删除，否则模拟器
+        // （API 24）旋转会立刻崩在 ThemeReveal 的 PixelCopy 四参重载上。
+        val night = newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        if (night == lastUiNightMode) return
+        lastUiNightMode = night
         val pref = getSharedPreferences("settings", MODE_PRIVATE)
             .getString("app_theme", "follow_system") ?: "follow_system"
         if (pref == "follow_system") {

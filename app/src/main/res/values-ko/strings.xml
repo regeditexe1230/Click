@@ -278,7 +278,7 @@
     <string name="node_graph_pick_click">한 번 탭하여 클릭 좌표를 선택</string>
     <string name="node_graph_pick_swipe">스와이프하여 시작점과 끝점을 선택</string>
     <string name="node_graph_step">%1$d단계</string>
-    <string name="node_graph_empty_hint">아래 트레이에서 블록을 끌어다 놓아 시작하세요</string>
+    <string name="node_graph_empty_hint">트레이에서 블록을 끌어다 놓아 시작하세요</string>
     <string name="node_graph_thumb_ms">%1$d ms</string>
     <string name="node_graph_loop_infinite_short">무한</string>
     <string name="node_graph_start_short">시작점</string>
