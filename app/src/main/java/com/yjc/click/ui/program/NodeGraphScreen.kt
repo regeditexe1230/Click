@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -257,6 +259,14 @@ fun NodeGraphScreen(
             .onGloballyPositioned { rootRightPx = it.boundsInRoot().right }
             .background(MaterialTheme.colorScheme.background),
     ) {
+        // 状态栏那一条：显式铺一层和画布同色的底，不让上层容器的底色（surfaceVariant）透出来。
+        // 画布/点阵是否真的钻到状态栏下面另说，至少这一条和画布颜色一致，看起来就是「透明」。
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsTopHeight(WindowInsets.statusBars)
+                .background(MaterialTheme.colorScheme.surface),
+        )
         // 任何一次按下都算「用户已经上手了」：不消费事件，画布照常收到
         Box(
             modifier = Modifier
@@ -390,6 +400,8 @@ fun NodeGraphScreen(
                 modifier = Modifier
                     .zIndex(6f)
                     .align(Alignment.TopCenter)
+                    // 顶栏不再压在状态栏上：让出状态栏高度，状态栏那一带露出画布（点阵），背景就是透明的
+                    .statusBarsPadding()
                     // 横屏：右端要看得见和左端一样的圆角 ⇒ 卡片右沿与参数栏（或托盘）左沿之间
                     // 留一条缝，缝宽 = 卡片左侧到屏幕的距离（8dp，来自 barModifier 的横向 padding）。
                     // 这里只让出「托盘 + 参数栏弹簧宽 + 导航栏」，卡片自己的 8dp 外边距由 barModifier 提供。

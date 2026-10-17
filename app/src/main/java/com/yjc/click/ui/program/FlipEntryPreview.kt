@@ -42,8 +42,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
@@ -68,7 +70,7 @@ import kotlinx.coroutines.launch
 
 /** 预览台外壳：按钮播放 + 滑块逐帧。 */
 @Composable
-private fun FlipEntryStage(profileLabel: String, profile: StageProfile, modifier: Modifier = Modifier) {
+internal fun FlipEntryStage(profileLabel: String, profile: StageProfile, modifier: Modifier = Modifier) {
     val progress = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
@@ -108,11 +110,63 @@ private fun FlipEntryStage(profileLabel: String, profile: StageProfile, modifier
     }
 }
 
-enum class StageProfile { TURNSTILE, EXPAND, FLIP }
+enum class StageProfile { TURNSTILE, EXPAND, FLIP, SLAB }
+
+/**
+ * 「窄板」档的时间轴（毫秒，累加到 [SLAB_TOTAL_MS]）。
+ *
+ * 四拍：列表页缩小退场 → 磁贴大小的页板绕**右**竖轴转开成窄板并停一拍 →
+ * 一帧扫满全屏（还带一点残角）→ 摆正收尾。
+ */
+private const val SLAB_A_END = 100f      // 列表页退场结束
+private const val SLAB_B_END = 300f      // 转到窄板
+private const val SLAB_C_END = 430f      // 窄板停留结束
+private const val SLAB_D_END = 467f      // 扫满全屏
+private const val SLAB_TOTAL_MS = 534f   // 残角收完
+
+private fun slabProgress(p: Float): Float = (p.coerceIn(0f, 1f)) * SLAB_TOTAL_MS
+
+/** 列表页在整个窄板档里的缩放与不透明度：前 100ms 缩到 0.42 并淡出，之后不再出现。 */
+private fun slabListScale(p: Float): Float =
+    1f - 0.58f * FastOutSlowInEasing.transform((slabProgress(p) / SLAB_A_END).coerceIn(0f, 1f))
+
+private fun slabListAlpha(p: Float): Float =
+    1f - (slabProgress(p) / SLAB_A_END).coerceIn(0f, 1f)
+
+/** 页板（磁贴大小那一层）的转角：0° → −76°，绕右竖轴。 */
+private fun slabPanelAngle(p: Float): Float {
+    val ms = slabProgress(p)
+    if (ms <= SLAB_A_END) return 0f
+    val q = ((ms - SLAB_A_END) / (SLAB_B_END - SLAB_A_END)).coerceIn(0f, 1f)
+    return -76f * FastOutSlowInEasing.transform(q)
+}
+
+/** 页板可见区间：窄板停一拍期间它一直在；扫满之后交给整页。 */
+private fun slabPanelAlpha(p: Float): Float {
+    val ms = slabProgress(p)
+    return if (ms < SLAB_A_END) 0f else if (ms <= SLAB_C_END) 1f else 0f
+}
+
+/** 整页的转角：从窄板那一拍接过 −76°，两帧扫到 0°；之后只剩 3.5° 残角慢慢收平。 */
+private fun slabPageAngle(p: Float): Float {
+    val ms = slabProgress(p)
+    if (ms <= SLAB_C_END) return -76f
+    if (ms <= SLAB_D_END) {
+        val q = ((ms - SLAB_C_END) / (SLAB_D_END - SLAB_C_END)).coerceIn(0f, 1f)
+        return -76f * (1f - q)
+    }
+    val q = ((ms - SLAB_D_END) / (SLAB_TOTAL_MS - SLAB_D_END)).coerceIn(0f, 1f)
+    return -3.5f * (1f - FastOutSlowInEasing.transform(q))
+}
+
+private fun slabPageAlpha(p: Float): Float {
+    val ms = slabProgress(p)
+    return if (ms <= SLAB_C_END) 0f else 1f
+}
 
 /** 一块「舞台」：窗口全尺寸，按档位画进入动画的当前帧。 */
 @Composable
-private fun Stage(profile: StageProfile, progress: Float) {
+internal fun Stage(profile: StageProfile, progress: Float) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     Box(Modifier.fillMaxSize()) {
         when (profile) {
@@ -199,6 +253,69 @@ private fun Stage(profile: StageProfile, progress: Float) {
                     ) { FakeGraphPage() }
                 }
             }
+            StageProfile.SLAB -> {
+                // ① 列表页缩小 + 淡出
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = slabListScale(progress)
+                            scaleY = slabListScale(progress)
+                        }
+                        .alphaMod(slabListAlpha(progress)),
+                ) { FakeTile() }
+
+                // ② 磁贴大小的页板：绕**右**竖轴转开成窄板，并停一拍
+                if (slabPanelAlpha(progress) > 0f) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .size(width = 300.dp, height = 150.dp)
+                                .quadFlip(thetaDeg = slabPanelAngle(progress), density = density),
+                        ) { FakeGraphPage() }
+                    }
+                }
+
+                // ③ 整页扫满全屏（起始还带残角）→ ④ 摆正
+                if (slabPageAlpha(progress) > 0f) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .quadFlip(thetaDeg = slabPageAngle(progress), density = density),
+                    ) { FakeGraphPage() }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 绕**右**竖轴（x = 宽度处）的射影映射：θ 为负值时右侧不动、左侧收向屏幕里，
+ * 于是画面变成「左窄右宽」的窄板 —— 与生产 TURNSTILE 档的轴向相反。
+ */
+private fun Modifier.quadFlip(thetaDeg: Float, density: Density): Modifier = drawWithContent {
+    if (kotlin.math.abs(thetaDeg) < 0.01f) {
+        this@drawWithContent.drawContent()
+    } else {
+        val q = turnstileQuad(
+            thetaDeg = thetaDeg,
+            originX = size.width,
+            originY = size.height / 2f,
+            perspective = with(density) { 600.dp.toPx() },
+            width = size.width,
+            height = size.height,
+        )
+        if (q == null) {
+            this@drawWithContent.drawContent()
+        } else {
+            val src = floatArrayOf(
+                0f, 0f, size.width, 0f,
+                size.width, size.height, 0f, size.height,
+            )
+            val m = android.graphics.Matrix()
+            m.setPolyToPoly(src, 0, q, 0, 4)
+            drawContext.canvas.nativeCanvas.concat(m)
+            this@drawWithContent.drawContent()
         }
     }
 }
@@ -313,6 +430,12 @@ private fun FakeGraphPage() {
             }
         }
     }
+}
+
+@Preview(showBackground = true, widthDp = 440, heightDp = 700, name = "窄板 SLAB（四拍）")
+@Composable
+private fun PreviewSlab() {
+    MaterialTheme { FlipEntryStage("窄板 SLAB", StageProfile.SLAB) }
 }
 
 @Preview(showBackground = true, widthDp = 440, heightDp = 700, name = "转门 TURNSTILE（当前生产档）")

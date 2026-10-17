@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 仅 debug 变体包含：动画预览台，用来逐帧抓图核对进入节点图的动效。
+         启动方式：adb shell am start -n com.yjc.click/com.yjc.click.FlipPreviewActivity -->
+    <application>
+        <activity
+            android:name=".FlipPreviewActivity"
+            android:exported="true"
+            android:label="动画预览台"
+            android:theme="@style/Theme.Click" />
+    </application>
+</manifest>

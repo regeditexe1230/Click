@@ -60,6 +60,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -76,6 +77,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
@@ -102,7 +104,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * 「程序」页：预设卡片列表 + Win8 磁贴翻转进出节点图画布。
+ * 「程序」页：预设卡片列表 + 卡片放大淡入进出节点图画布。
  *
  * [openProgramId] 由外壳持有：非 null = 现在要展示这个程序的画布。
  * 点卡片时先播翻转动画，翻过 90° 之后才回调 [onOpenProgram]，
@@ -441,15 +443,25 @@ internal fun Modifier.programListTurnstile(
     flip: ProgramFlipState,
     layerLeft: Float,
     layerTop: Float,
-): Modifier = turnstileLayer(
-    angleDeg = flip.listAngle,
-    alpha = flip.listAlpha,
-    originX = TURNSTILE_ORIGIN_X,
-    originY = flip.window.height / 2f,
-    perspective = TURNSTILE_PERSPECTIVE_IN,
-    layerLeft = layerLeft,
-    layerTop = layerTop,
-)
+): Modifier =
+    // 窄板档：列表页不转，只缩小 + 淡出（转场由上面那层图页负责）
+    if (FLIP_PROFILE == FlipProfile.SLAB) {
+        this.graphicsLayer {
+            scaleX = flip.slabListScale
+            scaleY = flip.slabListScale
+            alpha = flip.slabListAlpha.coerceIn(0f, 1f)
+        }
+    } else {
+        turnstileLayer(
+            angleDeg = flip.listAngle,
+            alpha = flip.listAlpha,
+            originX = TURNSTILE_ORIGIN_X,
+            originY = flip.window.height / 2f,
+            perspective = TURNSTILE_PERSPECTIVE_IN,
+            layerLeft = layerLeft,
+            layerTop = layerTop,
+        )
+    }
 
 /**
  * turnstile 层：整层绕「屏幕左外侧 40dp 的竖轴」转 [angleDeg] 度，再叠加不透明度 [alpha]。
@@ -653,7 +665,8 @@ private fun GraphReveal(
             .drawWithContent {
                 // turnstile 档：图页就是「整页转进来」，不裁剪、也不分阶段揭示 ——
                 // 旋转和不透明度都在外面那层 turnstileLayer 里做。
-                if (turnstile) {
+                // SLAB 档的变换全在外面那层做，这里也必须原样透传，否则会被下面 FLIP 的裁剪吞掉
+                if (turnstile || FLIP_PROFILE == FlipProfile.SLAB || FLIP_PROFILE == FlipProfile.GROW) {
                     this@drawWithContent.drawContent()
                     return@drawWithContent
                 }
@@ -871,6 +884,29 @@ internal class ProgramFlipState {
     private val turnstileActive: Boolean
         get() = FLIP_PROFILE == FlipProfile.WIN8_TURNSTILE && (openId != null || flipId != null)
 
+    // ---- 窄板档（SLAB）：列表页缩退 + 页板转开成窄板停一拍 + 扫满带残角收平 ----
+
+    /** 列表页此刻的缩放：前 [SLAB_A_END] 毫秒缩到 0.42。 */
+    val slabListScale: Float
+        get() = if (slabActive) slabListScaleAt(progress.value) else 1f
+
+    val slabListAlpha: Float
+        get() = if (slabActive) slabListAlphaAt(progress.value) else 1f
+
+    /** 图页此刻绕右竖轴的转角（负值 = 左半边收向屏幕里）。 */
+    val slabGraphAngle: Float
+        get() = if (slabActive) slabGraphAngleAt(progress.value) else 0f
+
+    val slabGraphAlpha: Float
+        get() = if (slabActive) slabGraphAlphaAt(progress.value) else 1f
+
+    /** 图页此刻的缩放：窄板阶段只有卡片那么大，扫满那一下长到 1。 */
+    val slabGraphScale: Float
+        get() = if (slabActive) slabGraphScaleAt(progress.value) else 1f
+
+    private val slabActive: Boolean
+        get() = FLIP_PROFILE == FlipProfile.SLAB && (openId != null || flipId != null)
+
     // ---- 回调：由 ProgramScreen 装上（只有它知道点开的是哪张卡片、列表怎么改）----
     var scope: CoroutineScope? = null
 
@@ -992,6 +1028,10 @@ internal class ProgramFlipState {
             TURNSTILE_IN_MS
         } else if (FLIP_PROFILE == FlipProfile.EXPAND) {
             if (targetValue > HANDOFF) WIN8_ENTER_MS else WIN8_EXIT_MS
+        } else if (FLIP_PROFILE == FlipProfile.GROW) {
+            if (targetValue > HANDOFF) GROW_TOTAL_MS.toInt() else GROW_EXIT_MS
+        } else if (FLIP_PROFILE == FlipProfile.SLAB) {
+            if (targetValue > HANDOFF) SLAB_TOTAL_MS.toInt() else SLAB_EXIT_MS
         } else {
             FLIP_MS
         }
@@ -1106,6 +1146,95 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
         } else if (FLIP_PROFILE == FlipProfile.EXPAND) {
             front()
             graph()
+        } else if (FLIP_PROFILE == FlipProfile.GROW) {
+            // 放大档：被点的那张卡片从原位长到满屏（圆角同步收到 0），图页在它上面同时淡入
+            val density = LocalDensity.current
+            val winW = flip.window.width
+            val winH = flip.window.height
+            val frameW = if (flip.frame.width > 1f) flip.frame.width else winW * 0.92f
+            val frameH = if (flip.frame.height > 1f) flip.frame.height else winH * 0.14f
+            val frameX = if (flip.frame.width > 1f) flip.frame.left else winW * 0.04f
+            val frameY = if (flip.frame.height > 1f) flip.frame.top else winH * 0.06f
+            val gms = growMs(flip.progress.value)
+            val cardT = FastOutSlowInEasing.transform((gms / GROW_CARD_END).coerceIn(0f, 1f))
+            // 图页在 85% 处就淡透：最后 100ms 画面完全是静的，交接只会发生在静止帧上，看不出来
+            val alphaT = ((gms - GROW_FADE_START) / (GROW_TOTAL_MS * 0.85f - GROW_FADE_START)).coerceIn(0f, 1f)
+            val cardW = frameW + (winW - frameW) * cardT
+            val cardH = frameH + (winH - frameH) * cardT
+            // 不再画列表副本：真实列表还在下面那一层，副本只会和它差几像素 —— 开场那一下跳变就是它。
+            Box(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            (frameX * (1f - cardT)).roundToInt(),
+                            (frameY * (1f - cardT)).roundToInt(),
+                        )
+                    }
+                    .size(with(density) { cardW.toDp() }, with(density) { cardH.toDp() })
+                    .background(
+                        color = androidx.compose.ui.graphics.lerp(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.surface,
+                            cardT,
+                        ),
+                        shape = RoundedCornerShape((GROW_CARD_RADIUS * (1f - cardT)).dp),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = alphaT },
+            ) {
+                graph()
+            }
+        } else if (FLIP_PROFILE == FlipProfile.SLAB) {
+            // 窄板档：整页先按「卡片大小」渲染，让这个小盒子绕自己的竖轴转 —— 转到侧面时
+            // 自然就是一条窄板，背景也露得出来；④ 阶段这个盒子长到全屏，同一个轴心把页摆平。
+            val density = LocalDensity.current
+            val winW = flip.window.width
+            val winH = flip.window.height
+            val frameW = if (flip.frame.width > 1f) flip.frame.width else winW * 0.92f
+            val frameH = if (flip.frame.height > 1f) flip.frame.height else winH * 0.14f
+            val frameX = if (flip.frame.width > 1f) flip.frame.left else winW * 0.04f
+            val frameY = if (flip.frame.height > 1f) flip.frame.top else winH * 0.06f
+            val grow = ((flip.slabGraphScale - SLAB_PANEL_SCALE) / (1f - SLAB_PANEL_SCALE)).coerceIn(0f, 1f)
+            // 页是白的，转到侧面时和同样白的背景糊成一片 —— 底下垫一层随扫满淡出的暗幕。
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = SLAB_SCRIM_ALPHA * flip.slabGraphAlpha * (1f - grow))),
+            )
+            // 窄板档：图页先按屏幕 40% 的「页面等比小盒子」渲染（绕开「整页转过去时远侧被放大铺满
+            // 全屏、看不出窄板」的问题），绕小盒自己的竖轴转 —— 转到侧面时自然就是一条窄板，
+            // 背景也露得出来；扫满阶段这个盒子长到全屏，同一个轴心把页摆平。角度为负 = 与参考方向相反。
+            val holdW = winW * 0.40f
+            val holdH = winH * 0.40f
+            val holdX = (frameX + frameW / 2f) - holdW / 2f
+            val holdY = winH / 2f - holdH / 2f
+            val boxW = holdW + (winW - holdW) * grow
+            val boxH = holdH + (winH - holdH) * grow
+            val boxX = holdX * (1f - grow)
+            val boxY = holdY * (1f - grow)
+            var slabLayerOrigin by remember { mutableStateOf(Offset.Zero) }
+            val axisDp = with(density) { (boxX + boxW / 2f).toDp() }
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(boxX.roundToInt(), boxY.roundToInt()) }
+                    .size(with(density) { boxW.toDp() }, with(density) { boxH.toDp() })
+                    .onGloballyPositioned { slabLayerOrigin = it.boundsInRoot().topLeft }
+                    .clipToBounds()
+                    .turnstileLayer(
+                        angleDeg = flip.slabGraphAngle,
+                        alpha = flip.slabGraphAlpha,
+                        originX = axisDp,
+                        originY = boxY + boxH / 2f,
+                        perspective = SLAB_PERSPECTIVE,
+                        layerLeft = slabLayerOrigin.x,
+                        layerTop = slabLayerOrigin.y,
+                    ),
+            ) {
+                graph()
+            }
         } else {
             graph()
             front()
@@ -1155,7 +1284,7 @@ internal data class CardTilt(
  * - [FLIP]：卡片绕自身竖中轴转 180° 交班给背面，600ms 强透视（更早的一版）。
  * 三档共用同一套结构：覆盖层在窗口级、两条栏动画期间不改布局、卡片矩形快照 + 裁剪揭示。
  */
-private val FLIP_PROFILE = FlipProfile.WIN8_TURNSTILE
+private val FLIP_PROFILE = FlipProfile.GROW
 
 /**
  * 三档动画，一行可切（lead 要求给用户留后路）：
@@ -1163,7 +1292,7 @@ private val FLIP_PROFILE = FlipProfile.WIN8_TURNSTILE
  * - [EXPAND]：卡片矩形长到全屏 + 节点图在裁剪窗口里淡入（上一版）；
  * - [FLIP]：卡片绕自身竖中轴转 180° 交班给背面 + 自算射影透视，600ms。
  */
-private enum class FlipProfile { WIN8_TURNSTILE, EXPAND, FLIP }
+private enum class FlipProfile { WIN8_TURNSTILE, EXPAND, FLIP, SLAB, GROW }
 
 /** [FlipProfile.FLIP] 档专用：总时长（毫秒）。其余两档各用自己的时间轴，不读它。 */
 private const val FLIP_MS = 600
@@ -1236,6 +1365,74 @@ private val TURNSTILE_IN_EASE = CubicBezierEasing(0.01f, 0.975f, 0.4775f, 0.9775
 private val TURNSTILE_OUT_EASE = CubicBezierEasing(0.4925f, 0.01f, 0.7675f, -0.01f)
 private val TURNSTILE_FADE_IN_EASE = CubicBezierEasing(0f, 2f, 0f, 2f)
 private val TURNSTILE_FADE_OUT_EASE = CubicBezierEasing(1f, -0.42f, 0.995f, -0.425f)
+
+// ---- 窄板档（SLAB）的四拍：全部时间都落在 [SLAB_TOTAL_MS] 这条轴上 ----
+// ① 0–100ms   列表页缩到 0.42 并淡出
+// ② 100–300ms 页板绕右竖轴转到 −76°，收成一条竖窄板
+// ③ 300–430ms 窄板停一拍（角度不变）
+// ④ 430–534ms 一帧扫到 −3.5°（残角），再收平到 0°
+private const val SLAB_A_END = 100f
+private const val SLAB_B_END = 300f
+private const val SLAB_C_END = 430f
+private const val SLAB_D_END = 467f
+private const val SLAB_TOTAL_MS = 534f
+private const val SLAB_EXIT_MS = 400
+private const val SLAB_PANEL_DEG = -84f
+private const val SLAB_REST_DEG = -3.5f
+private const val SLAB_PANEL_SCALE = 0.42f
+private const val SLAB_SCRIM_ALPHA = 0.32f
+private val SLAB_PERSPECTIVE = 600.dp
+
+// ---- 放大淡入档（GROW）：卡片从原位长到满屏，图页同时淡入 ----
+private const val GROW_TOTAL_MS = 700f
+private const val GROW_EXIT_MS = 520
+private const val GROW_CARD_END = 490f
+private const val GROW_FADE_START = 190f
+private const val GROW_CARD_RADIUS = 20f
+
+private fun growMs(p: Float): Float = p.coerceIn(0f, 1f) * GROW_TOTAL_MS
+
+private fun slabMs(p: Float): Float = p.coerceIn(0f, 1f) * SLAB_TOTAL_MS
+
+private fun slabListScaleAt(p: Float): Float =
+    1f - 0.58f * FastOutSlowInEasing.transform((slabMs(p) / SLAB_A_END).coerceIn(0f, 1f))
+
+private fun slabListAlphaAt(p: Float): Float =
+    1f - (slabMs(p) / SLAB_A_END).coerceIn(0f, 1f)
+
+private fun slabGraphAngleAt(p: Float): Float {
+    val ms = slabMs(p)
+    return when {
+        ms <= SLAB_A_END -> 0f
+        ms <= SLAB_B_END -> SLAB_PANEL_DEG * FastOutSlowInEasing.transform(
+            ((ms - SLAB_A_END) / (SLAB_B_END - SLAB_A_END)).coerceIn(0f, 1f),
+        )
+        ms <= SLAB_C_END -> SLAB_PANEL_DEG
+        ms <= SLAB_D_END -> {
+            val q = ((ms - SLAB_C_END) / (SLAB_D_END - SLAB_C_END)).coerceIn(0f, 1f)
+            SLAB_PANEL_DEG * (1f - q) + SLAB_REST_DEG * q
+        }
+        else -> {
+            val q = ((ms - SLAB_D_END) / (SLAB_TOTAL_MS - SLAB_D_END)).coerceIn(0f, 1f)
+            SLAB_REST_DEG * (1f - FastOutSlowInEasing.transform(q))
+        }
+    }
+}
+
+private fun slabGraphAlphaAt(p: Float): Float =
+    ((slabMs(p) - SLAB_A_END) / 60f).coerceIn(0f, 1f)
+
+private fun slabGraphScaleAt(p: Float): Float {
+    val ms = slabMs(p)
+    return when {
+        ms <= SLAB_C_END -> SLAB_PANEL_SCALE
+        ms <= SLAB_D_END -> {
+            val q = ((ms - SLAB_C_END) / (SLAB_D_END - SLAB_C_END)).coerceIn(0f, 1f)
+            SLAB_PANEL_SCALE + (1f - SLAB_PANEL_SCALE) * q
+        }
+        else -> 1f
+    }
+}
 
 /** 正面转到 90°（侧面对着人）的那一刻：过这条线就交出背面 —— 节点图。FLIP 档专用。 */
 private const val HANDOFF = 0.5f
@@ -1424,7 +1621,8 @@ private fun ProgramListView(
         }
 
         // 右下角「新建程序」
-        FloatingActionButton(
+        // 动画期间不画「新建」按钮：它在翻转层之上，最后一刻消失时看着就是一次跳变
+        if (LocalProgramFlip.current?.animating != true) FloatingActionButton(
             onClick = onNewProgram,
             modifier = Modifier
                 .align(Alignment.BottomEnd)

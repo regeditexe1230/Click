@@ -108,10 +108,10 @@ private val ExpandEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 /** 程序页磁贴翻转的时长：必须和 ProgramScreen.FLIP_MS 一致，两条栏才和 3D 动画同一条时间轴。 */
 /**
  * 两条栏收起/放回的时长。
- * WIN8 档（默认）进场是 367ms（PerfSpec：affected 位移 367ms delay 0），栏用同一个数才和卡片同步。
+ * 伸缩档：两条栏的收起/展开与页面动画同一条时间轴。
  * FLIP 档是 600ms，要和 ProgramScreen.FLIP_MS 一致 —— 切回 FLIP 时这里也要改成 600。
  */
-private const val BAR_FLIP_MS = 367
+private const val BAR_FLIP_MS = 700
 
 /**
  * 应用外壳：旧 activity_main.xml（顶栏 + 页面 + BottomNavigationView）的 Compose 版本。
@@ -225,6 +225,7 @@ fun MainScaffold(
         }
     }
     LaunchedEffect(programFullScreen) {
+        // 进/出程序页：两条栏都走同一条伸缩动画（与卡片放大的 320ms 同步），不再一边瞬间一边动画
         flipRetract.animateTo(
             if (programFullScreen) 1f else 0f,
             tween(BAR_FLIP_MS, easing = FastOutSlowInEasing),
@@ -250,12 +251,9 @@ fun MainScaffold(
     // 所以：视觉用的 retract 照旧一路跟着动画走，真正把高度收掉等动画放完（600ms + 40ms 余量）再做。
     var barsCollapsed by remember { mutableStateOf(programFullScreen) }
     LaunchedEffect(programFullScreen) {
-        if (programFullScreen) {
-            delay(BAR_FLIP_MS.toLong() + 40L)
-            barsCollapsed = true
-        } else {
-            barsCollapsed = false
-        }
+        // 布局高度立刻跟着变：等动画放完再收的话，真正的图页会在那一刻突然多出两条栏的高度，
+        // 里面的顶栏按钮和托盘都要重排一次 —— 看着就是「最后几帧按钮跳了一下」。
+        barsCollapsed = programFullScreen
     }
     // 只有许可页那条（barRetract）才允许立刻动布局高度。程序页那 600ms 里 layoutRetract 必须保持 0，
     // 否则页面照样重排（实测：起飞 1 秒后列表已经被顶上去 12px，再往后就是原来那 224px）。
