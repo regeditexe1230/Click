@@ -12,8 +12,8 @@ android {
         applicationId = "com.yjc.click"
         minSdk = 24
         targetSdk = 33
-        versionCode = 23
-        versionName = "5.2"
+        versionCode = 24
+        versionName = "5.3-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
