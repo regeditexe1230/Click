@@ -1050,8 +1050,17 @@ internal class ProgramFlipState {
         entering = targetValue > HANDOFF
         finish = onDone
         animating = true
-        // 用户：顶栏底栏要和动画同时动 ⇒「全屏」从点下去那一刻就算数，退场动画一开始就立刻还回来
-        onFullScreen(entering)
+        // 用户：点下去那一瞬「按钮本体直接上移」——顶底栏在卡片还露着的时候就收走了，
+        // 列表整体被往上顶了一截。进场改成等色块盖满再收（收的动作正好被色块挡住），
+        // 退场仍然立刻还回来，这样回列表时两条栏是跟动画一起动的。
+        if (entering && FLIP_PROFILE == FlipProfile.GROW) {
+            s.launch {
+                delay((GROW_CARD_END * SLOWMO * 0.92f).toLong())
+                onFullScreen(true)
+            }
+        } else {
+            onFullScreen(entering)
+        }
         val ms = durationMs(targetValue)
         s.launch {
             if (entering) progress.snapTo(0f)
