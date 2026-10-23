@@ -1434,7 +1434,7 @@ private val SLAB_PERSPECTIVE = 600.dp
 
 // ---- 放大淡入档（GROW）：卡片从原位长到满屏，图页同时淡入 ----
 private const val GROW_TOTAL_MS = 700f
-private const val GROW_EXIT_MS = 520
+private const val GROW_EXIT_MS = 400
 private const val GROW_CARD_END = 490f
 private const val GROW_FADE_START = 430f
 private const val GROW_CARD_RADIUS = 16f
