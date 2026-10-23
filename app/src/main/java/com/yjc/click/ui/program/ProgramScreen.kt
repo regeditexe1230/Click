@@ -586,9 +586,9 @@ private fun tileGrow(p: Float, entering: Boolean): Float {
     return if (entering) {
         FLIP_EASE.transform(q)
     } else {
-        val start = FLIP_FADE_DELAY_EXIT + FLIP_FADE_MS
-        val t = ((q * FLIP_EXIT_MS - start) / FLIP_MOVE_MS).coerceIn(0f, 1f)
-        1f - FLIP_EASE_EXIT.transform(t)
+        // 退场不能再「先淡出、后移动」：图页淡出是淡到底下的白列表上，肉眼看不见，
+        // 那 167ms 的延迟 + 缓动手感就是用户说的「点了退出要缓半秒才动」。退场立刻开始缩。
+        1f - FLIP_EASE_EXIT.transform(q)
     }
 }
 
@@ -602,8 +602,9 @@ private fun tileAlpha(p: Float, entering: Boolean): Float {
         val t = ((q * FLIP_ENTER_MS - FLIP_FADE_DELAY_ENTER) / FLIP_FADE_MS).coerceIn(0f, 1f)
         FLIP_EASE.transform(t)
     } else {
-        val t = ((q * FLIP_EXIT_MS - FLIP_FADE_DELAY_EXIT) / FLIP_FADE_MS).coerceIn(0f, 1f)
-        1f - FLIP_EASE.transform(t)
+        // 退场全程保持不透明：图页淡在白色底上根本看不出来，只会显得「点了没反应」；
+        // 等收缩快贴到卡片时才淡掉，避免残影。
+        1f - ((q - 0.85f) / 0.15f).coerceIn(0f, 1f)
     }
 }
 
