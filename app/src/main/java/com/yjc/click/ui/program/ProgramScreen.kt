@@ -1173,21 +1173,29 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
                 // 用户只看到「整页停一下、然后一闪」，卡片收回去的过程全被挡住。
                 ((cardT - 0.12f) / 0.88f).coerceIn(0f, 1f)
             }
-            val cardW = frameW + (winW - frameW) * cardT
-            val cardH = frameH + (winH - frameH) * cardT
+            // 起始块必须和「手指按下时那张卡片」一模一样：卡片按下会缩到 PRESS_SCALE（0.94），
+            // 色块要是从没缩过的矩形长起来，一按下就看见按钮自己“啪”地胀开。这里把按下那一份缩放
+            // 带进起点，随 cardT 一起放大到 1。
+            val pressK = 1f + (flip.tilt.scale.coerceIn(0.5f, 1.1f) - 1f) * (1f - cardT)
+            val startW = frameW * pressK
+            val startH = frameH * pressK
+            val startX = frameX + (frameW - startW) / 2f
+            val startY = frameY + (frameH - startH) / 2f
+            val cardW = startW + (winW - startW) * cardT
+            val cardH = startH + (winH - startH) * cardT
+            val cardX = startX * (1f - cardT)
+            val cardY = startY * (1f - cardT)
             // 不再画列表副本：真实列表还在下面那一层，副本只会和它差几像素 —— 开场那一下跳变就是它。
             Box(
                 modifier = Modifier
                     .offset {
-                        IntOffset(
-                            (frameX * (1f - cardT)).roundToInt(),
-                            (frameY * (1f - cardT)).roundToInt(),
-                        )
+                        IntOffset(cardX.roundToInt(), cardY.roundToInt())
                     }
                     .size(with(density) { cardW.toDp() }, with(density) { cardH.toDp() })
                     .background(
                         color = androidx.compose.ui.graphics.lerp(
-                            MaterialTheme.colorScheme.surfaceVariant,
+                            // 起点色必须是列表卡片自己的底色（surfaceContainerHigh），否则一按下按钮会变色。
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
                             MaterialTheme.colorScheme.surface,
                             cardT,
                         ),
@@ -1419,7 +1427,7 @@ private const val GROW_TOTAL_MS = 700f
 private const val GROW_EXIT_MS = 520
 private const val GROW_CARD_END = 490f
 private const val GROW_FADE_START = 430f
-private const val GROW_CARD_RADIUS = 20f
+private const val GROW_CARD_RADIUS = 16f
 
 private fun growMs(p: Float): Float = p.coerceIn(0f, 1f) * GROW_TOTAL_MS
 
