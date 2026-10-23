@@ -247,7 +247,15 @@ fun ProgramScreen(
             dragPointerDeltaY = dragPointerDeltaY,
             listTopInRoot = listTopInRoot,
             onListTopChange = { listTopInRoot = it },
-            onCardFrame = { id, frame -> cardFrames[id] = frame },
+            onCardFrame = { id, frame ->
+                cardFrames[id] = frame
+                // 转屏之后列表虽然被图页整个盖住，仍然在参与布局，卡片矩形会按新朝向重新上报。
+                // 同步给打开着的那一页：退出动画才会缩到「现在这个朝向」的卡片，
+                // 而不是进来时那张（竖屏进来、横屏退出时，原来会缩到一个竖屏尺寸的矩形上）。
+                // 转屏之后列表会按新方向重新布局，卡片位置也跟着变：退场动画的落点必须是「当下的卡片」，
+            // 所以关闭途中也照收 —— 这一层每个帧都从 flip.frame 现算，晚一两帧纠正过来落点才对得上。
+            if (flip.flipId == id) flip.frame = frame
+            },
             onOpen = { program, tilt -> openTile(program, tilt) },
             onLongPress = { },   // 长按不再弹菜单：只用于“按住拖动排序”
             onRename = { renameTarget = it },
@@ -1158,7 +1166,13 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
             val gms = growMs(flip.progress.value)
             val cardT = FastOutSlowInEasing.transform((gms / GROW_CARD_END).coerceIn(0f, 1f))
             // 图页在 85% 处就淡透：最后 100ms 画面完全是静的，交接只会发生在静止帧上，看不出来
-            val alphaT = ((gms - GROW_FADE_START) / (GROW_TOTAL_MS * 0.85f - GROW_FADE_START)).coerceIn(0f, 1f)
+            val alphaT = if (flip.entering) {
+                ((gms - GROW_FADE_START) / (GROW_TOTAL_MS * 0.85f - GROW_FADE_START)).coerceIn(0f, 1f)
+            } else {
+                // 退场：图页跟着卡片一起退。以前图页要到 85% 才开始淡，那之前它整页盖在卡片上面，
+                // 用户只看到「整页停一下、然后一闪」，卡片收回去的过程全被挡住。
+                ((cardT - 0.12f) / 0.88f).coerceIn(0f, 1f)
+            }
             val cardW = frameW + (winW - frameW) * cardT
             val cardH = frameH + (winH - frameH) * cardT
             // 不再画列表副本：真实列表还在下面那一层，副本只会和它差几像素 —— 开场那一下跳变就是它。
@@ -1183,7 +1197,23 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = alphaT },
+                    .graphicsLayer {
+                        // 进出都让「图页」本身体积跟着卡片走：进场从卡片那一小块长到满屏，
+                        // 退场再缩回卡片那一块 —— 缩小的目标是按下那一刻卡片的位置与大小，
+                        // 转屏之后这个矩形已经按新方向重新量过，所以横竖屏都缩得回按钮上。
+                        val t = 1f - cardT
+                        scaleX = 1f + (frameW / winW - 1f) * t
+                        scaleY = 1f + (frameH / winH - 1f) * t
+                        translationX = (frameX + frameW / 2f - winW / 2f) * t
+                        translationY = (frameY + frameH / 2f - winH / 2f) * t
+                        alpha = if (flip.entering) {
+                            alphaT
+                        } else {
+                            // 退场：缩到卡片那么大才淡掉，前面一路都能看见它往回缩
+                            (1f - ((t - 0.82f) / 0.18f)).coerceIn(0f, 1f)
+                        }
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                    },
             ) {
                 graph()
             }
