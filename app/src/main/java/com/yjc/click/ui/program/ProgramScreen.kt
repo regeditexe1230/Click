@@ -235,7 +235,7 @@ fun ProgramScreen(
             // 退出收尾时会整张卡片（含右下角三个按钮）在一帧里蹦回来 —— 就是用户报的「按钮突然出现」。
             // 只有 EXPAND / FLIP 那两档才会在动画层重画同一张卡片，那时才该藏本体。
             // 慢放抓帧：frame24→25 时 (56,378,1384,720) 这块有 77.66% 像素在一帧内变化，正是这张卡片。
-            pageFlippingId = if (FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE) null else flip.flipId,
+            pageFlippingId = if (FLIP_PROFILE == FlipProfile.FLIP_TURNSTILE || FLIP_PROFILE == FlipProfile.GROW) null else flip.flipId,
             programs = programs,
             listState = listState,
             // 只让被点的磁贴自己翻+放大（磁贴翻转 磁贴那种），列表本身一动不动：
@@ -254,7 +254,7 @@ fun ProgramScreen(
                 // 而不是进来时那张（竖屏进来、横屏退出时，原来会缩到一个竖屏尺寸的矩形上）。
                 // 转屏之后列表会按新方向重新布局，卡片位置也跟着变：退场动画的落点必须是「当下的卡片」，
             // 所以关闭途中也照收 —— 这一层每个帧都从 flip.frame 现算，晚一两帧纠正过来落点才对得上。
-            if (flip.flipId == id) flip.frame = frame
+            if (flip.flipId == id && (!flip.animating || flip.closing)) flip.frame = frame
             },
             onOpen = { program, tilt -> openTile(program, tilt) },
             onLongPress = { },   // 长按不再弹菜单：只用于“按住拖动排序”
@@ -1198,24 +1198,25 @@ internal fun ProgramFlipOverlay(flip: ProgramFlipState) {
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        // 进出都让「图页」本身体积跟着卡片走：进场从卡片那一小块长到满屏，
-                        // 退场再缩回卡片那一块 —— 缩小的目标是按下那一刻卡片的位置与大小，
-                        // 转屏之后这个矩形已经按新方向重新量过，所以横竖屏都缩得回按钮上。
                         val t = 1f - cardT
-                        scaleX = 1f + (frameW / winW - 1f) * t
-                        scaleY = 1f + (frameH / winH - 1f) * t
-                        translationX = (frameX + frameW / 2f - winW / 2f) * t
-                        translationY = (frameY + frameH / 2f - winH / 2f) * t
-                        alpha = if (flip.entering) {
-                            alphaT
+                        if (flip.entering) {
+                            // 进场只淡入、不改几何：整页每帧重算缩放会掉帧（前几帧尤其明显）。
+                            // 「卡片长大」由下面那块色块完成，观感一样而代价小得多。
+                            alpha = alphaT
                         } else {
-                            // 退场：缩到卡片那么大才淡掉，前面一路都能看见它往回缩
-                            (1f - ((t - 0.82f) / 0.18f)).coerceIn(0f, 1f)
+                            // 退场让图页本身体积缩回卡片：落点取当下这个矩形（转屏后已按新方向重新量过）
+                            scaleX = 1f + (frameW / winW - 1f) * t
+                            scaleY = 1f + (frameH / winH - 1f) * t
+                            translationX = (frameX + frameW / 2f - winW / 2f) * t
+                            translationY = (frameY + frameH / 2f - winH / 2f) * t
+                            alpha = (1f - ((t - 0.82f) / 0.18f)).coerceIn(0f, 1f)
                         }
                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
                     },
             ) {
-                graph()
+                // 图页首次组合/布局很重（点阵画布 + 全部节点 + 托盘），放在进场开头会卡掉前几帧。
+                // 推迟到色块快铺满时再组合：掉的那一帧被色块整个盖住，淡入也从那一刻开始。
+                if (!flip.entering || gms >= GROW_FADE_START - 24f) graph()
             }
         } else if (FLIP_PROFILE == FlipProfile.SLAB) {
             // 窄板档：整页先按「卡片大小」渲染，让这个小盒子绕自己的竖轴转 —— 转到侧面时
@@ -1417,7 +1418,7 @@ private val SLAB_PERSPECTIVE = 600.dp
 private const val GROW_TOTAL_MS = 700f
 private const val GROW_EXIT_MS = 520
 private const val GROW_CARD_END = 490f
-private const val GROW_FADE_START = 190f
+private const val GROW_FADE_START = 430f
 private const val GROW_CARD_RADIUS = 20f
 
 private fun growMs(p: Float): Float = p.coerceIn(0f, 1f) * GROW_TOTAL_MS
