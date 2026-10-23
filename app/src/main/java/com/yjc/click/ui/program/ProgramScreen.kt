@@ -1725,10 +1725,16 @@ private fun ProgramEntry(
     var heldLong by remember { mutableStateOf(false) }
 
     val gapPx = with(density) { CARD_GAP_DP.dp.toPx() }
+    val flipState = LocalProgramFlip.current
+    // 正在进场的那张卡片：按住不松，等色块盖住它。
+    // 松手回弹（0.94 → 1）比色块长得快，卡片的边会从色块里探出来，看着像「按钮超出动画边界」。
+    val heldByFlip = flipState != null && flipState.animating && flipState.entering &&
+        flipState.flipId == program.id
     val scale by animateFloatAsState(
         // 只有缩放：按下缩一点、按住/长按放大一点、拖起来再大一点，松手回 1。
         // （原来那条 flip TiltEffect：rotationX/rotationY + 轴心 + 变暗，用户明确不要，已删）
         targetValue = when {
+            heldByFlip -> PRESS_SCALE
             dragging -> 1.03f
             heldLong -> PRESS_HOLD_SCALE
             pressed && !draggingAnything -> PRESS_SCALE
