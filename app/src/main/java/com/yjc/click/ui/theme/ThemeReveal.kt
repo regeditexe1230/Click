@@ -139,6 +139,11 @@ object AppTheme {
             // 窗口此刻没有 surface（App 在后台、或配置变化还没落定时）PixelCopy 会直接抛
             // "Window doesn't have a backing surface!"：退化成"没有旧画面"，不播圆形揭示。
             onCaptured(null)
+        } catch (e: NoSuchMethodError) {
+            // Android 7.0 的系统里没有 request(Window, Bitmap, listener, Handler) 这个重载：
+            // 直接调用会抛 NoSuchMethodError（Error，不是 Exception），一路把 App 崩掉。
+            // 换个主题不该让 App 挂掉 —— 退化成「没有旧画面」，只是不播揭示动画。
+            onCaptured(null)
         }
     }
 
@@ -241,6 +246,11 @@ object AppTheme {
             )
         } catch (e: IllegalArgumentException) {
             // 同上：窗口没有 surface 时不播过渡，直接把主题状态落下去。
+            commit(activity, theme, target, null, origin)
+        } catch (e: NoSuchMethodError) {
+            // Android 7.x 的系统里没有 request(Window, Bitmap, listener, Handler) 这个重载，
+            // 直接调用会抛 NoSuchMethodError（Error 不是 Exception，接不住就闪退）。
+            // 换主题不该把 App 崩掉：退化成「没有旧画面」，直接切。
             commit(activity, theme, target, null, origin)
         }
     }
