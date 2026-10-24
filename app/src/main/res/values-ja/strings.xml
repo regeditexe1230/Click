@@ -332,4 +332,7 @@
     <string name="edge_error_to_start">開始ノードには接続できません</string>
     <string name="edge_error_duplicate">この2つのノードはすでに接続済みです</string>
     <string name="edge_error_loop_single_out">ループノードの出力は1本だけです</string>
+    <string name="program_guide_title">ノード図の使い方</string>
+    <string name="program_guide_message">1. ノードの移動：カードを押したままドラッグします。長押しは不要です。\n\n2. 範囲選択：空白部分を約 0.7 秒（650 ミリ秒）動かさずに押し続けると選択枠が出ます。そのままドラッグしてください。\n\n3. ノードの追加：トレイのブロックをタップすると画面中央に配置されます。約 0.5 秒押し続けてからドラッグすると好きな位置に置けます。\n\n4. 接続：カード右端の丸からドラッグし、別のノードで離します。\n\n5. 移動とズーム：空白を 1 本指でドラッグすると移動、2 本指のピンチでズームします。\n\n6. 削除：ノードをタップして選択し、上部の削除を押します。</string>
+    <string name="program_guide_ok_wait">了解（%1$s秒）</string>
 </resources>

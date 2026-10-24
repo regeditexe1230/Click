@@ -144,6 +144,9 @@ fun NodeGraphScreen(
         onDispose { state.saveNow() }
     }
 
+    // 第一次进节点图（也就是第一次点开一个程序）弹一次使用说明，之后不再弹。
+    NodeGraphGuideEffect()
+
     // 新建节点菜单已经整体删掉：取块改走底部积木托盘（docs/node-tray-spec.md §1）
     var renameOpen by remember { mutableStateOf(false) }
     var deleteOpen by remember { mutableStateOf(false) }

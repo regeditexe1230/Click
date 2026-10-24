@@ -333,4 +333,7 @@
     <string name="edge_error_to_start">不能連到開始節點</string>
     <string name="edge_error_duplicate">這兩個節點已經連過了</string>
     <string name="edge_error_loop_single_out">迴圈節點只能有一條出線</string>
+    <string name="program_guide_title">節點圖使用說明</string>
+    <string name="program_guide_message">1. 移動節點：按住節點卡片直接拖，不需要長按。\n\n2. 框選：在空白處按住約 0.7 秒（650 毫秒）不動，出現選取框後繼續拖即可框住多個節點。\n\n3. 新增節點：點一下托盤裡的積木，它會落在畫面中央；按住約 0.5 秒再拖，可以放到指定位置。\n\n4. 連線：從卡片右邊緣的圓點拖出，放手落在另一個節點上即可連上。\n\n5. 平移與縮放：單指按住空白處拖動是平移，兩根手指捏合是縮放。\n\n6. 刪除：先點選節點，再按頂部的刪除按鈕。</string>
+    <string name="program_guide_ok_wait">知道了（%1$s 秒）</string>
 </resources>
