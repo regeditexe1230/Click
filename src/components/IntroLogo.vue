@@ -47,20 +47,16 @@ function finish(instant) {
   leaveTimer = window.setTimeout(() => emit("done"), LEAVE_MS);
 }
 
-function run() {
+// 量一次「从当前位置飞到页头 logo」的位移与缩放，并把终点缓存下来。
+// 被打断时如果还没量过（挂载后那 120ms 内），skip() 会先调它一次再续飞。
+function measure() {
   const el = logo.value;
   const target = document.querySelector(".site-header .brand-mark");
-  if (!el || !target || typeof el.animate !== "function") {
-    finish(true);
-    return;
-  }
+  if (!el || !target) return null;
 
   const from = el.getBoundingClientRect();
   const to = target.getBoundingClientRect();
-  if (!from.height || !to.height) {
-    finish(true);
-    return;
-  }
+  if (!from.height || !to.height) return null;
 
   const dx = to.left + to.width / 2 - (from.left + from.width / 2);
   const dy = to.top + to.height / 2 - (from.top + from.height / 2);
@@ -69,6 +65,23 @@ function run() {
   // 终点单抽出来：中途被打断时，从「当前姿态」直接接着飞到这里，
   // 而不是硬跳到终点。
   endTransform = `translate3d(${dx}px, ${dy}px, 0) scale(${scale}) rotateY(-360deg)`;
+  return { dx, dy, scale };
+}
+
+function run() {
+  const el = logo.value;
+  if (!el || typeof el.animate !== "function") {
+    finish(true);
+    return;
+  }
+
+  const geo = measure();
+  if (!geo) {
+    finish(true);
+    return;
+  }
+
+  const { dx, dy, scale } = geo;
 
   animation = el.animate(
     [
@@ -106,6 +119,9 @@ function skip() {
   skipping = true;
 
   const el = logo.value;
+  // 头 120ms（run() 还没跑）被打断时 endTransform 还是空，
+  // 这里补量一次，保证「任何时刻打断都是续飞，而不是硬跳」。
+  if (!endTransform) measure();
   const canCarryOn = el && endTransform && typeof el.animate === "function";
 
   if (canCarryOn) {
