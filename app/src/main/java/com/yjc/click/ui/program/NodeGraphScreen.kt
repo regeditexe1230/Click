@@ -656,8 +656,6 @@ private fun NodeGraphToolbar(
             onClick = onRunToggle,
         )
     }
-    // 竖屏溢出菜单：复制 / 粘贴 / 删除收进「⋮」，把宽度让给程序名（否则标题会被压成「程…」）。
-    var menuOpen by remember { mutableStateOf(false) }
     if (horizontal) {
         // 横屏：单 Row —— 返回 + 标题（只占内容宽）+ 弹性空隙 + 按钮组贴右。
         // 不要用「Box 里两段 align」那种写法：标题行的 weight(1f) 会把父 Row 撑满、按钮组被挤出可视区。
@@ -712,67 +710,14 @@ private fun NodeGraphToolbar(
                 color = onSurface,
                 maxLines = 1,
                 modifier = Modifier
-                    // 竖屏按钮多，标题原来只按内容宽排、剩余宽度不够就被压成「程…」；
-                    // 改成吃满剩余宽度，同时把复制/粘贴/删除收进右侧「⋮」。
-                    .weight(1f)
+                    // fill = false：标题只占自身内容宽，余量留给右侧按钮，保证「运行 ▶」不被工具条裁掉。
+                    .weight(1f, fill = false)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onRename() }
                     .padding(horizontal = 6.dp, vertical = 6.dp),
             )
-            ToolbarIcon(
-                iconRes = R.drawable.ic_undo,
-                labelRes = R.string.node_graph_undo,
-                enabled = canUndo,
-                onClick = onUndo,
-            )
-            ToolbarIcon(
-                iconRes = R.drawable.ic_redo,
-                labelRes = R.string.node_graph_redo,
-                enabled = canRedo,
-                onClick = onRedo,
-            )
-            ToolbarIcon(
-                iconRes = if (running) R.drawable.ic_stop else R.drawable.ic_play,
-                labelRes = if (running) R.string.node_graph_stop else R.string.node_graph_run,
-                enabled = true,
-                onClick = onRunToggle,
-            )
-            Box {
-                ToolbarIcon(
-                    iconRes = R.drawable.ic_more_vert,
-                    labelRes = R.string.node_graph_more,
-                    enabled = true,
-                    onClick = { menuOpen = true },
-                )
-                DropdownMenu(
-                    expanded = menuOpen,
-                    onDismissRequest = { menuOpen = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.node_graph_copy)) },
-                        enabled = canDelete,
-                        onClick = {
-                            menuOpen = false
-                            onCopy()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.node_graph_paste)) },
-                        enabled = canPaste,
-                        onClick = {
-                            menuOpen = false
-                            onPaste()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.node_graph_delete)) },
-                        enabled = canDelete,
-                        onClick = {
-                            menuOpen = false
-                            onDelete()
-                        },
-                    )
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                buttons()
             }
         }
     }

@@ -352,5 +352,4 @@
     <string name="program_guide_title">Node graph guide</string>
     <string name="program_guide_message">1. Move a node: press and drag the card directly — no long press needed.\n\n2. Box select: hold on empty space for about 0.7 s (650 ms) without moving, then drag out the selection box.\n\n3. Add a node: tap a block in the tray to drop it in the middle; hold for about 0.5 s and drag to place it where you want.\n\n4. Connect: drag from the dot on the card\'s right edge and release on another node.\n\n5. Pan and zoom: one finger on empty space pans, two fingers pinch to zoom.\n\n6. Delete: tap to select a node, then press delete at the top.</string>
     <string name="program_guide_ok_wait">Got it (%1$ds)</string>
-    <string name="node_graph_more">More actions</string>
 </resources>
