@@ -15,6 +15,7 @@ const leaving = ref(false);
 let finished = false;
 let skipping = false;
 let animation = null;
+let endTransform = null;
 let holdTimer = 0;
 let leaveTimer = 0;
 let keyHandler = null;
@@ -65,6 +66,10 @@ function run() {
   const dy = to.top + to.height / 2 - (from.top + from.height / 2);
   const scale = to.height / from.height;
 
+  // 终点单抽出来：中途被打断时，从「当前姿态」直接接着飞到这里，
+  // 而不是硬跳到终点。
+  endTransform = `translate3d(${dx}px, ${dy}px, 0) scale(${scale}) rotateY(-360deg)`;
+
   animation = el.animate(
     [
       { transform: "translate3d(0, 0, 0) scale(1) rotateY(0deg)", offset: 0 },
@@ -94,11 +99,35 @@ function run() {
   animation.onfinish = () => finish(false);
 }
 
-// 跳过逻辑保留：没有按钮，但 Esc / Enter / 空格 或点头图以外的地方可以提前收场，
-// 以后要接「自动跳过」「调试直通」也走这里。
+// 跳过逻辑保留：没有按钮，但 Esc / Enter / 空格 或点头图以外的地方可以提前收场。
+// 打断时不是硬跳：从当前姿态用 260ms 加速飞完剩下的路程，观感上像「被拽了一下」。
 function skip() {
   if (finished || skipping) return;
   skipping = true;
+
+  const el = logo.value;
+  const canCarryOn = el && endTransform && typeof el.animate === "function";
+
+  if (canCarryOn) {
+    const current = getComputedStyle(el).transform;
+    const from = !current || current === "none" ? "translate3d(0, 0, 0) scale(1) rotateY(0deg)" : current;
+
+    if (animation) {
+      try {
+        animation.cancel();
+      } catch (err) {
+        /* 动画已结束或已被取消 */
+      }
+    }
+
+    animation = el.animate(
+      [{ transform: from }, { transform: endTransform }],
+      { duration: 260, easing: "cubic-bezier(0.22, 0.9, 0.16, 1)", fill: "forwards" }
+    );
+    animation.onfinish = () => finish(false);
+    return;
+  }
+
   if (animation) {
     try {
       animation.finish();
