@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Click — 把重复的操作，画成一条流程</title>
+    <meta
+      name="description"
+      content="Click 是 Android 上的可视化自动化工具：把「点击」「延时」「动作」「控制」这些节点连成流程，点播放就按顺序执行。不需要写代码，数据只存在本机。"
+    />
+    <meta name="theme-color" content="#FEF7FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./brand/favicon-64.png" />
+    <link rel="apple-touch-icon" href="./brand/icon-light.png" />
+    <script>
+      // 首屏前就把主题定下来，避免刷新时闪一下白/黑
+      (function () {
+        var root = document.documentElement;
+        try {
+          // 三种模式：system（跟随系统）/ light / dark，与 App 的配色方案一一对应。
+          // 默认跟随系统；旧版的 click-theme 不再沿用，只有用户自己选过才记住。
+          var mode = localStorage.getItem("click-theme-mode");
+          if (mode !== "system" && mode !== "light" && mode !== "dark") mode = "system";
+          localStorage.removeItem("click-theme");
+          var dark =
+            mode === "dark" ||
+            (mode === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          root.dataset.theme = dark ? "dark" : "light";
+          root.dataset.themeMode = mode;
+        } catch (e) {
+          root.dataset.theme = "light";
+          root.dataset.themeMode = "system";
+        }
+
+        // 开场动画：同一个标签页会话只播一次（sessionStorage 记一条），
+        // 刷新不再重播；系统级「减少动效」也直接放行。
+        var introKey = "click-intro";
+        var introDone = false;
+        try {
+          introDone = sessionStorage.getItem(introKey) === "1";
+        } catch (e) {
+          introDone = false;
+        }
+        if (!introDone && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          root.classList.add("intro-active");
+          // 兜底：万一开场组件没跑起来，8 秒后强行把页面放出来
+          setTimeout(function () {
+            root.classList.remove("intro-active");
+            root.classList.add("intro-done");
+          }, 8000);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <p style="padding: 24px; font: 16px/1.6 system-ui, sans-serif">
+        Click 是 Android 上的可视化自动化工具，把「点击」「延时」「动作」「控制」节点连成流程即可运行。
+        启用 JavaScript 可以看到完整页面，或者直接到
+        <a href="https://github.com/regeditexe1230/Click">GitHub 仓库</a> 了解。
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
