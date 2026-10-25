@@ -335,4 +335,5 @@
     <string name="program_guide_title">노드 그래프 사용 설명</string>
     <string name="program_guide_message">1. 노드 이동: 카드를 길게 누르지 않고 바로 드래그하면 됩니다.\n\n2. 영역 선택: 빈 곳을 약 0.7초(650밀리초) 동안 움직이지 않고 누르고 있으면 선택 상자가 나타납니다. 그대로 드래그하세요.\n\n3. 노드 추가: 트레이의 블록을 한 번 누르면 화면 중앙에 배치됩니다. 약 0.5초 누른 뒤 드래그하면 원하는 위치에 놓을 수 있습니다.\n\n4. 연결: 카드 오른쪽 가장자리의 점에서 드래그해 다른 노드 위에서 놓습니다.\n\n5. 이동 및 확대: 빈 곳을 한 손가락으로 드래그하면 이동, 두 손가락으로 벌리면 확대/축소됩니다.\n\n6. 삭제: 노드를 눌러 선택한 뒤 상단의 삭제를 누릅니다.</string>
     <string name="program_guide_ok_wait">확인 (%1$s초)</string>
+    <string name="node_graph_more">추가 작업</string>
 </resources>

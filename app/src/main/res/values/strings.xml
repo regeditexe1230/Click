@@ -348,4 +348,5 @@
     <string name="program_guide_title">节点图使用说明</string>
     <string name="program_guide_message">1. 移动节点：按住节点卡片直接拖，不需要长按。\n\n2. 框选：在空白处按住约 0.7 秒（650 毫秒）不动，出现选框后继续拖即可框住多个节点。\n\n3. 添加节点：点一下托盘里的积木，它会落在画面中央；按住约 0.5 秒再拖，可以放到指定位置。\n\n4. 连线：从卡片右边缘的圆点拖出，松手落在另一个节点上即可连上。\n\n5. 平移与缩放：单指按住空白处拖动是平移，两根手指捏合是缩放。\n\n6. 删除：先点选节点，再按顶部的删除按钮。</string>
     <string name="program_guide_ok_wait">知道了（%1$ds）</string>
+    <string name="node_graph_more">更多操作</string>
 </resources>
