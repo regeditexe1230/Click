@@ -28,6 +28,9 @@ export async function onRequestGet({ request, env }) {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
+      // Function 的响应不经过 public/_headers，这两个头要自己给。
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
     },
   });
 }
