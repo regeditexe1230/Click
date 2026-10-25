@@ -1,7 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
-const HOLD_MS = 1500;
+const HOLD_MS = 1000;
 const MOVE_MS = 900;
 const LEAVE_MS = 460;
 const SESSION_KEY = "click-intro";
