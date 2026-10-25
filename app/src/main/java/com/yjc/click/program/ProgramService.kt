@@ -804,6 +804,17 @@ class ProgramService : Service() {
 
         fun isRunning(context: Context): Boolean = instance?.runner != null
 
+        /**
+         * 应用回到前台时用：不管是真在跑程序，还是只挂着一颗待命球，都直接收掉。
+         *
+         * 为什么不用 [isRunning] 判断：只挂待命球的时候 runner 是空的，isRunning 返回 false，
+         * 于是球会一直挂在别人界面上面 —— 用户切回本应用时看到球还在，就是这个问题。
+         */
+        fun dismiss(context: Context) {
+            val svc = instance ?: return
+            svc.mainHandler.post { svc.stopInternal() }
+        }
+
         /** 只显示 START 节点位置的紫色开始球（不跑），点它 = 开始跑。 */
         fun showStartBall(context: Context, programId: String) {
             val app = context.applicationContext

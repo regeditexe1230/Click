@@ -428,6 +428,9 @@ class MainActivity : AppCompatActivity() {
         AppConfig.preventExecution = true
         AppConfig.running = false
         stopService(Intent(this, FloatingService::class.java))
+        // 程序跑着（或只挂着一颗待命球）的时候切回本应用 = 用户回来了：
+        // 和首页那颗悬浮球一样就地收掉，免得球还挂在别人界面上面、程序还在背地里点。
+        com.yjc.click.program.ProgramService.dismiss(this)
         // 用户自己回到 App = 放弃这次录制：待录制状态和那条「点此开始录制手势」通知都撤掉
         FloatingService.cancelPendingRecording(this)
 
