@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>页面不存在 · Click</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/brand/favicon-64.png" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #fef7ff;
+        color: #1d1b20;
+        font: 16px/1.7 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+      }
+      main {
+        max-width: 520px;
+        text-align: center;
+      }
+      img {
+        width: 48px;
+        height: 66px;
+        opacity: 0.9;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 20px 0 8px;
+      }
+      p {
+        margin: 0 0 22px;
+        color: #49454f;
+      }
+      a {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: #6750a4;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      a:focus-visible {
+        outline: 3px solid #6750a4;
+        outline-offset: 3px;
+      }
+      .en {
+        font-size: 14px;
+        color: #79747e;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #141218;
+          color: #e6e0e9;
+        }
+        p {
+          color: #cac4d0;
+        }
+        a {
+          background: #d0bcff;
+          color: #1d1b20;
+        }
+        .en {
+          color: #938f99;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/brand/logo-light.png" alt="" id="mark" />
+      <h1>这个页面不存在</h1>
+      <p>
+        地址可能拼错了，或者这一页已经被移走。回到首页看看 Click 能做什么。
+      </p>
+      <a href="/">回到首页</a>
+      <p class="en" lang="en">404 · This page doesn't exist. Head back to the homepage.</p>
+    </main>
+    <script>
+      // 深色模式下换成白色手形 logo，避免黑色图形压在近黑背景上看不见。
+      (function () {
+        if (!window.matchMedia("(prefers-color-scheme: dark)").matches) return;
+        var el = document.getElementById("mark");
+        if (el) el.src = "/brand/logo-dark.png";
+      })();
+    </script>
+  </body>
+</html>
