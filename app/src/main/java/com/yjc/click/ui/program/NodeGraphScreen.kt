@@ -317,12 +317,12 @@ fun NodeGraphScreen(
 
         // 运行状态：点工具条上的运行按钮 = 放开始球（切到目标应用后点球开始跑），跑起来后按钮变停止
     var running by remember(programId) {
-        mutableStateOf(runCatching { com.yjc.click.program.ProgramService.isRunning(context) }.getOrDefault(false))
+        mutableStateOf(runCatching { com.yjc.click.program.ProgramService.isActive(context) }.getOrDefault(false))
     }
     LaunchedEffect(programId) {
         while (true) {
             kotlinx.coroutines.delay(600)
-            running = runCatching { com.yjc.click.program.ProgramService.isRunning(context) }.getOrDefault(false)
+            running = runCatching { com.yjc.click.program.ProgramService.isActive(context) }.getOrDefault(false)
         }
     }
 
@@ -389,7 +389,9 @@ fun NodeGraphScreen(
                         com.yjc.click.program.ProgramService.stop(context)
                         running = false
                     } else {
-                        com.yjc.click.program.ProgramService.showStartBall(context, programId)
+                        // 起不来（没开始块 / 缺悬浮窗权限）时 showStartBall 会自己 Toast，
+                        // 这里按返回值决定按钮状态，别让它停在「已经在跑」的样子上。
+                        running = com.yjc.click.program.ProgramService.showStartBall(context, programId)
                     }
                 }
             },

@@ -805,6 +805,15 @@ class ProgramService : Service() {
         fun isRunning(context: Context): Boolean = instance?.runner != null
 
         /**
+         * 会话是否活着：真在跑程序，或者只挂着一颗待命球。
+         *
+         * 工具条上的 ▶ / ■ 要按这个切换 —— 只按 [isRunning] 的话，点了 ▶ 只是挂球、
+         * runner 还是空的，按钮就一直停在 ▶，既显示不出「已经启动」，也没地方点停止。
+         */
+        fun isActive(context: Context): Boolean =
+            instance?.let { it.runner != null || it.pendingStartProgramId != null } ?: false
+
+        /**
          * 应用回到前台时用：不管是真在跑程序，还是只挂着一颗待命球，都直接收掉。
          *
          * 为什么不用 [isRunning] 判断：只挂待命球的时候 runner 是空的，isRunning 返回 false，
@@ -816,21 +825,21 @@ class ProgramService : Service() {
         }
 
         /** 只显示 START 节点位置的紫色开始球（不跑），点它 = 开始跑。 */
-        fun showStartBall(context: Context, programId: String) {
+        fun showStartBall(context: Context, programId: String): Boolean {
             val app = context.applicationContext
             if (!Settings.canDrawOverlays(app)) {
                 toast(app, R.string.program_toast_need_overlay)
-                return
+                return false
             }
             val program = ProgramStore.load(app, programId)
             if (program == null) {
                 toast(app, R.string.program_toast_not_found)
-                return
+                return false
             }
             // 没有开始块就别挂球：直接给一句看得见的提示（新程序是空画布，见 docs/node-tray-spec.md §7）
             if (program.start == null) {
                 toast(app, R.string.program_toast_no_start)
-                return
+                return false
             }
             val running = instance
             val intent = Intent(app, ProgramService::class.java)
@@ -841,7 +850,7 @@ class ProgramService : Service() {
                     running.pendingStartProgramId = programId
                     running.showStartBallNow()
                 }
-                return
+                return true
             }
             try {
                 // 挂球也要扛得住 App 退到后台，所以同样按前台服务起
@@ -850,8 +859,10 @@ class ProgramService : Service() {
                 } else {
                     app.startService(intent)
                 }
+                return true
             } catch (e: Exception) {
                 Log.e(TAG, "showStartBall failed", e)
+                return false
             }
         }
 
