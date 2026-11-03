@@ -372,7 +372,7 @@ watch(isDark, (value) => {
         </div>
 
         <div class="grid grid-3">
-          <article v-reveal class="card">
+          <article v-reveal class="card card-lg card-lg--a">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <rect x="4" y="5" width="16" height="6" rx="2" />
@@ -384,7 +384,7 @@ watch(isDark, (value) => {
             <p>一个程序一张卡：节点数、类型色条一眼看清，编辑、复制、删除都在卡上，右下角加号新建。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-lg card-lg--b">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <path
@@ -396,7 +396,7 @@ watch(isDark, (value) => {
             <p>按住卡片就能拖；从右边缘的圆点拉出连线，落到另一个节点上就接上了。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-sm card-sm--4">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <path
@@ -409,7 +409,7 @@ watch(isDark, (value) => {
             <p>空白处按住约 0.7 秒出现选框，一次圈住多个节点成批移动；顶部常驻撤销、重做。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-sm card-sm--4">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <rect x="4" y="4" width="16" height="9" rx="2" />
@@ -420,7 +420,7 @@ watch(isDark, (value) => {
             <p>点击次数、延时毫秒、输入内容都直接写在节点卡片里，不用再点进二级页面。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-sm card-sm--4">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <path d="M8 5.5v13l10-6.5-10-6.5Z" />
@@ -430,7 +430,7 @@ watch(isDark, (value) => {
             <p>画完点播放就按连线顺序跑一遍，可以先试跑再保存；手势与自动化入口就在程序里。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-sm card-sm--6">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <circle cx="12" cy="12" r="8.2" />
@@ -441,7 +441,7 @@ watch(isDark, (value) => {
             <p>跟随系统或手动切换，紫、蓝、红、黄、绿五套种子色，夜里看着不刺眼。</p>
           </article>
 
-          <article v-reveal class="card">
+          <article v-reveal class="card card-sm card-sm--6">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <rect x="4.5" y="5" width="15" height="14" rx="3" />
@@ -634,6 +634,20 @@ watch(isDark, (value) => {
                 </div>
               </li>
             </ol>
+          </div>
+          <div v-reveal class="start-visual">
+            <div class="phone">
+              <div class="phone-screen">
+                <img
+                  :src="shotSrc('programs-clean')"
+                  @error="shotFallback"
+                  width="1080"
+                  height="2203"
+                  alt="Click 的程序列表：三张程序卡片，每张写着节点数量和节点类型色点，右侧是编辑、复制、删除按钮，右下角是新建按钮。"
+                />
+              </div>
+              <div class="phone-glow" aria-hidden="true"></div>
+            </div>
           </div>
 
         </div>

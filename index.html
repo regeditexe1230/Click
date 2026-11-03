@@ -42,7 +42,9 @@
         } catch (e) {
           introDone = false;
         }
-        if (!introDone && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // 截图/自动化验收时可以带 ?nointro=1 跳过开场，不影响真实访问。
+        var skipIntro = /[?&]nointro=1(&|$)/.test(location.search);
+        if (!skipIntro && !introDone && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           root.classList.add("intro-active");
           // 兜底：万一开场组件没跑起来，8 秒后强行把页面放出来
           setTimeout(function () {
