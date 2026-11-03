@@ -356,6 +356,7 @@ watch(isDark, (value) => {
             <div class="phone-glow" aria-hidden="true"></div>
           </div>
           <p class="hero-caption">节点图画布 · 事件 / 动作 / 控制三类节点</p>
+          <p class="hero-note">Android 版实拍 · 深色主题</p>
         </div>
       </div>
     </section>
@@ -438,7 +439,7 @@ watch(isDark, (value) => {
               </svg>
             </span>
             <h3>深色与 5 套配色</h3>
-            <p>跟随系统或手动切换，紫、蓝、红、黄、绿五套种子色，夜里看着不刺眼。</p>
+            <p>跟随系统或手动切换都行，紫、蓝、红、黄、绿五套种子色；夜里看也不刺眼，白天在户外也能看清。</p>
           </article>
 
           <article v-reveal class="card card-sm card-sm--6">
@@ -448,8 +449,8 @@ watch(isDark, (value) => {
                 <path d="M12 9.5v5M9.5 12h5" />
               </svg>
             </span>
-            <h3>数据只在本机</h3>
-            <p>程序存成设备上的本地文件，不需要账号，也没有「上传」这一步。</p>
+            <h3>数据只在本机 <span class="card-chip">本地文件</span></h3>
+            <p>不需要账号，没有「上传」这一步。</p>
           </article>
         </div>
       </div>

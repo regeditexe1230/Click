@@ -1784,3 +1784,71 @@ html.intro-done .hero-visual {
   }
 
 }
+
+/* 首屏右栏：底部补一条小注，避免机图变窄后右下留一大块空 */
+.hero-visual {
+  align-self: stretch;
+  justify-content: end;
+  padding-bottom: 2px;
+}
+
+.hero-note {
+  margin-top: 2px;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--on-surface-variant) 78%, transparent);
+}
+
+/* 功能区最后两张：给一张挂个小徽标，厚薄不再一致 */
+.card-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  vertical-align: 0.18em;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--on-primary-container);
+  background: color-mix(in srgb, var(--primary-container) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
+}
+
+@media (max-width: 860px) {
+  .hero-visual {
+    justify-content: center;
+    padding-bottom: 0;
+  }
+}
+
+/* ---------- 标题字：自托管思源宋 SemiBold（子集） ---------- */
+
+@font-face {
+  font-family: "Noto Serif SC";
+  src: url("../assets/fonts/noto-serif-sc-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+  font-weight: 600;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero h1 {
+  letter-spacing: -0.02em;
+}
+
+/* 数字统一等宽，避免位数变化时抖动 */
+.hero-meta,
+.hero-note,
+.step-no,
+.download p,
+.card-chip {
+  font-variant-numeric: tabular-nums;
+}
