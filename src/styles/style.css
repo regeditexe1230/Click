@@ -95,14 +95,15 @@ h3 {
   /* 大字负得多、小字接近 0 */
   letter-spacing: -0.01em;
   font-weight: 700;
-  /* 中文标点不挂在行首 */
+  /* 中文标点不挂在行首、句末标点允许悬挂出边界 */
   text-spacing-trim: trim-start;
+  hanging-punctuation: allow-end;
 }
 
 h1 {
   font-size: var(--t-h1);
   line-height: 1.05;
-  letter-spacing: -0.028em;
+  letter-spacing: -0.01em;
   font-weight: 800;
   text-wrap: balance;
 }
@@ -110,14 +111,14 @@ h1 {
 h2 {
   font-size: var(--t-h2);
   line-height: 1.12;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.005em;
   text-wrap: balance;
 }
 
 h3 {
   font-size: var(--t-h3);
   line-height: 1.35;
-  letter-spacing: -0.008em;
+  letter-spacing: 0;
 }
 
 p {
@@ -484,7 +485,7 @@ p {
   max-width: none;
   font-size: var(--t-h1);
   line-height: 1.02;
-  letter-spacing: -0.032em;
+  letter-spacing: -0.01em;
 }
 
 .lede {
@@ -1854,7 +1855,7 @@ h3 {
 }
 
 .hero h1 {
-  letter-spacing: -0.032em;
+  letter-spacing: -0.01em;
 }
 
 /* 数字统一等宽，避免位数变化时抖动 */
