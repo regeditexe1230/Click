@@ -13,7 +13,7 @@ Click 是 Android 上的可视化自动化工具：把「事件 / 动作 / 控�
 | 构建 | Vite 5，产物为纯静态 `dist/` |
 | 3D | three.js（动态 import；手机宽度 < 720px 不加载） |
 | 样式 | 原生 CSS，设计令牌集中在 `src/styles/tokens.css` |
-| 资源 | 图标内联 SVG，字体用系统字体栈 |
+| 资源 | 图标内联 SVG；标题自托管思源宋子集（约 49 KB），正文用系统字体栈 |
 
 ## 本地运行
 
@@ -46,3 +46,16 @@ public/screenshots/ App 真机截图（深浅各一套），nodes/ 下是抠好�
 | `screenshots/nodes/*.png` | 369–382 × 229–236 | 透明底节点卡，`max-width:100%` 直接引用 |
 
 节点卡按主题取 `-light` / `-dark`，两者不可互换；截图与手机框同比例，用 `object-fit: contain`，避免二次裁切把底栏切掉。
+
+## 字体许可
+
+标题字体为 **思源宋体 / Noto Serif SC**（SemiBold 600），通过 `pyftsubset` 子集化到 160 个字符，
+文件在 `src/assets/fonts/noto-serif-sc-600.woff2`。
+
+- 许可：**SIL Open Font License 1.1**（OFL-1.1），允许商用、自托管、内嵌与修改；
+- 限制仅两条：不得单独销售字体本身；修改后再分发不得沿用其保留字体名。网页以资源方式加载，不属于分发字体；
+- 许可全文：<https://openfontlicense.org/open-font-license-official-text/>
+- 上游：<https://fonts.google.com/noto/specimen/Noto+Serif+SC>
+
+正文与按钮使用系统字体栈（PingFang SC / Noto Sans SC / Microsoft YaHei 等），不涉及授权。
+参考站使用的 Sora、Lexend 同为 OFL，可商用。
