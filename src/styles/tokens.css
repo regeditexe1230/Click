@@ -31,6 +31,15 @@
   --radius-block: 28px;
   --radius-pill: 999px;
 
+  /* 字号阶梯（clamp: 下限 / 流式 / 上限） */
+  --t-h1: clamp(38px, 6.2vw, 70px);        /* 首屏主标题 / 页面 h1 */
+  --t-h1-section: clamp(34px, 5.6vw, 62px);/* 需要时的小一号 h1 */
+  --t-h2: clamp(26px, 3.6vw, 42px);        /* 次级标题 */
+  --t-h3: clamp(17px, 1.55vw, 20px);       /* 卡片标题 */
+  --t-lead: clamp(17px, 1.5vw, 20px);      /* 导语 */
+  --t-body: clamp(14.5px, 1.15vw, 17px);     /* 正文 */
+  --t-meta: 13px;                          /* 眉标 / 说明 */
+
   /* 间距节奏 */
   --gap-1: 4px;
   --gap-2: 8px;
