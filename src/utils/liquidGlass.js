@@ -16,7 +16,15 @@ export function getDisplacementMap({ height, width, radius, depth }) {
         <stop offset="100%" stop-color="#000" />
       </linearGradient>
     </defs>
+    <defs>
+      <radialGradient id="LENS" cx="50%" cy="50%" r="62%">
+        <stop offset="0%" stop-color="#FF1010" />
+        <stop offset="55%" stop-color="#800000" />
+        <stop offset="100%" stop-color="#000000" />
+      </radialGradient>
+    </defs>
     <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
+    <rect x="0" y="0" height="${height}" width="${width}" fill="url(#LENS)" opacity="0.07" class="mix" />
     <g filter="blur(2px)">
       <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
       <rect x="0" y="0" height="${height}" width="${width}" fill="url(#Y)" class="mix" />

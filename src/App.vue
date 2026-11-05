@@ -217,9 +217,9 @@ onMounted(() => {
     if (supportsBackdropUrl) {
       detachGlass = attachLiquidGlass(glassLayer.value, {
         radius: 24,
-        depth: 7,
-        strength: 16,
-        chromaticAberration: 2,
+        depth: 4,
+        strength: 8,
+        chromaticAberration: 1,
       });
     } else {
       glassLayer.value.classList.add("is-fallback");
