@@ -1,6 +1,7 @@
 <script setup>
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import IntroLogo from "./components/IntroLogo.vue";
+import { attachLiquidGlass, supportsBackdropUrl } from "./utils/liquidGlass";
 
 const NodeField = defineAsyncComponent(() => import("./components/NodeField.vue"));
 const GraphScene = defineAsyncComponent(() => import("./components/GraphScene.vue"));
@@ -207,7 +208,23 @@ function observeGraph() {
   graphObserver.observe(graphHost.value);
 }
 
+const glassLayer = ref(null);
+let detachGlass = null;
+
 onMounted(() => {
+  // 液态玻璃：能折射就折射，不支持的浏览器退化成毛玻璃
+  if (glassLayer.value) {
+    if (supportsBackdropUrl) {
+      detachGlass = attachLiquidGlass(glassLayer.value, {
+        radius: 24,
+        depth: 7,
+        strength: 16,
+        chromaticAberration: 2,
+      });
+    } else {
+      glassLayer.value.classList.add("is-fallback");
+    }
+  }
   themeMeta = document.querySelectorAll('meta[name="theme-color"]');
   mediaQuery = window.matchMedia("(min-width: 720px)");
   isWide.value = mediaQuery.matches;
@@ -228,6 +245,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (detachGlass) detachGlass();
   if (mediaQuery) mediaQuery.removeEventListener("change", onMediaChange);
   if (darkQuery) darkQuery.removeEventListener("change", onSystemThemeChange);
   if (graphObserver) graphObserver.disconnect();
@@ -248,7 +266,8 @@ watch(isDark, (value) => {
 
   <a class="skip-link" href="#main">跳到主要内容</a>
 
-  <header class="site-header">
+  <header class="site-header is-glass">
+    <span ref="glassLayer" class="header-glass" aria-hidden="true"></span>
     <div class="container header-inner">
       <a class="brand" href="#top" aria-label="Click 首页">
         <span class="brand-mark" aria-hidden="true">
