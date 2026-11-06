@@ -171,8 +171,8 @@ p {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 12px;
-  background: linear-gradient(var(--surface) 45%, color-mix(in srgb, var(--surface) 60%, transparent) 75%, transparent);
+  height: 18px;
+  background: linear-gradient(var(--surface) 62%, color-mix(in srgb, var(--surface) 78%, transparent) 70%, transparent);
   pointer-events: none;
 }
 
@@ -184,7 +184,7 @@ p {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #ffffff 62%, transparent),
     inset 0 -14px 26px -20px color-mix(in srgb, #ffffff 70%, transparent),

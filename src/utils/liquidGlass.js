@@ -1,6 +1,8 @@
-// 液态玻璃：用 SVG 位移贴图做真实的折射（不是单纯模糊）
-// 思路来自 iOS 26 那套：边缘一圈做位移、中心几乎不动，再叠一点点色散。
+// 液态玻璃：对“背景”做真实折射，而不是只盖一层模糊。
+// 手法参考了 iOS 26 那套效果链（位移贴图 + 高光层 + 饱和度提升），
+// 但贴图与滤镜都是按元素真实尺寸现场生成的，没有内置任何位图资源。
 
+/** 位移贴图：中心几乎不动，越靠边位移越大，形成“边缘透镜” */
 export function getDisplacementMap({ height, width, radius, depth }) {
   return (
     "data:image/svg+xml;utf8," +
@@ -16,15 +18,7 @@ export function getDisplacementMap({ height, width, radius, depth }) {
         <stop offset="100%" stop-color="#000" />
       </linearGradient>
     </defs>
-    <defs>
-      <radialGradient id="LENS" cx="50%" cy="50%" r="62%">
-        <stop offset="0%" stop-color="#FF1010" />
-        <stop offset="55%" stop-color="#800000" />
-        <stop offset="100%" stop-color="#000000" />
-      </radialGradient>
-    </defs>
     <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
-    <rect x="0" y="0" height="${height}" width="${width}" fill="url(#LENS)" opacity="0.07" class="mix" />
     <g filter="blur(2px)">
       <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
       <rect x="0" y="0" height="${height}" width="${width}" fill="url(#Y)" class="mix" />
@@ -35,32 +29,67 @@ export function getDisplacementMap({ height, width, radius, depth }) {
   );
 }
 
-export function getDisplacementFilter({
-  height,
-  width,
-  radius,
-  depth,
-  strength = 100,
-  chromaticAberration = 0,
-}) {
+/**
+ * 高光层：沿圆角描一圈“从上打光”的白边，模拟玻璃边缘的镜面反射。
+ * 没有这一层，纯折射看起来只是一块被扭弯的毛玻璃。
+ */
+export function getSpecularMap({ height, width, radius }) {
+  const inset = 1.5;
+  const stroke = Math.max(1.5, Math.min(height, width) * 0.035);
   return (
     "data:image/svg+xml;utf8," +
     encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <filter id="displace" color-interpolation-filters="sRGB">
-        <feImage x="0" y="0" height="${height}" width="${width}" href="${getDisplacementMap({ height, width, radius, depth })}" result="displacementMap" />
-        <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration * 2}" xChannelSelector="R" yChannelSelector="G" />
-        <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedR" />
-        <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration}" xChannelSelector="R" yChannelSelector="G" />
-        <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedG" />
-        <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength}" xChannelSelector="R" yChannelSelector="G" />
-        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="displacedB" />
-        <feBlend in="displacedR" in2="displacedG" mode="screen" />
-        <feBlend in2="displacedB" mode="screen" />
+      <linearGradient id="s" x1="0.15" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.85" />
+        <stop offset="38%" stop-color="#fff" stop-opacity="0.28" />
+        <stop offset="72%" stop-color="#fff" stop-opacity="0.06" />
+        <stop offset="100%" stop-color="#fff" stop-opacity="0.22" />
+      </linearGradient>
+    </defs>
+    <rect x="${inset}" y="${inset}" width="${Math.max(0, width - inset * 2)}" height="${Math.max(0, height - inset * 2)}"
+          rx="${Math.max(0, radius - inset)}" ry="${Math.max(0, radius - inset)}"
+          fill="none" stroke="url(#s)" stroke-width="${stroke}" />
+  </svg>`)
+  );
+}
+
+/**
+ * 完整滤镜链（按我们的页面重写，参数全开）：
+ *   轻微模糊 → 位移折射 → 提饱和度 → 只在高光范围内上色 → 衰减 → 叠回底图
+ */
+export function getGlassFilter({
+  height,
+  width,
+  radius,
+  depth,
+  strength = 26,
+  blur = 0.6,
+  saturate = 2.2,
+  specularOpacity = 0.42,
+}) {
+  const displacement = getDisplacementMap({ height, width, radius, depth });
+  const specular = getSpecularMap({ height, width, radius });
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glass" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="soft" />
+        <feImage x="0" y="0" width="${width}" height="${height}" href="${displacement}" result="map" />
+        <feDisplacementMap in="soft" in2="map" scale="${strength}" xChannelSelector="R" yChannelSelector="G" result="refracted" />
+        <feColorMatrix in="refracted" type="saturate" values="${saturate}" result="vivid" />
+        <feImage x="0" y="0" width="${width}" height="${height}" href="${specular}" result="spec" />
+        <feComposite in="vivid" in2="spec" operator="in" result="specTinted" />
+        <feComponentTransfer in="spec" result="specFaded">
+          <feFuncA type="linear" slope="${specularOpacity}" />
+        </feComponentTransfer>
+        <feBlend in="specTinted" in2="refracted" mode="normal" result="withTint" />
+        <feBlend in="specFaded" in2="withTint" mode="normal" />
       </filter>
     </defs>
   </svg>`) +
-    "#displace"
+    "#glass"
   );
 }
 
@@ -76,46 +105,56 @@ export const supportsBackdropUrl = (() => {
 })();
 
 /**
- * 给一个元素挂上液态玻璃：生成滤镜、按尺寸重算、监听尺寸变化。
+ * 给一个元素挂上液态玻璃：按尺寸生成滤镜，尺寸变化时重算。
  * el 必须是「滤镜层」本身（覆盖在内容底下、承载 backdrop-filter 的那一层）。
  */
 export function attachLiquidGlass(el, options = {}) {
   if (!el) return () => {};
   const opts = {
     radius: 22,
-    depth: 10,
-    strength: 60,
-    chromaticAberration: 6,
-    saturate: 1.7,
-    brightness: 1.05,
+    depth: 8,
+    strength: 26,
+    blur: 0.6,
+    saturate: 2.2,
+    specularOpacity: 0.42,
+    brightness: 1.04,
     ...options,
   };
 
+  let frame = 0;
   const render = () => {
     const rect = el.getBoundingClientRect();
     const width = Math.round(rect.width);
     const height = Math.round(rect.height);
     if (width < 8 || height < 8) return;
 
-    // backdrop-filter 直接吃一个「指向 SVG 滤镜的 data URI」，不需要往 DOM 里塞 svg
-    const href = getDisplacementFilter({
+    // backdrop-filter 直接吃一个「指向 SVG 滤镜的 data URI」，不必往 DOM 里塞 svg
+    const href = getGlassFilter({
       width,
       height,
-      radius: opts.radius,
-      depth: opts.depth,
+      radius: Math.min(opts.radius, height / 2),
+      depth: Math.min(opts.depth, height / 3),
       strength: opts.strength,
-      chromaticAberration: opts.chromaticAberration,
+      blur: opts.blur,
+      saturate: opts.saturate,
+      specularOpacity: opts.specularOpacity,
     });
-    const value = `url("${href}") saturate(${opts.saturate}) brightness(${opts.brightness})`;
+    const value = `url("${href}") brightness(${opts.brightness})`;
     el.style.backdropFilter = value;
     el.style.webkitBackdropFilter = value;
   };
 
+  const schedule = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(render);
+  };
+
   render();
-  const ro = new ResizeObserver(render);
+  const ro = new ResizeObserver(schedule);
   ro.observe(el);
 
   return () => {
+    cancelAnimationFrame(frame);
     ro.disconnect();
     el.style.backdropFilter = "";
     el.style.webkitBackdropFilter = "";
