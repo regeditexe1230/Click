@@ -216,11 +216,11 @@ onMounted(() => {
   if (glassLayer.value) {
     if (supportsBackdropUrl) {
       detachGlass = attachLiquidGlass(glassLayer.value, {
-        radius: 30,
+        radius: 26,
         depth: 6,
-        strength: 15,
-        blur: 0.4,
-        saturate: 1.55,
+        strength: 26,
+        blur: 0.3,
+        saturate: 1.7,
         specularOpacity: 0.32,
       });
     } else {
