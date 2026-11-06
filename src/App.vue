@@ -264,25 +264,13 @@ watch(isDark, (value) => {
   <svg class="glass-defs" aria-hidden="true" focusable="false" width="0" height="0">
     <filter id="header-glass" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blurred_source" />
-      <feImage
-        href="/brand/glass-displacement.png"
-        x="0" y="0" width="100%" height="100%" preserveAspectRatio="none"
-        result="displacement_map"
-      />
-      <feDisplacementMap
-        in="blurred_source" in2="displacement_map"
-        scale="32" xChannelSelector="R" yChannelSelector="G"
-        result="displaced"
-      />
+      <feImage href="/brand/glass-displacement.png" x="0" y="0" width="640" height="63" result="displacement_map" />
+      <feDisplacementMap in="blurred_source" in2="displacement_map" scale="74.65" xChannelSelector="R" yChannelSelector="G" result="displaced" />
       <feColorMatrix in="displaced" type="saturate" values="6" result="displaced_saturated" />
-      <feImage
-        href="/brand/glass-specular.png"
-        x="0" y="0" width="100%" height="100%" preserveAspectRatio="none"
-        result="specular_layer"
-      />
+      <feImage href="/brand/glass-specular.png" x="0" y="0" width="640" height="63" result="specular_layer" />
       <feComposite in="displaced_saturated" in2="specular_layer" operator="in" result="specular_saturated" />
       <feComponentTransfer in="specular_layer" result="specular_faded">
-        <feFuncA type="linear" slope="0.38" />
+        <feFuncA type="linear" slope="0.5" />
       </feComponentTransfer>
       <feBlend in="specular_saturated" in2="displaced" mode="normal" result="withSaturation" />
       <feBlend in="specular_faded" in2="withSaturation" mode="normal" />
