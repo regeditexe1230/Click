@@ -16,7 +16,7 @@ html {
 :root {
   --container-max: 1120px;
   --container-pad: clamp(20px, 4vw, 32px);
-  --header-h: 76px;
+  --header-h: 80px;
   --glass-tint: 68%;
   --focus-ring: 2px solid var(--primary);
 }

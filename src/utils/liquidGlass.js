@@ -29,6 +29,29 @@ export function getDisplacementMap({ height, width, radius, depth }) {
   );
 }
 
+
+/**
+ * 放大层：一条水平线性位移（左右两半各自向中心偏移），
+ * 配合 scale=元素宽度，把背后画面整体放大 zoom 倍——这就是放大镜的“鼓起”。
+ * 竖方向因为条很矮，忽略不计。
+ */
+export function getZoomMap({ width, height, zoom = 1.06 }) {
+  const d = Math.round(128 - (1 - 1 / zoom) * 127.5);
+  const e = 255 - d;
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="zx" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgb(${e},128,128)" />
+        <stop offset="100%" stop-color="rgb(${d},128,128)" />
+      </linearGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#zx)" />
+  </svg>`)
+  );
+}
+
 /**
  * 完整滤镜链（按我们的页面重写，参数全开）：
  *   轻微模糊 → 位移折射 → 提饱和度 → 只在高光范围内上色 → 衰减 → 叠回底图
@@ -41,8 +64,10 @@ export function getGlassFilter({
   strength = 30,
   blur = 0.35,
   saturate = 1.8,
+  zoom = 1.06,
 }) {
   const displacement = getDisplacementMap({ height, width, radius, depth });
+  const zoomMap = getZoomMap({ width, height, zoom });
   return (
     "data:image/svg+xml;utf8," +
     encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -50,7 +75,9 @@ export function getGlassFilter({
       <filter id="glass" color-interpolation-filters="sRGB">
         <feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="soft" />
         <feImage x="0" y="0" width="${width}" height="${height}" href="${displacement}" result="map" />
-        <feDisplacementMap in="soft" in2="map" scale="${strength}" xChannelSelector="R" yChannelSelector="G" result="refracted" />
+        <feImage x="0" y="0" width="${width}" height="${height}" href="${zoomMap}" result="zmap" />
+        <feDisplacementMap in="soft" in2="zmap" scale="${width}" xChannelSelector="R" yChannelSelector="G" result="zoomed" />
+        <feDisplacementMap in="zoomed" in2="map" scale="${strength}" xChannelSelector="R" yChannelSelector="G" result="refracted" />
         <feColorMatrix in="refracted" type="saturate" values="${saturate}" />
       </filter>
     </defs>

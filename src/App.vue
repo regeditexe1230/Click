@@ -218,10 +218,10 @@ onMounted(() => {
       detachGlass = attachLiquidGlass(glassLayer.value, {
         radius: 26,
         depth: 6,
-        strength: 26,
-        blur: 0.3,
+        strength: 22,
+        blur: 0.8,
         saturate: 1.7,
-        specularOpacity: 0.32,
+        zoom: 1.02,
       });
     } else {
       glassLayer.value.classList.add("is-fallback");
