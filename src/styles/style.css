@@ -18,6 +18,7 @@ html {
   --container-pad: clamp(20px, 4vw, 32px);
   --header-h: 88px;
   --glass-tint: 68%;
+  --glass-h: 63px;
   --focus-ring: 2px solid var(--primary);
 }
 
@@ -190,7 +191,7 @@ p {
   top: 12px;
   transform: translateX(-50%);
   width: min(900px, calc(100vw - 32px));
-  height: 63px;
+  height: var(--glass-h);
   border-radius: 34px;
   z-index: 0;
   pointer-events: none;
@@ -1173,7 +1174,8 @@ p {
 
 @media (max-width: 640px) {
   :root {
-    --header-h: 58px;
+    --header-h: 64px;
+    --glass-h: 52px;
   }
 
   .brand span:last-child {
@@ -1919,4 +1921,25 @@ h3 {
 .download p,
 .card-chip {
   font-variant-numeric: tabular-nums;
+}
+
+/* 玻璃本身已经是一条面，里面的按钮不要再各画一圈描边，否则像三颗钉子 */
+.site-header .nav-more summary,
+.site-header .icon-button {
+  border-color: transparent;
+}
+.site-header .nav-more summary:hover,
+.site-header .icon-button:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+}
+
+@media (max-width: 860px) {
+  .header-glass {
+    width: calc(100vw - 20px);
+    border-radius: 20px;
+  }
+  .header-inner {
+    padding-inline: 12px;
+  }
 }

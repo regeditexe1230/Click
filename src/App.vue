@@ -1,7 +1,7 @@
 <script setup>
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import IntroLogo from "./components/IntroLogo.vue";
-import { attachLiquidGlass, supportsBackdropUrl } from "./utils/liquidGlass";
+import { attachLiquidGlass, syncGlassMaps, supportsBackdropUrl } from "./utils/liquidGlass";
 
 const NodeField = defineAsyncComponent(() => import("./components/NodeField.vue"));
 const GraphScene = defineAsyncComponent(() => import("./components/GraphScene.vue"));
@@ -215,7 +215,18 @@ onMounted(() => {
   // 液态玻璃：能折射就折射，不支持的浏览器退化成毛玻璃
   if (glassLayer.value) {
     if (supportsBackdropUrl) {
-      detachGlass = attachLiquidGlass(glassLayer.value);
+      const pill = glassLayer.value;
+      // 贴图跟着元素宽度走：窗口变窄时重新采样，否则玻璃会歪（参考实现是写死尺寸的）
+      syncGlassMaps(pill);
+      if (typeof ResizeObserver !== "undefined") {
+        let t = 0;
+        const ro = new ResizeObserver(() => {
+          clearTimeout(t);
+          t = setTimeout(() => syncGlassMaps(pill), 120);
+        });
+        ro.observe(pill);
+      }
+      detachGlass = attachLiquidGlass(pill);
     } else {
       glassLayer.value.classList.add("is-fallback");
     }
@@ -264,10 +275,10 @@ watch(isDark, (value) => {
   <svg class="glass-defs" aria-hidden="true" focusable="false" width="0" height="0">
     <filter id="header-glass" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blurred_source" />
-      <feImage href="/brand/glass-displacement-900.png" x="0" y="0" width="900" height="63" result="displacement_map" />
+      <feImage id="header-glass-displacement" href="/brand/glass-displacement-900.png" x="0" y="0" width="900" height="63" result="displacement_map" />
       <feDisplacementMap in="blurred_source" in2="displacement_map" scale="74.65" xChannelSelector="R" yChannelSelector="G" result="displaced" />
       <feColorMatrix in="displaced" type="saturate" values="6" result="displaced_saturated" />
-      <feImage href="/brand/glass-specular-900.png" x="0" y="0" width="900" height="63" result="specular_layer" />
+      <feImage id="header-glass-specular" href="/brand/glass-specular-900.png" x="0" y="0" width="900" height="63" result="specular_layer" />
       <feComposite in="displaced_saturated" in2="specular_layer" operator="in" result="specular_saturated" />
       <feComponentTransfer in="specular_layer" result="specular_faded">
         <feFuncA type="linear" slope="0.5" />
