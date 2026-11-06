@@ -19,6 +19,7 @@ html {
   --header-h: 88px;
   --glass-tint: 68%;
   --glass-h: 63px;
+  --header-h: calc(var(--glass-h) + 26px);
   --focus-ring: 2px solid var(--primary);
 }
 
@@ -157,8 +158,8 @@ p {
   z-index: 40;
   height: var(--header-h);
   /* 悬浮的液态玻璃条：内容从它下面滑过去并被折射 */
-  padding-inline: 18px;
-  padding-block: 12px;
+  padding-inline: 0;
+  padding-block: 12px 0;
   margin: 0;
   background: transparent;
   border-bottom: 0;
@@ -213,12 +214,13 @@ p {
 }
 
 .header-inner {
-  max-width: 900px;
+  max-width: min(900px, calc(100vw - 32px));
   margin: 0 auto;
-  padding-inline: 22px;
+  padding-inline: 26px;
   position: relative;
   z-index: 1;
-  height: 100%;
+  /* 和玻璃条完全同高同起点，否则文字会比玻璃高出几像素，看着就是错位 */
+  height: var(--glass-h);
   display: flex;
   align-items: center;
   gap: var(--gap-5);
@@ -1174,8 +1176,8 @@ p {
 
 @media (max-width: 640px) {
   :root {
-    --header-h: 64px;
     --glass-h: 52px;
+    --header-h: calc(var(--glass-h) + 22px);
   }
 
   .brand span:last-child {
@@ -1934,12 +1936,24 @@ h3 {
   background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 }
 
+/* 窄屏不玩悬浮胶囊：直接铺满做常规吸顶栏，省得贴图比例、圆角、内边距三处对不齐 */
 @media (max-width: 860px) {
+  .site-header {
+    padding-block: 0;
+  }
   .header-glass {
-    width: calc(100vw - 20px);
-    border-radius: 20px;
+    left: 0;
+    right: 0;
+    top: 0;
+    transform: none;
+    width: auto;
+    height: var(--header-h);
+    border-radius: 0;
+    box-shadow: none;
   }
   .header-inner {
-    padding-inline: 12px;
+    max-width: none;
+    padding-inline: 16px;
+    height: var(--header-h);
   }
 }

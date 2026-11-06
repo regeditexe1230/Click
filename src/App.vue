@@ -216,17 +216,29 @@ onMounted(() => {
   if (glassLayer.value) {
     if (supportsBackdropUrl) {
       const pill = glassLayer.value;
-      // 贴图跟着元素宽度走：窗口变窄时重新采样，否则玻璃会歪（参考实现是写死尺寸的）
-      syncGlassMaps(pill);
+      // 折射只在够宽的屏幕上开：窄屏胶囊只有 ~360px，位移贴图的圆角比例压不下，
+      // 一拉伸就歪——手机上直接给毛玻璃，反而稳。
+      const wide = window.matchMedia("(min-width: 861px)");
+      const apply = () => {
+        if (wide.matches) {
+          syncGlassMaps(pill);
+          detachGlass = attachLiquidGlass(pill);
+        } else if (detachGlass) {
+          detachGlass();
+          detachGlass = null;
+        }
+      };
+      apply();
+      wide.addEventListener("change", apply);
       if (typeof ResizeObserver !== "undefined") {
         let t = 0;
         const ro = new ResizeObserver(() => {
+          if (!wide.matches) return;
           clearTimeout(t);
           t = setTimeout(() => syncGlassMaps(pill), 120);
         });
         ro.observe(pill);
       }
-      detachGlass = attachLiquidGlass(pill);
     } else {
       glassLayer.value.classList.add("is-fallback");
     }
