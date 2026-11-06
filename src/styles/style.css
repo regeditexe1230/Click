@@ -189,7 +189,7 @@ p {
   left: 50%;
   top: 12px;
   transform: translateX(-50%);
-  width: min(760px, calc(100vw - 32px));
+  width: min(900px, calc(100vw - 32px));
   height: 63px;
   border-radius: 34px;
   z-index: 0;
@@ -212,7 +212,7 @@ p {
 }
 
 .header-inner {
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
   padding-inline: 22px;
   position: relative;
