@@ -216,9 +216,9 @@ onMounted(() => {
   if (glassLayer.value) {
     if (supportsBackdropUrl) {
       detachGlass = attachLiquidGlass(glassLayer.value, {
-        radius: 24,
-        depth: 5,
-        strength: 13,
+        radius: 30,
+        depth: 6,
+        strength: 15,
         blur: 0.4,
         saturate: 1.55,
         specularOpacity: 0.32,
