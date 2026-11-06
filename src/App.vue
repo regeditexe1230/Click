@@ -215,14 +215,7 @@ onMounted(() => {
   // 液态玻璃：能折射就折射，不支持的浏览器退化成毛玻璃
   if (glassLayer.value) {
     if (supportsBackdropUrl) {
-      detachGlass = attachLiquidGlass(glassLayer.value, {
-        radius: 26,
-        depth: 6,
-        strength: 22,
-        blur: 0.8,
-        saturate: 1.7,
-        zoom: 1.02,
-      });
+      detachGlass = attachLiquidGlass(glassLayer.value);
     } else {
       glassLayer.value.classList.add("is-fallback");
     }
@@ -267,6 +260,34 @@ watch(isDark, (value) => {
   </Teleport>
 
   <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <svg class="glass-defs" aria-hidden="true" focusable="false" width="0" height="0">
+    <filter id="header-glass" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blurred_source" />
+      <feImage
+        href="/brand/glass-displacement.png"
+        x="0" y="0" width="100%" height="100%" preserveAspectRatio="none"
+        result="displacement_map"
+      />
+      <feDisplacementMap
+        in="blurred_source" in2="displacement_map"
+        scale="32" xChannelSelector="R" yChannelSelector="G"
+        result="displaced"
+      />
+      <feColorMatrix in="displaced" type="saturate" values="6" result="displaced_saturated" />
+      <feImage
+        href="/brand/glass-specular.png"
+        x="0" y="0" width="100%" height="100%" preserveAspectRatio="none"
+        result="specular_layer"
+      />
+      <feComposite in="displaced_saturated" in2="specular_layer" operator="in" result="specular_saturated" />
+      <feComponentTransfer in="specular_layer" result="specular_faded">
+        <feFuncA type="linear" slope="0.38" />
+      </feComponentTransfer>
+      <feBlend in="specular_saturated" in2="displaced" mode="normal" result="withSaturation" />
+      <feBlend in="specular_faded" in2="withSaturation" mode="normal" />
+    </filter>
+  </svg>
 
   <header class="site-header is-glass">
     <span ref="glassLayer" class="header-glass" aria-hidden="true"></span>

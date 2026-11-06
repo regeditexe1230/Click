@@ -1,90 +1,7 @@
-// 液态玻璃：对“背景”做真实折射，而不是只盖一层模糊。
-// 手法参考了 iOS 26 那套效果链（位移贴图 + 高光层 + 饱和度提升），
-// 但贴图与滤镜都是按元素真实尺寸现场生成的，没有内置任何位图资源。
-
-/** 位移贴图：中心几乎不动，越靠边位移越大，形成“边缘透镜” */
-export function getDisplacementMap({ height, width, radius, depth }) {
-  return (
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <style>.mix { mix-blend-mode: screen; }</style>
-    <defs>
-      <linearGradient id="Y" x1="0" x2="0" y1="${Math.ceil((radius / height) * 15)}%" y2="${Math.floor(100 - (radius / height) * 15)}%">
-        <stop offset="0%" stop-color="#0F0" />
-        <stop offset="100%" stop-color="#000" />
-      </linearGradient>
-      <linearGradient id="X" x1="${Math.ceil((radius / width) * 15)}%" x2="${Math.floor(100 - (radius / width) * 15)}%" y1="0" y2="0">
-        <stop offset="0%" stop-color="#F00" />
-        <stop offset="100%" stop-color="#000" />
-      </linearGradient>
-    </defs>
-    <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
-    <g filter="blur(2px)">
-      <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
-      <rect x="0" y="0" height="${height}" width="${width}" fill="url(#Y)" class="mix" />
-      <rect x="0" y="0" height="${height}" width="${width}" fill="url(#X)" class="mix" />
-      <rect x="${depth}" y="${depth}" height="${height - 2 * depth}" width="${width - 2 * depth}" fill="#808080" rx="${radius}" ry="${radius}" filter="blur(${depth}px)" />
-    </g>
-  </svg>`)
-  );
-}
-
-
-/**
- * 放大层：一条水平线性位移（左右两半各自向中心偏移），
- * 配合 scale=元素宽度，把背后画面整体放大 zoom 倍——这就是放大镜的“鼓起”。
- * 竖方向因为条很矮，忽略不计。
- */
-export function getZoomMap({ width, height, zoom = 1.06 }) {
-  const d = Math.round(128 - (1 - 1 / zoom) * 127.5);
-  const e = 255 - d;
-  return (
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="zx" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="rgb(${e},128,128)" />
-        <stop offset="100%" stop-color="rgb(${d},128,128)" />
-      </linearGradient>
-    </defs>
-    <rect width="${width}" height="${height}" fill="url(#zx)" />
-  </svg>`)
-  );
-}
-
-/**
- * 完整滤镜链（按我们的页面重写，参数全开）：
- *   轻微模糊 → 位移折射 → 提饱和度 → 只在高光范围内上色 → 衰减 → 叠回底图
- */
-export function getGlassFilter({
-  height,
-  width,
-  radius,
-  depth,
-  strength = 30,
-  blur = 0.35,
-  saturate = 1.8,
-  zoom = 1.06,
-}) {
-  const displacement = getDisplacementMap({ height, width, radius, depth });
-  const zoomMap = getZoomMap({ width, height, zoom });
-  return (
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="glass" color-interpolation-filters="sRGB">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="soft" />
-        <feImage x="0" y="0" width="${width}" height="${height}" href="${displacement}" result="map" />
-        <feImage x="0" y="0" width="${width}" height="${height}" href="${zoomMap}" result="zmap" />
-        <feDisplacementMap in="soft" in2="zmap" scale="${width}" xChannelSelector="R" yChannelSelector="G" result="zoomed" />
-        <feDisplacementMap in="zoomed" in2="map" scale="${strength}" xChannelSelector="R" yChannelSelector="G" result="refracted" />
-        <feColorMatrix in="refracted" type="saturate" values="${saturate}" />
-      </filter>
-    </defs>
-  </svg>`) +
-    "#glass"
-  );
-}
+// 液态玻璃：直接照搬参考实现的那条滤镜链，只把元素尺寸换成我们的。
+// 位移贴图与高光层是参考页那两张 640×63 的 PNG（放在 public/brand/ 下），
+// 这里通过 preserveAspectRatio="none" 把它们拉伸到顶栏尺寸，滤镜仍是同一条。
+export const GLASS_FILTER_ID = "header-glass";
 
 /** Chrome/Edge 支持 backdrop-filter: url(#f)；Safari 与 Firefox 会退化 */
 export const supportsBackdropUrl = (() => {
@@ -98,55 +15,15 @@ export const supportsBackdropUrl = (() => {
 })();
 
 /**
- * 给一个元素挂上液态玻璃：按尺寸生成滤镜，尺寸变化时重算。
- * el 必须是「滤镜层」本身（覆盖在内容底下、承载 backdrop-filter 的那一层）。
+ * 把内联 SVG 里的滤镜挂到元素上。
+ * 元素尺寸变化时不需要重算——滤镜用的是百分比尺寸 + 拉伸，这一点和参考一致。
  */
-export function attachLiquidGlass(el, options = {}) {
+export function attachLiquidGlass(el, { filterId = GLASS_FILTER_ID } = {}) {
   if (!el) return () => {};
-  const opts = {
-    radius: 22,
-    depth: 8,
-    strength: 26,
-    blur: 0.6,
-    saturate: 1.8,
-    brightness: 1.0,
-    ...options,
-  };
-
-  let frame = 0;
-  const render = () => {
-    const rect = el.getBoundingClientRect();
-    const width = Math.round(rect.width);
-    const height = Math.round(rect.height);
-    if (width < 8 || height < 8) return;
-
-    // backdrop-filter 直接吃一个「指向 SVG 滤镜的 data URI」，不必往 DOM 里塞 svg
-    const href = getGlassFilter({
-      width,
-      height,
-      radius: Math.min(opts.radius, height / 2),
-      depth: Math.min(opts.depth, height / 3),
-      strength: opts.strength,
-      blur: opts.blur,
-      saturate: opts.saturate,
-    });
-    const value = `url("${href}") brightness(${opts.brightness})`;
-    el.style.backdropFilter = value;
-    el.style.webkitBackdropFilter = value;
-  };
-
-  const schedule = () => {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(render);
-  };
-
-  render();
-  const ro = new ResizeObserver(schedule);
-  ro.observe(el);
-
+  const value = `url(#${filterId})`;
+  el.style.backdropFilter = value;
+  el.style.webkitBackdropFilter = value;
   return () => {
-    cancelAnimationFrame(frame);
-    ro.disconnect();
     el.style.backdropFilter = "";
     el.style.webkitBackdropFilter = "";
   };

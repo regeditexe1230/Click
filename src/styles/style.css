@@ -177,6 +177,13 @@ p {
   pointer-events: none;
 }
 
+.glass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .header-glass {
   position: absolute;
   inset: 12px 18px auto;
