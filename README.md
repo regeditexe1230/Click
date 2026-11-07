@@ -59,3 +59,10 @@ public/screenshots/ App 真机截图（深浅各一套），nodes/ 下是抠好�
 
 正文与按钮使用系统字体栈（PingFang SC / Noto Sans SC / Microsoft YaHei 等），不涉及授权。
 参考站使用的 Sora、Lexend 同为 OFL，可商用。
+
+## 许可
+
+本分支（`click-web`，官网源码）以 **Apache License 2.0** 授权，全文见 [LICENSE](LICENSE)，
+第三方组件与字体的归属见 [NOTICE](NOTICE)。
+
+App 本体在 `main` / `beta` 分支，授权方式以那些分支上的说明为准。
