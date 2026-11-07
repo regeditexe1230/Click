@@ -1957,3 +1957,18 @@ h3 {
     height: var(--header-h);
   }
 }
+
+/* 跟随系统时在主题按钮上点一颗小点，免得用户以为只能二选一 */
+.icon-button[data-mode="system"]::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.icon-button[data-theme-toggle] {
+  position: relative;
+}

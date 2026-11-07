@@ -174,8 +174,26 @@ function closeMenu() {
 
 // 点一下就是切换颜色：当前是深色就变浅色，反之亦然。
 // 没点过的时候处于「跟随系统」，第一次点会固定成与当前相反的那一档。
+// 三态循环：跟随系统 → 浅色 → 深色 → 跟随系统
+// （以前只有两态，点一次就再也回不到「跟随系统」，看起来就像默认逻辑失效了）
+const themeModeLabel = computed(() => {
+  if (themeMode.value === "system") return "跟随系统";
+  return themeMode.value === "dark" ? "深色" : "浅色";
+});
+const themeButtonLabel = computed(() => {
+  if (themeMode.value === "system") return `配色：跟随系统（点击改为浅色）`;
+  if (themeMode.value === "light") return `配色：浅色（点击改为深色）`;
+  return `配色：深色（点击恢复跟随系统）`;
+});
+
 function toggleColorScheme(event) {
-  setMode(isDark.value ? "light" : "dark", event);
+  const next =
+    themeMode.value === "system"
+      ? "light"
+      : themeMode.value === "light"
+        ? "dark"
+        : "system";
+  setMode(next, event);
 }
 
 function onMediaChange(event) {
@@ -334,9 +352,10 @@ watch(isDark, (value) => {
         <button
           class="icon-button"
           data-theme-toggle
+          :data-mode="themeMode"
           type="button"
-          :aria-label="isDark ? '切换到浅色' : '切换到深色'"
-          :title="isDark ? '切换到浅色' : '切换到深色'"
+          :aria-label="themeButtonLabel"
+          :title="themeButtonLabel"
           @click="toggleColorScheme"
         >
           <svg
