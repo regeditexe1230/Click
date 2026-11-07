@@ -342,8 +342,8 @@ watch(isDark, (value) => {
 
     <!-- 点击导航时冒出来的那块圆形透镜：一张径向位移图，中心平、边缘往内收，就是放大镜 -->
     <filter id="nav-lens" color-interpolation-filters="sRGB" x="-10%" y="-10%" width="120%" height="120%">
-      <feImage href="/brand/lens-96.png" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="lens_map" />
-      <feDisplacementMap in="SourceGraphic" in2="lens_map" scale="96" xChannelSelector="R" yChannelSelector="G" result="lens_warp" />
+      <feImage href="/brand/lens-oval-150.png" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="lens_map" />
+      <feDisplacementMap in="SourceGraphic" in2="lens_map" scale="150" xChannelSelector="R" yChannelSelector="G" result="lens_warp" />
       <feGaussianBlur in="lens_warp" stdDeviation="0.25" />
     </filter>
   </svg>
