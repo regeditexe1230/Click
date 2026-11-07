@@ -186,6 +186,29 @@ const themeButtonLabel = computed(() => {
   return `配色：深色（点击恢复跟随系统）`;
 });
 
+
+// 导航点击时，在鼠标位置冒一块圆形液态玻璃（放大镜），400ms 后自己消失
+function spawnLens(event) {
+  if (!supportsBackdropUrl) return;
+  if (!window.matchMedia("(min-width: 861px)").matches) return;
+  const link = event.currentTarget;
+  const header = link && link.closest(".site-header");
+  if (!header) return;
+  const rect = header.getBoundingClientRect();
+  const target = link.getBoundingClientRect();
+  const cx = event.clientX || target.left + target.width / 2;
+  const cy = event.clientY || target.top + target.height / 2;
+  const lens = document.createElement("span");
+  lens.className = "nav-lens";
+  lens.style.left = `${cx - rect.left}px`;
+  lens.style.top = `${cy - rect.top}px`;
+  header.appendChild(lens);
+  requestAnimationFrame(() => lens.classList.add("is-open"));
+  // 先撑开到最大，再轻轻放大 + 淡出，不然会“啪”地一下消失
+  setTimeout(() => lens.classList.add("is-closing"), 300);
+  setTimeout(() => lens.remove(), 620);
+}
+
 function toggleColorScheme(event) {
   const next =
     themeMode.value === "system"
@@ -316,6 +339,13 @@ watch(isDark, (value) => {
       <feBlend in="specular_saturated" in2="displaced" mode="normal" result="withSaturation" />
       <feBlend in="specular_faded" in2="withSaturation" mode="normal" />
     </filter>
+
+    <!-- 点击导航时冒出来的那块圆形透镜：一张径向位移图，中心平、边缘往内收，就是放大镜 -->
+    <filter id="nav-lens" color-interpolation-filters="sRGB" x="-10%" y="-10%" width="120%" height="120%">
+      <feImage href="/brand/lens-96.png" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="lens_map" />
+      <feDisplacementMap in="SourceGraphic" in2="lens_map" scale="96" xChannelSelector="R" yChannelSelector="G" result="lens_warp" />
+      <feGaussianBlur in="lens_warp" stdDeviation="0.25" />
+    </filter>
   </svg>
 
   <header class="site-header is-glass">
@@ -330,10 +360,10 @@ watch(isDark, (value) => {
       </a>
 
       <nav class="site-nav" aria-label="主导航">
-        <a href="#features">功能</a>
-        <a href="#graph">节点图</a>
-        <a href="#start">上手</a>
-        <a href="#download">下载</a>
+        <a href="#features" class="nav-lens-host" @pointerdown="spawnLens">功能</a>
+        <a href="#graph" class="nav-lens-host" @pointerdown="spawnLens">节点图</a>
+        <a href="#start" class="nav-lens-host" @pointerdown="spawnLens">上手</a>
+        <a href="#download" class="nav-lens-host" @pointerdown="spawnLens">下载</a>
       </nav>
 
       <div class="header-actions">
