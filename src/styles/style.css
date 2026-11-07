@@ -1180,10 +1180,6 @@ p {
     --header-h: calc(var(--glass-h) + 22px);
   }
 
-  .brand span:last-child {
-    display: none;
-  }
-
   .hero::before {
     height: 62%;
   }
