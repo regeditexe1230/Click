@@ -17,17 +17,15 @@
       (function () {
         var root = document.documentElement;
         try {
-          // 三种模式：system（跟随系统）/ light / dark，与 App 的配色方案一一对应。
-          // 默认跟随系统；旧版的 click-theme 不再沿用，只有用户自己选过才记住。
-          var mode = localStorage.getItem("click-theme-mode");
-          if (mode !== "system" && mode !== "light" && mode !== "dark") mode = "system";
-          localStorage.removeItem("click-theme");
-          var dark =
-            mode === "dark" ||
-            (mode === "system" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          // 只有两态、且不落盘：每次打开都跟随系统；
+          // 用户手动切只存在内存里，刷新/新标签页就回到跟随系统。
+          try {
+            localStorage.removeItem("click-theme-mode");
+            localStorage.removeItem("click-theme");
+          } catch (e) {}
+          var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           root.dataset.theme = dark ? "dark" : "light";
-          root.dataset.themeMode = mode;
+          root.dataset.themeMode = "system";
         } catch (e) {
           root.dataset.theme = "light";
           root.dataset.themeMode = "system";

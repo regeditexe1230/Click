@@ -6,34 +6,18 @@ import { attachLiquidGlass, syncGlassMaps, supportsBackdropUrl } from "./utils/l
 const GraphScene = defineAsyncComponent(() => import("./components/GraphScene.vue"));
 
 const BASE = import.meta.env.BASE_URL;
-const MODE_KEY = "click-theme-mode";
-const LEGACY_KEY = "click-theme";
 const RELEASES_URL = "https://github.com/regeditexe1230/Click/releases/latest";
 const RELEASES_LIST_URL = "https://github.com/regeditexe1230/Click/releases";
 const REPO_URL = "https://github.com/regeditexe1230/Click";
 
 
-function readMode() {
-  try {
-    const saved = localStorage.getItem(MODE_KEY);
-    if (saved === "system" || saved === "light" || saved === "dark") return saved;
-    // 旧版单键切换留下的 click-theme 不再沿用：默认就该是「跟随系统」，
-    // 只有用户自己在菜单里选过才算手动设定过。
-    localStorage.removeItem(LEGACY_KEY);
-  } catch (err) {
-    /* 隐私模式下读不到，按跟随系统处理 */
-  }
-  return "system";
-}
-
-const themeMode = ref(readMode());
+// 不落盘：默认永远跟随系统，用户手动切只影响当前这一次访问
+const manualTheme = ref(null);
 const prefersDark = ref(
   typeof window !== "undefined" &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
 );
-const theme = computed(() =>
-  themeMode.value === "system" ? (prefersDark.value ? "dark" : "light") : themeMode.value
-);
+const theme = computed(() => manualTheme.value ?? (prefersDark.value ? "dark" : "light"));
 
 
 
@@ -119,7 +103,7 @@ let themeMeta = null;
 
 function paintTheme(next) {
   document.documentElement.dataset.theme = next;
-  document.documentElement.dataset.themeMode = themeMode.value;
+  document.documentElement.dataset.themeMode = manualTheme.value ?? "system";
   if (themeMeta && themeMeta.length) {
     themeMeta.forEach((tag) => {
       tag.setAttribute("content", next === "dark" ? "#141218" : "#FEF7FF");
@@ -127,23 +111,14 @@ function paintTheme(next) {
   }
 }
 
-function persistMode(next) {
-  try {
-    localStorage.setItem(MODE_KEY, next);
-    localStorage.removeItem(LEGACY_KEY);
-  } catch (err) {
-    /* 写不了就算了，本次会话内仍然生效 */
-  }
-}
 
 // 切换配色方案。App 里用 ThemeReveal 做从点击点扩散的圆形过渡，
 // 网页这边用 View Transitions 的 clip-path 圆扩散对齐，不支持就直接换色。
-function setMode(next, event) {
-  if (next === themeMode.value) return;
+function applyTheme(next, event) {
+  if (next === theme.value) return;
   const apply = () => {
-    themeMode.value = next;
-    persistMode(next);
-    paintTheme(next === "system" ? (prefersDark.value ? "dark" : "light") : next);
+    manualTheme.value = next;
+    paintTheme(next);
   };
 
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -170,28 +145,14 @@ function closeMenu() {
   if (menu.value) menu.value.removeAttribute("open");
 }
 
-// 点一下就是切换颜色：当前是深色就变浅色，反之亦然。
-// 没点过的时候处于「跟随系统」，第一次点会固定成与当前相反的那一档。
-// 三态循环：跟随系统 → 浅色 → 深色 → 跟随系统
-// （以前只有两态，点一次就再也回不到「跟随系统」，看起来就像默认逻辑失效了）
-const themeModeLabel = computed(() => {
-  if (themeMode.value === "system") return "跟随系统";
-  return themeMode.value === "dark" ? "深色" : "浅色";
-});
-const themeButtonLabel = computed(() => {
-  if (themeMode.value === "system") return `配色：跟随系统（点击改为浅色）`;
-  if (themeMode.value === "light") return `配色：浅色（点击改为深色）`;
-  return `配色：深色（点击恢复跟随系统）`;
-});
+// 只有两态：深 ↔ 浅。默认跟随系统，手动切只对当前这次访问生效，不写 localStorage，
+// 刷新或新开标签页就回到跟随系统。
+const themeButtonLabel = computed(() =>
+  isDark.value ? "配色：深色（点击改为浅色）" : "配色：浅色（点击改为深色）",
+);
 
 function toggleColorScheme(event) {
-  const next =
-    themeMode.value === "system"
-      ? "light"
-      : themeMode.value === "light"
-        ? "dark"
-        : "system";
-  setMode(next, event);
+  applyTheme(isDark.value ? "light" : "dark", event);
 }
 
 function onMediaChange(event) {
@@ -199,10 +160,10 @@ function onMediaChange(event) {
   if (event.matches) observeGraph();
 }
 
-// 跟随系统时，系统切深色/浅色要立刻跟着变，不刷新页面
+// 系统切深色/浅色：用户没手动改过就立刻跟着变
 function onSystemThemeChange(event) {
   prefersDark.value = event.matches;
-  if (themeMode.value === "system") paintTheme(event.matches ? "dark" : "light");
+  if (!manualTheme.value) paintTheme(event.matches ? "dark" : "light");
 }
 
 function observeGraph() {
@@ -344,7 +305,6 @@ watch(isDark, (value) => {
         <button
           class="icon-button"
           data-theme-toggle
-          :data-mode="themeMode"
           type="button"
           :aria-label="themeButtonLabel"
           :title="themeButtonLabel"
