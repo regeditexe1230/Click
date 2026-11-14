@@ -11,8 +11,17 @@ const RELEASES_LIST_URL = "https://github.com/regeditexe1230/Click/releases";
 const REPO_URL = "https://github.com/regeditexe1230/Click";
 
 
-// 不落盘：默认永远跟随系统，用户手动切只影响当前这一次访问
-const manualTheme = ref(null);
+// 手动配色只存 sessionStorage（和开场动画同一口径）：本标签页刷新沿用，新标签页回到跟随系统
+const SESSION_KEY = "click-theme";
+function readManual() {
+  try {
+    const v = sessionStorage.getItem(SESSION_KEY);
+    return v === "light" || v === "dark" ? v : null;
+  } catch (err) {
+    return null;
+  }
+}
+const manualTheme = ref(readManual());
 const prefersDark = ref(
   typeof window !== "undefined" &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -118,6 +127,11 @@ function applyTheme(next, event) {
   if (next === theme.value) return;
   const apply = () => {
     manualTheme.value = next;
+    try {
+      sessionStorage.setItem(SESSION_KEY, next);
+    } catch (err) {
+      /* 隐私模式写不了就只在内存里生效 */
+    }
     paintTheme(next);
   };
 

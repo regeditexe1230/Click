@@ -17,15 +17,23 @@
       (function () {
         var root = document.documentElement;
         try {
-          // 只有两态、且不落盘：每次打开都跟随系统；
-          // 用户手动切只存在内存里，刷新/新标签页就回到跟随系统。
+          // 顺手清掉旧版落盘的记录，避免老数据把默认行为带偏
           try {
             localStorage.removeItem("click-theme-mode");
             localStorage.removeItem("click-theme");
           } catch (e) {}
-          var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          // 手动选的配色只留在本标签页（sessionStorage，和开场动画同一套口径）：
+          // 本标签页刷新仍然沿用，新开标签页就回到跟随系统。
+          var manual = null;
+          try {
+            var m = sessionStorage.getItem("click-theme");
+            if (m === "light" || m === "dark") manual = m;
+          } catch (e) {}
+          var dark = manual
+            ? manual === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
           root.dataset.theme = dark ? "dark" : "light";
-          root.dataset.themeMode = "system";
+          root.dataset.themeMode = manual || "system";
         } catch (e) {
           root.dataset.theme = "light";
           root.dataset.themeMode = "system";
