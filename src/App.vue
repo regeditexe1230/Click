@@ -377,7 +377,6 @@ watch(isDark, (value) => {
             </div>
           </div>
           <p class="hero-caption">节点图画布 · 事件 / 动作 / 控制三类节点</p>
-          <p class="hero-note">Android 版实拍 · 深色主题</p>
         </div>
       </div>
     </section>
