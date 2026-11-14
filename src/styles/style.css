@@ -628,16 +628,6 @@ p {
   object-position: center;
 }
 
-.phone-glow {
-  position: absolute;
-  inset: auto 8% -6% 8%;
-  height: 22%;
-  z-index: -1;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 26%, transparent);
-  filter: blur(34px);
-}
-
 .hero-caption {
   font-size: 12.5px;
   color: var(--on-surface-variant);
@@ -1244,18 +1234,6 @@ p {
 
 /* ---------- three.js 画布 ---------- */
 
-/* 首屏背景那层「节点星图」：纯装饰，压在所有内容下面 */
-.node-field {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  -webkit-mask-image: radial-gradient(52% 62% at 76% 44%, #000 22%, transparent 74%);
-  mask-image: radial-gradient(52% 62% at 76% 44%, #000 22%, transparent 74%);
-}
-
-.node-field canvas,
 .graph-scene canvas {
   display: block;
   width: 100%;
@@ -1306,18 +1284,6 @@ p {
   pointer-events: none;
 }
 
-@media (max-width: 860px) {
-  .node-field {
-    display: none;
-  }
-
-  /* 窄屏不上 3D，也别留一层盖在手机图上的渐变 */
-  .hero::after {
-    display: none;
-  }
-}
-
-
 /* ---------- 细节修正 ---------- */
 
 /* 锚点跳转要给吸顶栏让位 */
@@ -1329,22 +1295,6 @@ section[id] {
   scroll-margin-top: 84px;
 }
 
-/* 首屏：文字柱底下压一层与背景同色的横向渐变，
-   星图只留在右侧，标题/正文/按钮区域保持干净 */
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    color-mix(in srgb, var(--surface) 97%, transparent) 0%,
-    color-mix(in srgb, var(--surface) 97%, transparent) 46%,
-    color-mix(in srgb, var(--surface) 62%, transparent) 56%,
-    transparent 66%
-  );
-}
 /* ---------- 开场：居中 logo → 旋到页头 ---------- */
 
 .intro-layer {

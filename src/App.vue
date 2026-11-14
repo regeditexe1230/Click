@@ -3,7 +3,6 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch 
 import IntroLogo from "./components/IntroLogo.vue";
 import { attachLiquidGlass, syncGlassMaps, supportsBackdropUrl } from "./utils/liquidGlass";
 
-const NodeField = defineAsyncComponent(() => import("./components/NodeField.vue"));
 const GraphScene = defineAsyncComponent(() => import("./components/GraphScene.vue"));
 
 const BASE = import.meta.env.BASE_URL;
@@ -39,7 +38,6 @@ const theme = computed(() =>
 
 
 const introVisible = ref(document.documentElement.classList.contains("intro-active"));
-const hero3d = ref(false);
 const graph3d = ref(false);
 const isWide = ref(true);
 const graphHost = ref(null);
@@ -271,12 +269,6 @@ onMounted(() => {
   darkQuery.addEventListener("change", onSystemThemeChange);
   paintTheme(theme.value);
 
-  // 首屏先把文字和截图画出来，3D 晚一步加载，别抢首屏
-  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 220));
-  idle(() => {
-    hero3d.value = true;
-  });
-
   observeGraph();
 });
 
@@ -386,8 +378,6 @@ watch(isDark, (value) => {
 
   <main id="main">
     <section class="hero" id="top">
-      <NodeField v-if="hero3d && isWide" :theme="theme" />
-
       <div class="container hero-inner">
         <div class="hero-copy">
           <p class="eyebrow">
@@ -425,7 +415,6 @@ watch(isDark, (value) => {
                 alt="Click 的节点图画布：顶部是工具栏，画布中间放着一张「点击 ×1」节点卡，左右各有一个连线圆点；底部是事件 / 动作 / 控制托盘，托盘里放着一张「开始」起点卡。"
               />
             </div>
-            <div class="phone-glow" aria-hidden="true"></div>
           </div>
           <p class="hero-caption">节点图画布 · 事件 / 动作 / 控制三类节点</p>
           <p class="hero-note">Android 版实拍 · 深色主题</p>
@@ -551,7 +540,6 @@ watch(isDark, (value) => {
                   alt="Click 的主页：无障碍服务与悬浮窗权限两行状态，各自标着已开启；下面是执行模式（点击 / 滑动）、执行前延时、重复次数、无限循环开关，最下面是启动悬浮球与停止悬浮球两个按钮。"
                 />
               </div>
-              <div class="phone-glow" aria-hidden="true"></div>
             </div>
             <figcaption>
               <strong>主页</strong>无障碍服务和悬浮窗权限各自带一行状态，没开时有按钮直达开关；
@@ -569,7 +557,6 @@ watch(isDark, (value) => {
                   alt="Click 的程序列表：三张程序卡片，每张写着节点数量和节点类型色点，右侧是编辑、复制、删除按钮，右下角是新建按钮。"
                 />
               </div>
-              <div class="phone-glow" aria-hidden="true"></div>
             </div>
             <figcaption>
               <strong>程序列表</strong>一个程序一张卡，节点数和类型色条一眼看清；
@@ -588,7 +575,6 @@ watch(isDark, (value) => {
                   alt="Click 的设置页：文字、个性化、更新三组设置，个性化里有配色方案、颜色、应用背景，更新里可以开关自动检查更新。"
                 />
               </div>
-              <div class="phone-glow" aria-hidden="true"></div>
             </div>
             <figcaption>
               <strong>设置</strong>文字大小、配色方案、应用背景、自动检查更新；
@@ -719,7 +705,6 @@ watch(isDark, (value) => {
                   alt="Click 的程序列表：三张程序卡片，每张写着节点数量和节点类型色点，右侧是编辑、复制、删除按钮，右下角是新建按钮。"
                 />
               </div>
-              <div class="phone-glow" aria-hidden="true"></div>
             </div>
           </div>
 
