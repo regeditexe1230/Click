@@ -509,19 +509,6 @@ p {
   overflow: clip;
 }
 
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: -30% -10% auto -10%;
-  height: 78%;
-  z-index: -1;
-  background: radial-gradient(
-    56% 66% at 74% -4%,
-    color-mix(in srgb, var(--primary-container) 92%, transparent),
-    transparent 72%
-  );
-}
-
 .hero-inner {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
@@ -1168,10 +1155,6 @@ p {
   :root {
     --glass-h: 52px;
     --header-h: calc(var(--glass-h) + 22px);
-  }
-
-  .hero::before {
-    height: 62%;
   }
 
   .br-wide {
